@@ -1,0 +1,703 @@
+{
+  "project": "vc-sandbox-test-2",
+  "codes": {
+    "200": 98,
+    "429": 1
+  },
+  "samples": [
+    {
+      "t": "2026-10-21T11:26:53.065Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792582073"
+    },
+    {
+      "t": "2026-10-21T11:26:54.197Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792582074"
+    },
+    {
+      "t": "2026-10-21T11:26:55.332Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792582075"
+    },
+    {
+      "t": "2026-10-21T11:26:56.450Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792582077"
+    },
+    {
+      "t": "2026-10-21T11:26:57.579Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792582078"
+    },
+    {
+      "t": "2026-10-21T11:26:58.698Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792582079"
+    },
+    {
+      "t": "2026-10-21T11:26:59.814Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792582080"
+    },
+    {
+      "t": "2026-10-21T11:27:00.947Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792582081"
+    },
+    {
+      "t": "2026-10-21T11:27:02.091Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792582082"
+    },
+    {
+      "t": "2026-10-21T11:27:03.214Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792582083"
+    },
+    {
+      "t": "2026-10-21T11:27:04.350Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792582084"
+    },
+    {
+      "t": "2026-10-21T11:27:05.519Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792582086"
+    },
+    {
+      "t": "2026-10-21T11:27:06.321Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "934",
+      "x-ratelimit-reset": "1792582087"
+    },
+    {
+      "t": "2026-10-21T11:27:07.583Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "908",
+      "x-ratelimit-reset": "1792582088"
+    },
+    {
+      "t": "2026-10-21T11:27:08.698Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "826",
+      "x-ratelimit-reset": "1792582089"
+    },
+    {
+      "t": "2026-10-21T11:27:09.804Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "764",
+      "x-ratelimit-reset": "1792582090"
+    },
+    {
+      "t": "2026-10-21T11:27:10.599Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "691",
+      "x-ratelimit-reset": "1792582091"
+    },
+    {
+      "t": "2026-10-21T11:27:12.019Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "609",
+      "x-ratelimit-reset": "1792582092"
+    },
+    {
+      "t": "2026-10-21T11:27:13.156Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "525",
+      "x-ratelimit-reset": "1792582093"
+    },
+    {
+      "t": "2026-10-21T11:27:14.291Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "435",
+      "x-ratelimit-reset": "1792582094"
+    },
+    {
+      "t": "2026-10-21T11:27:15.395Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "343",
+      "x-ratelimit-reset": "1792582095"
+    },
+    {
+      "t": "2026-10-21T11:27:16.487Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "276",
+      "x-ratelimit-reset": "1792582097"
+    },
+    {
+      "t": "2026-10-21T11:27:17.599Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "184",
+      "x-ratelimit-reset": "1792582098"
+    },
+    {
+      "t": "2026-10-21T11:27:18.712Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "85",
+      "x-ratelimit-reset": "1792582099"
+    },
+    {
+      "t": "2026-10-21T11:27:19.346Z",
+      "status": 429,
+      "retry-after": "60",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "0",
+      "x-ratelimit-reset": "1792582100"
+    },
+    {
+      "t": "2026-10-21T11:27:20.447Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "12",
+      "x-ratelimit-reset": "1792582101"
+    },
+    {
+      "t": "2026-10-21T11:27:21.554Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "15",
+      "x-ratelimit-reset": "1792582102"
+    },
+    {
+      "t": "2026-10-21T11:27:22.670Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "30",
+      "x-ratelimit-reset": "1792582103"
+    },
+    {
+      "t": "2026-10-21T11:27:23.770Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "43",
+      "x-ratelimit-reset": "1792582104"
+    },
+    {
+      "t": "2026-10-21T11:27:24.864Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "58",
+      "x-ratelimit-reset": "1792582105"
+    },
+    {
+      "t": "2026-10-21T11:27:25.972Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "73",
+      "x-ratelimit-reset": "1792582106"
+    },
+    {
+      "t": "2026-10-21T11:27:27.079Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "88",
+      "x-ratelimit-reset": "1792582107"
+    },
+    {
+      "t": "2026-10-21T11:27:28.167Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "103",
+      "x-ratelimit-reset": "1792582108"
+    },
+    {
+      "t": "2026-10-21T11:27:28.976Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "118",
+      "x-ratelimit-reset": "1792582109"
+    },
+    {
+      "t": "2026-10-21T11:27:30.242Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "133",
+      "x-ratelimit-reset": "1792582110"
+    },
+    {
+      "t": "2026-10-21T11:27:31.617Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "165",
+      "x-ratelimit-reset": "1792582112"
+    },
+    {
+      "t": "2026-10-21T11:27:32.724Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "180",
+      "x-ratelimit-reset": "1792582113"
+    },
+    {
+      "t": "2026-10-21T11:27:33.837Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "195",
+      "x-ratelimit-reset": "1792582114"
+    },
+    {
+      "t": "2026-10-21T11:27:34.948Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "210",
+      "x-ratelimit-reset": "1792582115"
+    },
+    {
+      "t": "2026-10-21T11:27:36.047Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "225",
+      "x-ratelimit-reset": "1792582116"
+    },
+    {
+      "t": "2026-10-21T11:27:37.143Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "240",
+      "x-ratelimit-reset": "1792582117"
+    },
+    {
+      "t": "2026-10-21T11:27:38.399Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "255",
+      "x-ratelimit-reset": "1792582118"
+    },
+    {
+      "t": "2026-10-21T11:27:39.523Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "287",
+      "x-ratelimit-reset": "1792582120"
+    },
+    {
+      "t": "2026-10-21T11:27:40.653Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "302",
+      "x-ratelimit-reset": "1792582121"
+    },
+    {
+      "t": "2026-10-21T11:27:41.777Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "317",
+      "x-ratelimit-reset": "1792582122"
+    },
+    {
+      "t": "2026-10-21T11:27:42.893Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "332",
+      "x-ratelimit-reset": "1792582123"
+    },
+    {
+      "t": "2026-10-21T11:27:43.694Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "347",
+      "x-ratelimit-reset": "1792582124"
+    },
+    {
+      "t": "2026-10-21T11:27:44.857Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "362",
+      "x-ratelimit-reset": "1792582125"
+    },
+    {
+      "t": "2026-10-21T11:27:45.977Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "377",
+      "x-ratelimit-reset": "1792582126"
+    },
+    {
+      "t": "2026-10-21T11:27:47.086Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "392",
+      "x-ratelimit-reset": "1792582127"
+    },
+    {
+      "t": "2026-10-21T11:27:48.203Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "407",
+      "x-ratelimit-reset": "1792582128"
+    },
+    {
+      "t": "2026-10-21T11:27:49.319Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "422",
+      "x-ratelimit-reset": "1792582129"
+    },
+    {
+      "t": "2026-10-21T11:27:50.439Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "454",
+      "x-ratelimit-reset": "1792582131"
+    },
+    {
+      "t": "2026-10-21T11:27:51.564Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "469",
+      "x-ratelimit-reset": "1792582132"
+    },
+    {
+      "t": "2026-10-21T11:27:52.686Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "484",
+      "x-ratelimit-reset": "1792582133"
+    },
+    {
+      "t": "2026-10-21T11:27:53.819Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "499",
+      "x-ratelimit-reset": "1792582134"
+    },
+    {
+      "t": "2026-10-21T11:27:54.956Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "514",
+      "x-ratelimit-reset": "1792582135"
+    },
+    {
+      "t": "2026-10-21T11:27:56.069Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "529",
+      "x-ratelimit-reset": "1792582136"
+    },
+    {
+      "t": "2026-10-21T11:27:57.229Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "544",
+      "x-ratelimit-reset": "1792582137"
+    },
+    {
+      "t": "2026-10-21T11:27:58.344Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "559",
+      "x-ratelimit-reset": "1792582138"
+    },
+    {
+      "t": "2026-10-21T11:27:59.472Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "591",
+      "x-ratelimit-reset": "1792582140"
+    },
+    {
+      "t": "2026-10-21T11:28:00.631Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "606",
+      "x-ratelimit-reset": "1792582141"
+    },
+    {
+      "t": "2026-10-21T11:28:01.742Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "621",
+      "x-ratelimit-reset": "1792582142"
+    },
+    {
+      "t": "2026-10-21T11:28:02.988Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "636",
+      "x-ratelimit-reset": "1792582143"
+    },
+    {
+      "t": "2026-10-21T11:28:04.092Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "651",
+      "x-ratelimit-reset": "1792582144"
+    },
+    {
+      "t": "2026-10-21T11:28:05.345Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "666",
+      "x-ratelimit-reset": "1792582145"
+    },
+    {
+      "t": "2026-10-21T11:28:06.477Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "698",
+      "x-ratelimit-reset": "1792582147"
+    },
+    {
+      "t": "2026-10-21T11:28:07.659Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "713",
+      "x-ratelimit-reset": "1792582148"
+    },
+    {
+      "t": "2026-10-21T11:28:08.791Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "728",
+      "x-ratelimit-reset": "1792582149"
+    },
+    {
+      "t": "2026-10-21T11:28:09.906Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "743",
+      "x-ratelimit-reset": "1792582150"
+    },
+    {
+      "t": "2026-10-21T11:28:11.022Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "758",
+      "x-ratelimit-reset": "1792582151"
+    },
+    {
+      "t": "2026-10-21T11:28:12.172Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "773",
+      "x-ratelimit-reset": "1792582152"
+    },
+    {
+      "t": "2026-10-21T11:28:13.306Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "788",
+      "x-ratelimit-reset": "1792582153"
+    },
+    {
+      "t": "2026-10-21T11:28:14.435Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "820",
+      "x-ratelimit-reset": "1792582155"
+    },
+    {
+      "t": "2026-10-21T11:28:15.548Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "835",
+      "x-ratelimit-reset": "1792582156"
+    },
+    {
+      "t": "2026-10-21T11:28:16.676Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "850",
+      "x-ratelimit-reset": "1792582157"
+    },
+    {
+      "t": "2026-10-21T11:28:17.805Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "865",
+      "x-ratelimit-reset": "1792582158"
+    },
+    {
+      "t": "2026-10-21T11:28:18.956Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "880",
+      "x-ratelimit-reset": "1792582159"
+    },
+    {
+      "t": "2026-10-21T11:28:20.062Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "895",
+      "x-ratelimit-reset": "1792582160"
+    },
+    {
+      "t": "2026-10-21T11:28:21.163Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "910",
+      "x-ratelimit-reset": "1792582161"
+    },
+    {
+      "t": "2026-10-21T11:28:22.286Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "925",
+      "x-ratelimit-reset": "1792582162"
+    },
+    {
+      "t": "2026-10-21T11:28:23.387Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "940",
+      "x-ratelimit-reset": "1792582163"
+    },
+    {
+      "t": "2026-10-21T11:28:24.519Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "972",
+      "x-ratelimit-reset": "1792582165"
+    },
+    {
+      "t": "2026-10-21T11:28:25.670Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "987",
+      "x-ratelimit-reset": "1792582166"
+    },
+    {
+      "t": "2026-10-21T11:28:26.781Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792582167"
+    },
+    {
+      "t": "2026-10-21T11:28:27.920Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792582168"
+    },
+    {
+      "t": "2026-10-21T11:28:29.035Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792582169"
+    },
+    {
+      "t": "2026-10-21T11:28:30.157Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "998",
+      "x-ratelimit-reset": "1792582170"
+    },
+    {
+      "t": "2026-10-21T11:28:31.410Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792582171"
+    },
+    {
+      "t": "2026-10-21T11:28:32.521Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792582173"
+    },
+    {
+      "t": "2026-10-21T11:28:33.633Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792582174"
+    },
+    {
+      "t": "2026-10-21T11:28:34.730Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792582175"
+    },
+    {
+      "t": "2026-10-21T11:28:35.870Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792582176"
+    },
+    {
+      "t": "2026-10-21T11:28:36.978Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792582177"
+    },
+    {
+      "t": "2026-10-21T11:28:38.104Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792582178"
+    },
+    {
+      "t": "2026-10-21T11:28:39.256Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792582179"
+    },
+    {
+      "t": "2026-10-21T11:28:40.370Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792582180"
+    },
+    {
+      "t": "2026-10-21T11:28:41.491Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792582182"
+    },
+    {
+      "t": "2026-10-21T11:28:42.619Z",
+      "status": 200,
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792582183"
+    }
+  ]
+}

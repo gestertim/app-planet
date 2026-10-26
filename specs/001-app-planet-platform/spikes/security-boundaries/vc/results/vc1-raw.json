@@ -1,0 +1,871 @@
+{
+  "startedAt": "2026-10-21T10:54:13.656Z",
+  "region": "hnd1",
+  "probes": [
+    {
+      "kind": "sdk",
+      "target": "nul.domain(80)",
+      "error": "No route for port 80"
+    },
+    {
+      "kind": "sdk",
+      "target": "nul.domain(443)",
+      "error": "No route for port 443"
+    },
+    {
+      "kind": "sdk",
+      "target": "nul.domain(3000)",
+      "error": "No route for port 3000"
+    },
+    {
+      "kind": "sdk",
+      "target": "nul.domain(5173)",
+      "error": "No route for port 5173"
+    },
+    {
+      "kind": "sdk",
+      "target": "nul.domain(8080)",
+      "error": "No route for port 8080"
+    },
+    {
+      "kind": "sdk",
+      "target": "nul.domain(23456)",
+      "error": "No route for port 23456"
+    },
+    {
+      "kind": "sdk",
+      "target": "nul.domain(26661)",
+      "error": "No route for port 26661"
+    },
+    {
+      "url": "https://sb-6g6jv5ue4nh5.vercel.run/",
+      "kind": "http",
+      "status": 200,
+      "ms": 388,
+      "body": "CANARY:control:3000:/",
+      "canary": true,
+      "server": "Vercel"
+    },
+    {
+      "url": "https://sb-6g6jv5ue4nh5.vercel.run/ws",
+      "kind": "ws",
+      "ms": 1874,
+      "canary": true,
+      "status": 101,
+      "upgraded": true
+    },
+    {
+      "url": "https://sb-6g6jv5ue4nh5.vercel.run:80/",
+      "kind": "http",
+      "error": "ECONNRESET",
+      "ms": 111,
+      "canary": false
+    },
+    {
+      "url": "http://sb-6g6jv5ue4nh5.vercel.run:80/",
+      "kind": "http",
+      "status": 308,
+      "ms": 115,
+      "body": "Redirecting...",
+      "canary": false,
+      "server": "Vercel"
+    },
+    {
+      "url": "https://sb-6g6jv5ue4nh5.vercel.run:443/",
+      "kind": "http",
+      "status": 200,
+      "ms": 372,
+      "body": "CANARY:control:3000:/",
+      "canary": true,
+      "server": "Vercel"
+    },
+    {
+      "url": "http://sb-6g6jv5ue4nh5.vercel.run:443/",
+      "kind": "http",
+      "status": 308,
+      "ms": 111,
+      "body": "Redirecting...",
+      "canary": false,
+      "server": "Vercel"
+    },
+    {
+      "url": "https://sb-6g6jv5ue4nh5.vercel.run:5173/",
+      "kind": "http",
+      "error": "timeout",
+      "ms": 8062,
+      "canary": false
+    },
+    {
+      "url": "http://sb-6g6jv5ue4nh5.vercel.run:5173/",
+      "kind": "http",
+      "error": "timeout",
+      "ms": 8060,
+      "canary": false
+    },
+    {
+      "url": "https://sb-6g6jv5ue4nh5.vercel.run:8080/",
+      "kind": "http",
+      "error": "timeout",
+      "ms": 8059,
+      "canary": false
+    },
+    {
+      "url": "http://sb-6g6jv5ue4nh5.vercel.run:8080/",
+      "kind": "http",
+      "error": "timeout",
+      "ms": 8057,
+      "canary": false
+    },
+    {
+      "url": "https://sb-6g6jv5ue4nh5.vercel.run:23456/",
+      "kind": "http",
+      "error": "timeout",
+      "ms": 8056,
+      "canary": false
+    },
+    {
+      "url": "http://sb-6g6jv5ue4nh5.vercel.run:23456/",
+      "kind": "http",
+      "error": "timeout",
+      "ms": 8057,
+      "canary": false
+    },
+    {
+      "url": "https://sb-6g6jv5ue4nh5.vercel.run:26661/",
+      "kind": "http",
+      "error": "timeout",
+      "ms": 8056,
+      "canary": false
+    },
+    {
+      "url": "http://sb-6g6jv5ue4nh5.vercel.run:26661/",
+      "kind": "http",
+      "error": "timeout",
+      "ms": 8054,
+      "canary": false
+    },
+    {
+      "url": "https://sb-doesnotexist00.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 1748,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::nknpw-1792580062802-496849e7be25",
+      "canary": false,
+      "server": "Vercel"
+    },
+    {
+      "url": "https://cyan-spatial-bandicoot-d3MBYv.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 1841,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::wdnpt-1792580070914-54cc218df3af",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-cyan-spatial-bandicoot-d3MBYv.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 1776,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::vjp7j-1792580070886-a4bf0d38c305",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://cyan-spatial-bandicoot-d3MBYv-80.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 1807,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::pwd7r-1792580070910-da6e3f659a6f",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-cyan-spatial-bandicoot-d3MBYv-80.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 1807,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::znblw-1792580070922-e356b1e67092",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://cyan-spatial-bandicoot-d3MBYv-443.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 1778,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::4hvwn-1792580070894-26d2ff63b20c",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-cyan-spatial-bandicoot-d3MBYv-443.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 1822,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::r9s2r-1792580070901-d61135a29fc4",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://cyan-spatial-bandicoot-d3MBYv-3000.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 1883,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::xcv2p-1792580070939-e5c5fd5a53cd",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-cyan-spatial-bandicoot-d3MBYv-3000.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 1875,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::j59w5-1792580070930-363b8ec459eb",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://cyan-spatial-bandicoot-d3MBYv-5173.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 1911,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::cfq68-1792580070974-a25446e69c6e",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-cyan-spatial-bandicoot-d3MBYv-5173.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 1893,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::wdnpt-1792580070966-3f9ffe4da266",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://cyan-spatial-bandicoot-d3MBYv-8080.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 1873,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::mtq77-1792580070998-268ea0d05d9e",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-cyan-spatial-bandicoot-d3MBYv-8080.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 1861,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::mtq77-1792580070987-b8a9a5bbaf1f",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://cyan-spatial-bandicoot-d3MBYv-23456.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 1922,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::nknpw-1792580071018-d41ce0f191fd",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-cyan-spatial-bandicoot-d3MBYv-23456.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 1920,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::6dgrr-1792580071026-d3399202fcd6",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://cyan-spatial-bandicoot-d3MBYv-26661.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 1922,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::nhhjf-1792580071054-64cfb1a7895e",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-cyan-spatial-bandicoot-d3MBYv-26661.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 1921,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::r9s2r-1792580071058-c020ef422035",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sbx_1OGrRp827AjHDic7h8vEOsc38BOx.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 1962,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::nknpw-1792580071082-b9ea9fa9df7c",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-sbx_1OGrRp827AjHDic7h8vEOsc38BOx.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 1947,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::6dgrr-1792580071086-b6cba52d42f4",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sbx_1OGrRp827AjHDic7h8vEOsc38BOx-80.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 1974,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::tlw7c-1792580071114-bccb31b3c5ce",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-sbx_1OGrRp827AjHDic7h8vEOsc38BOx-80.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 1978,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::rkmnw-1792580071122-6cbd0c87ee9b",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sbx_1OGrRp827AjHDic7h8vEOsc38BOx-443.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2002,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::4hvwn-1792580071145-cfbc8cb143aa",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-sbx_1OGrRp827AjHDic7h8vEOsc38BOx-443.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2006,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::tlw7c-1792580071150-4b9d8fb4dc5e",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sbx_1OGrRp827AjHDic7h8vEOsc38BOx-3000.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2033,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::6dgrr-1792580071178-a20f8636b1b3",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-sbx_1OGrRp827AjHDic7h8vEOsc38BOx-3000.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2036,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::pnxhj-1792580071182-8eb0c95cdb6e",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sbx_1OGrRp827AjHDic7h8vEOsc38BOx-5173.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2062,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::xcv2p-1792580071210-b09e0f9514b6",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-sbx_1OGrRp827AjHDic7h8vEOsc38BOx-5173.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2088,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::r9s2r-1792580071220-80ffd32e11ee",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sbx_1OGrRp827AjHDic7h8vEOsc38BOx-8080.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2117,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::gbk9b-1792580071243-4b8bdab73033",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-sbx_1OGrRp827AjHDic7h8vEOsc38BOx-8080.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2137,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::j278b-1792580071246-76a543cfe3be",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sbx_1OGrRp827AjHDic7h8vEOsc38BOx-23456.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2164,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::j59w5-1792580071274-1f38012a0e37",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-sbx_1OGrRp827AjHDic7h8vEOsc38BOx-23456.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2185,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::8wgpw-1792580071282-fccdc61fe005",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sbx_1OGrRp827AjHDic7h8vEOsc38BOx-26661.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2187,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::j59w5-1792580071302-eb7b461e079f",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-sbx_1OGrRp827AjHDic7h8vEOsc38BOx-26661.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2150,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::nknpw-1792580071310-080a72079d68",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://1OGrRp827AjHDic7h8vEOsc38BOx.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2198,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::tlw7c-1792580071334-da5e839a5b97",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-1OGrRp827AjHDic7h8vEOsc38BOx.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2208,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::xcv2p-1792580071342-26d51d48aa94",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://1OGrRp827AjHDic7h8vEOsc38BOx-80.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2209,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::q5774-1792580071366-31ee826caad2",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-1OGrRp827AjHDic7h8vEOsc38BOx-80.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2235,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::n6sg8-1792580071379-21b9bf1c11e1",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://1OGrRp827AjHDic7h8vEOsc38BOx-443.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2229,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::6dgrr-1792580071394-2e553b574940",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-1OGrRp827AjHDic7h8vEOsc38BOx-443.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2243,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::fqrpr-1792580071414-134a203b3ba3",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://1OGrRp827AjHDic7h8vEOsc38BOx-3000.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2263,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::6dgrr-1792580071434-c342090639a8",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-1OGrRp827AjHDic7h8vEOsc38BOx-3000.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2299,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::qc46q-1792580071466-9367f4f8b682",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://1OGrRp827AjHDic7h8vEOsc38BOx-5173.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2311,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::swmv4-1792580071474-32710e4a5dca",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-1OGrRp827AjHDic7h8vEOsc38BOx-5173.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2328,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::8jmc9-1792580071502-e79a3d5bf408",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://1OGrRp827AjHDic7h8vEOsc38BOx-8080.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2436,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::lbnfd-1792580071610-3c25cc7bf2f2",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-1OGrRp827AjHDic7h8vEOsc38BOx-8080.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2359,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::8wgpw-1792580071534-cf04e42ca261",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://1OGrRp827AjHDic7h8vEOsc38BOx-23456.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2365,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::4hvwn-1792580071538-b8013dd0ca46",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-1OGrRp827AjHDic7h8vEOsc38BOx-23456.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2421,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::8jmc9-1792580071598-9d95025ec678",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://1OGrRp827AjHDic7h8vEOsc38BOx-26661.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2439,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::8wgpw-1792580071618-f06385f2ee0c",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-1OGrRp827AjHDic7h8vEOsc38BOx-26661.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2504,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::j59w5-1792580071666-391677b1af28",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-6g6jv5ue4nh5.vercel.run/",
+      "kind": "http",
+      "status": 200,
+      "ms": 986,
+      "body": "CANARY:control:3000:/",
+      "canary": true,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-sb-6g6jv5ue4nh5.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2487,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::tlw7c-1792580071662-49114d8ef8ee",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-6g6jv5ue4nh5-80.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2507,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::j278b-1792580071686-feda0a66504e",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-sb-6g6jv5ue4nh5-80.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2630,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::6vpqd-1792580071802-cbc0da2b0bd1",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-6g6jv5ue4nh5-443.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2561,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::cfq68-1792580071714-3561c1d6d978",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-sb-6g6jv5ue4nh5-443.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2564,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::vjp7j-1792580071750-313f820226ed",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-6g6jv5ue4nh5-3000.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2707,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::v5nmx-1792580071890-181b30d92b28",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-sb-6g6jv5ue4nh5-3000.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2649,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::r9s2r-1792580071838-d3a26bf9a0fe",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-6g6jv5ue4nh5-5173.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2694,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::wdnpt-1792580071874-f53893e91e67",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-sb-6g6jv5ue4nh5-5173.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2713,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::pnxhj-1792580071906-04b9c1100c61",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-6g6jv5ue4nh5-8080.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2763,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::j59w5-1792580071924-899596f0928e",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-sb-6g6jv5ue4nh5-8080.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2760,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::6dgrr-1792580071934-4d29f9c50e77",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-6g6jv5ue4nh5-23456.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2760,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::swmv4-1792580071953-ee2a0c74c134",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-sb-6g6jv5ue4nh5-23456.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2768,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::nknpw-1792580071966-1ec7dbcea2f8",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-6g6jv5ue4nh5-26661.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2825,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::xcv2p-1792580071982-0c1be8f1db6a",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sb-sb-6g6jv5ue4nh5-26661.vercel.run/",
+      "kind": "http",
+      "status": 404,
+      "ms": 2825,
+      "body": "This sandbox was not found\n\nSANDBOX_NOT_FOUND\n\nhkg1::fqrpr-1792580072002-4bb86d368664",
+      "canary": false,
+      "server": "Vercel",
+      "target": "null-guess"
+    },
+    {
+      "url": "https://cyan-spatial-bandicoot-d3MBYv.vercel.run/ws",
+      "kind": "ws",
+      "ms": 1748,
+      "canary": false,
+      "status": 404,
+      "upgraded": false,
+      "target": "null-guess"
+    },
+    {
+      "url": "https://sbx_1OGrRp827AjHDic7h8vEOsc38BOx.vercel.run/ws",
+      "kind": "ws",
+      "ms": 2820,
+      "canary": false,
+      "status": 404,
+      "upgraded": false,
+      "target": "null-guess"
+    },
+    {
+      "kind": "rest-routes",
+      "target": "null",
+      "status": 200,
+      "routes": []
+    },
+    {
+      "kind": "rest-routes",
+      "target": "allowAll",
+      "status": 200,
+      "routes": []
+    },
+    {
+      "kind": "rest-no-cred",
+      "status": 403
+    }
+  ],
+  "inVm": {
+    "null_deny_all": "== id\nuid=0(root) gid=0(root) groups=0(root)\n== uname\nLinux a6a536c1-7c4 6.18.49 #1 SMP Thu Oct  1 14:49:36 UTC 2026 x86_64 GNU/Linux\n== listening\nState  Recv-Q Send-Q Local Address:Port  Peer Address:PortProcess                              \nLISTEN 0      511          0.0.0.0:443        0.0.0.0:*    users:((\"MainThread\",pid=895,fd=22))\nLISTEN 0      511          0.0.0.0:80         0.0.0.0:*    users:((\"MainThread\",pid=895,fd=21))\nLISTEN 0      511          0.0.0.0:26661      0.0.0.0:*    users:((\"MainThread\",pid=895,fd=26))\nLISTEN 0      511          0.0.0.0:3000       0.0.0.0:*    users:((\"MainThread\",pid=895,fd=23))\nLISTEN 0      511          0.0.0.0:5173       0.0.0.0:*    users:((\"MainThread\",pid=895,fd=24))\nLISTEN 0      511          0.0.0.0:8080       0.0.0.0:*    users:((\"MainThread\",pid=895,fd=25))\nLISTEN 0      4096               *:23456            *:*                                        \n== ip\n1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000\n    inet 127.0.0.1/8 scope host lo\n2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000\n    inet 169.254.0.2/16 brd 169.254.255.255 scope global eth0\n== resolv\n#MANUAL\nnameserver 169.254.0.1\n== hostname\na6a536c1-7c4\n== env names + secret-shaped flags (values never printed)\nSHELL len=9\nSUDO_GID len=4\nNODE_EXTRA_CA_CERTS len=34\nSUDO_COMMAND len=18\necho \" len=50\necho \" len=79\necho \" len=68\necho \" len=57\necho \" len=21\necho \" len=57\nenv | awk -F len=212\necho \" len=33\nfor f in /proc/[0-9]*/environ; do tr '\\0' '\\n' < $f 2>/dev/null | awk -F len=105\necho \" len=59\ngrep -rIlE 'eyJ[A-Za-z0-9_-]{20,}\\.[A-Za-z0-9_-]{20,}\\.|VERCEL_OIDC_TOKEN|VERCEL_TOKEN|Bearer [A-Za-z0-9_-]{20,}' /etc /root /home /vercel /run /opt /usr/local /var/lib /var/run /tmp --exclude-dir len=54 NAME-SUSPECT\necho \" len=248\necho \" len=76\necho \" len=131\n len=0\nSUDO_USER len=6\nPWD len=7\nLOGNAME len=4\nSUDO_HOME len=7\nNPM_CONFIG_CAFILE len=34\nHOME len=5\nGIT_SSL_CAINFO len=34\nLANG len=7\nCARGO_HTTP_CAINFO len=34\nTERM len=7\nUSER len=4\nCURL_CA_BUNDLE len=34\nSHLVL len=1\nSSL_CERT_FILE len=34\nPIP_CERT len=34\nREQUESTS_CA_BUNDLE len=34\nNODE_USE_SYSTEM_CA len=1\nAWS_CA_BUNDLE len=34\nPATH len=70\nSUDO_UID len=4\nGRPC_DEFAULT_SSL_ROOTS_FILE_PATH len=34\n_ len=12\n== proc environ scan (names only)\n/proc/904/environ grep -rIlE 'eyJ[A-Za-z0-9_-]{20,}\\.[A-Za-z0-9_-]{20,}\\.|VERCEL_OIDC_TOKEN|VERCEL_TOKEN|Bearer [A-Za-z0-9_-]{20,}' /etc /root /home /vercel /run /opt /usr/local /var/lib /var/run /tmp --exclude-dir\n/proc/921/environ grep -rIlE 'eyJ[A-Za-z0-9_-]{20,}\\.[A-Za-z0-9_-]{20,}\\.|VERCEL_OIDC_TOKEN|VERCEL_TOKEN|Bearer [A-Za-z0-9_-]{20,}' /etc /root /home /vercel /run /opt /usr/local /var/lib /var/run /tmp --exclude-dir\n/proc/922/environ grep -rIlE 'eyJ[A-Za-z0-9_-]{20,}\\.[A-Za-z0-9_-]{20,}\\.|VERCEL_OIDC_TOKEN|VERCEL_TOKEN|Bearer [A-Za-z0-9_-]{20,}' /etc /root /home /vercel /run /opt /usr/local /var/lib /var/run /tmp --exclude-dir\n/proc/923/environ grep -rIlE 'eyJ[A-Za-z0-9_-]{20,}\\.[A-Za-z0-9_-]{20,}\\.|VERCEL_OIDC_TOKEN|VERCEL_TOKEN|Bearer [A-Za-z0-9_-]{20,}' /etc /root /home /vercel /run /opt /usr/local /var/lib /var/run /tmp --exclude-dir\n== file scan for token-shaped/credential files (paths only)\n== files named like credentials\n== processes\n    PID USER     COMMAND         COMMAND\n      1 ubuntu   sandbox-init    /run/vercel/share/sandbox-init --socket=/run/vercel/share/init.sock --pubkey=VDIYQ9ONS0VJzsozQvjUi1iMqxauG7\n    893 root     sudo            sudo node /tmp/srv.js\n    895 root     MainThread      node /tmp/srv.js\n    902 root     sudo            sudo bash -lc  echo \"== id\"; id; echo \"== uname\"; uname -a | cut -c1-120 echo \"== listening\"; (ss -ltnp 2>/\n    904 root     bash            bash -lc  echo \"== id\"; id; echo \"== uname\"; uname -a | cut -c1-120 echo \"== listening\"; (ss -ltnp 2>/dev/n\n    946 root     ps              ps -eo pid,user,comm,args\n    947 root     cut             cut -c1-140\n    948 root     head            head -40\n== grep route/domain hints in config (paths only)\n",
+    "null_deny_all_egress": {
+      "imds": "000 exit=7",
+      "vercelApi": "000 exit=6",
+      "vercelApiPatch": "http=000 exit=6",
+      "internalGateway": "000 exit=28"
+    },
+    "null_allow_all": "== id\nuid=0(root) gid=0(root) groups=0(root)\n== uname\nLinux e8a60e43-14b 6.18.49 #1 SMP Thu Oct  1 14:49:36 UTC 2026 x86_64 GNU/Linux\n== listening\nState  Recv-Q Send-Q Local Address:Port  Peer Address:PortProcess                              \nLISTEN 0      511          0.0.0.0:8080       0.0.0.0:*    users:((\"MainThread\",pid=895,fd=25))\nLISTEN 0      511          0.0.0.0:5173       0.0.0.0:*    users:((\"MainThread\",pid=895,fd=24))\nLISTEN 0      511          0.0.0.0:3000       0.0.0.0:*    users:((\"MainThread\",pid=895,fd=23))\nLISTEN 0      511          0.0.0.0:443        0.0.0.0:*    users:((\"MainThread\",pid=895,fd=22))\nLISTEN 0      511          0.0.0.0:80         0.0.0.0:*    users:((\"MainThread\",pid=895,fd=21))\nLISTEN 0      511          0.0.0.0:26661      0.0.0.0:*    users:((\"MainThread\",pid=895,fd=26))\nLISTEN 0      4096               *:23456            *:*                                        \n== ip\n1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000\n    inet 127.0.0.1/8 scope host lo\n2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000\n    inet 169.254.0.2/16 brd 169.254.255.255 scope global eth0\n== resolv\n#MANUAL\nnameserver 169.254.0.1\n== hostname\ne8a60e43-14b\n== env names + secret-shaped flags (values never printed)\nSHELL len=9\nSUDO_GID len=4\nNODE_EXTRA_CA_CERTS len=34\nSUDO_COMMAND len=18\necho \" len=50\necho \" len=79\necho \" len=68\necho \" len=57\necho \" len=21\necho \" len=57\nenv | awk -F len=212\necho \" len=33\nfor f in /proc/[0-9]*/environ; do tr '\\0' '\\n' < $f 2>/dev/null | awk -F len=105\necho \" len=59\ngrep -rIlE 'eyJ[A-Za-z0-9_-]{20,}\\.[A-Za-z0-9_-]{20,}\\.|VERCEL_OIDC_TOKEN|VERCEL_TOKEN|Bearer [A-Za-z0-9_-]{20,}' /etc /root /home /vercel /run /opt /usr/local /var/lib /var/run /tmp --exclude-dir len=54 NAME-SUSPECT\necho \" len=248\necho \" len=76\necho \" len=131\n len=0\nSUDO_USER len=6\nPWD len=7\nLOGNAME len=4\nSUDO_HOME len=7\nNPM_CONFIG_CAFILE len=34\nHOME len=5\nGIT_SSL_CAINFO len=34\nLANG len=7\nCARGO_HTTP_CAINFO len=34\nTERM len=7\nUSER len=4\nCURL_CA_BUNDLE len=34\nSHLVL len=1\nSSL_CERT_FILE len=34\nPIP_CERT len=34\nREQUESTS_CA_BUNDLE len=34\nNODE_USE_SYSTEM_CA len=1\nAWS_CA_BUNDLE len=34\nPATH len=70\nSUDO_UID len=4\nGRPC_DEFAULT_SSL_ROOTS_FILE_PATH len=34\n_ len=12\n== proc environ scan (names only)\n/proc/904/environ grep -rIlE 'eyJ[A-Za-z0-9_-]{20,}\\.[A-Za-z0-9_-]{20,}\\.|VERCEL_OIDC_TOKEN|VERCEL_TOKEN|Bearer [A-Za-z0-9_-]{20,}' /etc /root /home /vercel /run /opt /usr/local /var/lib /var/run /tmp --exclude-dir\n/proc/921/environ grep -rIlE 'eyJ[A-Za-z0-9_-]{20,}\\.[A-Za-z0-9_-]{20,}\\.|VERCEL_OIDC_TOKEN|VERCEL_TOKEN|Bearer [A-Za-z0-9_-]{20,}' /etc /root /home /vercel /run /opt /usr/local /var/lib /var/run /tmp --exclude-dir\n/proc/922/environ grep -rIlE 'eyJ[A-Za-z0-9_-]{20,}\\.[A-Za-z0-9_-]{20,}\\.|VERCEL_OIDC_TOKEN|VERCEL_TOKEN|Bearer [A-Za-z0-9_-]{20,}' /etc /root /home /vercel /run /opt /usr/local /var/lib /var/run /tmp --exclude-dir\n/proc/923/environ grep -rIlE 'eyJ[A-Za-z0-9_-]{20,}\\.[A-Za-z0-9_-]{20,}\\.|VERCEL_OIDC_TOKEN|VERCEL_TOKEN|Bearer [A-Za-z0-9_-]{20,}' /etc /root /home /vercel /run /opt /usr/local /var/lib /var/run /tmp --exclude-dir\n== file scan for token-shaped/credential files (paths only)\n== files named like credentials\n== processes\n    PID USER     COMMAND         COMMAND\n      1 ubuntu   sandbox-init    /run/vercel/share/sandbox-init --socket=/run/vercel/share/init.sock --pubkey=4Fy81Gy2H5UprEkFI/SfkQYx8F0z3I\n    893 root     sudo            sudo node /tmp/srv.js\n    895 root     MainThread      node /tmp/srv.js\n    902 root     sudo            sudo bash -lc  echo \"== id\"; id; echo \"== uname\"; uname -a | cut -c1-120 echo \"== listening\"; (ss -ltnp 2>/\n    904 root     bash            bash -lc  echo \"== id\"; id; echo \"== uname\"; uname -a | cut -c1-120 echo \"== listening\"; (ss -ltnp 2>/dev/n\n    946 root     ps              ps -eo pid,user,comm,args\n    947 root     cut             cut -c1-140\n    948 root     head            head -40\n== grep route/domain hints in config (paths only)\n",
+    "null_allow_all_egress": {
+      "imds": "000 exit=7",
+      "vercelApi": "403 exit=0",
+      "vercelApiPatch": "{\"error\":{\"code\":\"forbidden\",\"message\":\"The request is missing an authentication token\",\"missingToken\":true}} http=403 exit=0",
+      "internalGateway": "000 exit=28"
+    }
+  },
+  "notes": [],
+  "sandboxes": {
+    "control": {
+      "name": "chocolate-lucky-gopher-jBGfW7",
+      "routes": [
+        {
+          "url": "https://sb-6g6jv5ue4nh5.vercel.run",
+          "subdomain": "sb-6g6jv5ue4nh5",
+          "port": 3000
+        }
+      ]
+    },
+    "nullPorts": {
+      "name": "cyan-spatial-bandicoot-d3MBYv",
+      "routes": [],
+      "session": "sbx_1OGrRp827AjHDic7h8vEOsc38BOx"
+    },
+    "allowAllNullPorts": {
+      "name": "cyan-different-angelfish-GA5dtM",
+      "routes": []
+    }
+  },
+  "guessedHostCount": 64,
+  "finishedAt": "2026-10-21T10:55:10.808Z"
+}

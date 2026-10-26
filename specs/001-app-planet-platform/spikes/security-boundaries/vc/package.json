@@ -1,0 +1,11 @@
+{
+  "name": "app-planet-vc-spikes",
+  "private": true,
+  "description": "VC-1～VC-3 供應商實測腳本（僅合成資料；請在專用測試 Team 執行）",
+  "type": "module",
+  "dependencies": {
+    "@vercel/sandbox": "^3.8.0",
+    "puppeteer-core": "^25.15.0",
+    "tar": "^7.5.22"
+  }
+}

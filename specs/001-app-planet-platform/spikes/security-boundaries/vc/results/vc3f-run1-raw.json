@@ -1,0 +1,752 @@
+{
+  "startedAt": "2026-10-21T12:31:55.768Z",
+  "N": 40,
+  "rows": [
+    {
+      "i": 0,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 1040,
+      "sandboxDurationMs": 3621,
+      "ingress": 4992,
+      "egress": 2829,
+      "sessionKeys": {
+        "startedAt": 1792585917225,
+        "requestedStopAt": 1792585920216,
+        "stoppedAt": 1792585920846,
+        "duration": 3621,
+        "vcpus": 1,
+        "activeCpuDurationMs": 1040
+      }
+    },
+    {
+      "i": 1,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 966,
+      "sandboxDurationMs": 3850,
+      "ingress": 4779,
+      "egress": 2777,
+      "sessionKeys": {
+        "startedAt": 1792585925731,
+        "requestedStopAt": 1792585928931,
+        "stoppedAt": 1792585929581,
+        "duration": 3850,
+        "vcpus": 1,
+        "activeCpuDurationMs": 966
+      }
+    },
+    {
+      "i": 2,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 1021,
+      "sandboxDurationMs": 3610,
+      "ingress": 5039,
+      "egress": 2904,
+      "sessionKeys": {
+        "startedAt": 1792585933868,
+        "requestedStopAt": 1792585936803,
+        "stoppedAt": 1792585937478,
+        "duration": 3610,
+        "vcpus": 1,
+        "activeCpuDurationMs": 1021
+      }
+    },
+    {
+      "i": 3,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 1013,
+      "sandboxDurationMs": 4938,
+      "ingress": 4982,
+      "egress": 2881,
+      "sessionKeys": {
+        "startedAt": 1792585941338,
+        "requestedStopAt": 1792585945632,
+        "stoppedAt": 1792585946276,
+        "duration": 4938,
+        "vcpus": 1,
+        "activeCpuDurationMs": 1013
+      }
+    },
+    {
+      "i": 4,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 1103,
+      "sandboxDurationMs": 3382,
+      "ingress": 4826,
+      "egress": 2777,
+      "sessionKeys": {
+        "startedAt": 1792585950182,
+        "requestedStopAt": 1792585953249,
+        "stoppedAt": 1792585953564,
+        "duration": 3382,
+        "vcpus": 1,
+        "activeCpuDurationMs": 1103
+      }
+    },
+    {
+      "i": 5,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 1063,
+      "sandboxDurationMs": 3781,
+      "ingress": 4623,
+      "egress": 2725,
+      "sessionKeys": {
+        "startedAt": 1792585957775,
+        "requestedStopAt": 1792585961240,
+        "stoppedAt": 1792585961556,
+        "duration": 3781,
+        "vcpus": 1,
+        "activeCpuDurationMs": 1063
+      }
+    },
+    {
+      "i": 6,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 1028,
+      "sandboxDurationMs": 4027,
+      "ingress": 4980,
+      "egress": 2904,
+      "sessionKeys": {
+        "startedAt": 1792585965349,
+        "requestedStopAt": 1792585968754,
+        "stoppedAt": 1792585969376,
+        "duration": 4027,
+        "vcpus": 1,
+        "activeCpuDurationMs": 1028
+      }
+    },
+    {
+      "i": 7,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 1110,
+      "sandboxDurationMs": 4087,
+      "ingress": 4837,
+      "egress": 2800,
+      "sessionKeys": {
+        "startedAt": 1792585974499,
+        "requestedStopAt": 1792585977943,
+        "stoppedAt": 1792585978586,
+        "duration": 4087,
+        "vcpus": 1,
+        "activeCpuDurationMs": 1110
+      }
+    },
+    {
+      "i": 8,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 997,
+      "sandboxDurationMs": 3544,
+      "ingress": 4780,
+      "egress": 2829,
+      "sessionKeys": {
+        "startedAt": 1792585983297,
+        "requestedStopAt": 1792585986195,
+        "stoppedAt": 1792585986841,
+        "duration": 3544,
+        "vcpus": 1,
+        "activeCpuDurationMs": 997
+      }
+    },
+    {
+      "i": 9,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 1061,
+      "sandboxDurationMs": 3650,
+      "ingress": 6546,
+      "egress": 2748,
+      "sessionKeys": {
+        "startedAt": 1792585990747,
+        "requestedStopAt": 1792585993965,
+        "stoppedAt": 1792585994397,
+        "duration": 3650,
+        "vcpus": 1,
+        "activeCpuDurationMs": 1061
+      }
+    },
+    {
+      "i": 10,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 1122,
+      "sandboxDurationMs": 3943,
+      "ingress": 5150,
+      "egress": 2883,
+      "sessionKeys": {
+        "startedAt": 1792585998371,
+        "requestedStopAt": 1792586001895,
+        "stoppedAt": 1792586002314,
+        "duration": 3943,
+        "vcpus": 1,
+        "activeCpuDurationMs": 1122
+      }
+    },
+    {
+      "i": 11,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 1104,
+      "sandboxDurationMs": 3307,
+      "ingress": 4988,
+      "egress": 2883,
+      "sessionKeys": {
+        "startedAt": 1792586006165,
+        "requestedStopAt": 1792586009177,
+        "stoppedAt": 1792586009472,
+        "duration": 3307,
+        "vcpus": 1,
+        "activeCpuDurationMs": 1104
+      }
+    },
+    {
+      "i": 12,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 971,
+      "sandboxDurationMs": 3286,
+      "ingress": 4988,
+      "egress": 2883,
+      "sessionKeys": {
+        "startedAt": 1792586013205,
+        "requestedStopAt": 1792586016147,
+        "stoppedAt": 1792586016491,
+        "duration": 3286,
+        "vcpus": 1,
+        "activeCpuDurationMs": 971
+      }
+    },
+    {
+      "i": 13,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 1066,
+      "sandboxDurationMs": 3308,
+      "ingress": 4989,
+      "egress": 2958,
+      "sessionKeys": {
+        "startedAt": 1792586020382,
+        "requestedStopAt": 1792586023354,
+        "stoppedAt": 1792586023690,
+        "duration": 3308,
+        "vcpus": 1,
+        "activeCpuDurationMs": 1066
+      }
+    },
+    {
+      "i": 14,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 1130,
+      "sandboxDurationMs": 3584,
+      "ingress": 4886,
+      "egress": 2883,
+      "sessionKeys": {
+        "startedAt": 1792586027986,
+        "requestedStopAt": 1792586031235,
+        "stoppedAt": 1792586031570,
+        "duration": 3584,
+        "vcpus": 1,
+        "activeCpuDurationMs": 1130
+      }
+    },
+    {
+      "i": 15,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 975,
+      "sandboxDurationMs": 3388,
+      "ingress": 4990,
+      "egress": 2831,
+      "sessionKeys": {
+        "startedAt": 1792586035332,
+        "requestedStopAt": 1792586038112,
+        "stoppedAt": 1792586038720,
+        "duration": 3388,
+        "vcpus": 1,
+        "activeCpuDurationMs": 975
+      }
+    },
+    {
+      "i": 16,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 1172,
+      "sandboxDurationMs": 3284,
+      "ingress": 4992,
+      "egress": 2883,
+      "sessionKeys": {
+        "startedAt": 1792586043176,
+        "requestedStopAt": 1792586046141,
+        "stoppedAt": 1792586046460,
+        "duration": 3284,
+        "vcpus": 1,
+        "activeCpuDurationMs": 1172
+      }
+    },
+    {
+      "i": 17,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 1070,
+      "sandboxDurationMs": 3661,
+      "ingress": 4783,
+      "egress": 2854,
+      "sessionKeys": {
+        "startedAt": 1792586050679,
+        "requestedStopAt": 1792586054026,
+        "stoppedAt": 1792586054340,
+        "duration": 3661,
+        "vcpus": 1,
+        "activeCpuDurationMs": 1070
+      }
+    },
+    {
+      "i": 18,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 1003,
+      "sandboxDurationMs": 3087,
+      "ingress": 4778,
+      "egress": 2779,
+      "sessionKeys": {
+        "startedAt": 1792586058019,
+        "requestedStopAt": 1792586060782,
+        "stoppedAt": 1792586061106,
+        "duration": 3087,
+        "vcpus": 1,
+        "activeCpuDurationMs": 1003
+      }
+    },
+    {
+      "i": 19,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 1012,
+      "sandboxDurationMs": 3260,
+      "ingress": 4985,
+      "egress": 2906,
+      "sessionKeys": {
+        "startedAt": 1792586064817,
+        "requestedStopAt": 1792586067775,
+        "stoppedAt": 1792586068077,
+        "duration": 3260,
+        "vcpus": 1,
+        "activeCpuDurationMs": 1012
+      }
+    },
+    {
+      "i": 20,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 987,
+      "sandboxDurationMs": 3027,
+      "ingress": 4621,
+      "egress": 2779,
+      "sessionKeys": {
+        "startedAt": 1792586071885,
+        "requestedStopAt": 1792586074619,
+        "stoppedAt": 1792586074912,
+        "duration": 3027,
+        "vcpus": 1,
+        "activeCpuDurationMs": 987
+      }
+    },
+    {
+      "i": 21,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 1158,
+      "sandboxDurationMs": 3011,
+      "ingress": 4412,
+      "egress": 2404,
+      "sessionKeys": {
+        "startedAt": 1792586078709,
+        "requestedStopAt": 1792586081081,
+        "stoppedAt": 1792586081720,
+        "duration": 3011,
+        "vcpus": 1,
+        "activeCpuDurationMs": 1158
+      }
+    },
+    {
+      "i": 22,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 1003,
+      "sandboxDurationMs": 3526,
+      "ingress": 4783,
+      "egress": 2854,
+      "sessionKeys": {
+        "startedAt": 1792586085591,
+        "requestedStopAt": 1792586088519,
+        "stoppedAt": 1792586089117,
+        "duration": 3526,
+        "vcpus": 1,
+        "activeCpuDurationMs": 1003
+      }
+    },
+    {
+      "i": 23,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 985,
+      "sandboxDurationMs": 3449,
+      "ingress": 4991,
+      "egress": 2883,
+      "sessionKeys": {
+        "startedAt": 1792586092992,
+        "requestedStopAt": 1792586096094,
+        "stoppedAt": 1792586096441,
+        "duration": 3449,
+        "vcpus": 1,
+        "activeCpuDurationMs": 985
+      }
+    },
+    {
+      "i": 24,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 1092,
+      "sandboxDurationMs": 3002,
+      "ingress": 4840,
+      "egress": 2831,
+      "sessionKeys": {
+        "startedAt": 1792586099908,
+        "requestedStopAt": 1792586102620,
+        "stoppedAt": 1792586102910,
+        "duration": 3002,
+        "vcpus": 1,
+        "activeCpuDurationMs": 1092
+      }
+    },
+    {
+      "i": 25,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 994,
+      "sandboxDurationMs": 3077,
+      "ingress": 4995,
+      "egress": 2906,
+      "sessionKeys": {
+        "startedAt": 1792586106460,
+        "requestedStopAt": 1792586109181,
+        "stoppedAt": 1792586109537,
+        "duration": 3077,
+        "vcpus": 1,
+        "activeCpuDurationMs": 994
+      }
+    },
+    {
+      "i": 26,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 1024,
+      "sandboxDurationMs": 3991,
+      "ingress": 4981,
+      "egress": 2854,
+      "sessionKeys": {
+        "startedAt": 1792586113820,
+        "requestedStopAt": 1792586117194,
+        "stoppedAt": 1792586117811,
+        "duration": 3991,
+        "vcpus": 1,
+        "activeCpuDurationMs": 1024
+      }
+    },
+    {
+      "i": 27,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 1008,
+      "sandboxDurationMs": 3434,
+      "ingress": 4995,
+      "egress": 2883,
+      "sessionKeys": {
+        "startedAt": 1792586122047,
+        "requestedStopAt": 1792586124899,
+        "stoppedAt": 1792586125481,
+        "duration": 3434,
+        "vcpus": 1,
+        "activeCpuDurationMs": 1008
+      }
+    },
+    {
+      "i": 28,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 1040,
+      "sandboxDurationMs": 3857,
+      "ingress": 4786,
+      "egress": 2854,
+      "sessionKeys": {
+        "startedAt": 1792586129273,
+        "requestedStopAt": 1792586132816,
+        "stoppedAt": 1792586133130,
+        "duration": 3857,
+        "vcpus": 1,
+        "activeCpuDurationMs": 1040
+      }
+    },
+    {
+      "i": 29,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 1006,
+      "sandboxDurationMs": 3056,
+      "ingress": 4836,
+      "egress": 2831,
+      "sessionKeys": {
+        "startedAt": 1792586136911,
+        "requestedStopAt": 1792586139674,
+        "stoppedAt": 1792586139967,
+        "duration": 3056,
+        "vcpus": 1,
+        "activeCpuDurationMs": 1006
+      }
+    },
+    {
+      "i": 30,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 1027,
+      "sandboxDurationMs": 3873,
+      "ingress": 4932,
+      "egress": 2854,
+      "sessionKeys": {
+        "startedAt": 1792586144084,
+        "requestedStopAt": 1792586147636,
+        "stoppedAt": 1792586147957,
+        "duration": 3873,
+        "vcpus": 1,
+        "activeCpuDurationMs": 1027
+      }
+    },
+    {
+      "i": 31,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 965,
+      "sandboxDurationMs": 3494,
+      "ingress": 4990,
+      "egress": 2906,
+      "sessionKeys": {
+        "startedAt": 1792586151867,
+        "requestedStopAt": 1792586155048,
+        "stoppedAt": 1792586155361,
+        "duration": 3494,
+        "vcpus": 1,
+        "activeCpuDurationMs": 965
+      }
+    },
+    {
+      "i": 32,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 978,
+      "sandboxDurationMs": 3390,
+      "ingress": 4623,
+      "egress": 2802,
+      "sessionKeys": {
+        "startedAt": 1792586159616,
+        "requestedStopAt": 1792586162679,
+        "stoppedAt": 1792586163006,
+        "duration": 3390,
+        "vcpus": 1,
+        "activeCpuDurationMs": 978
+      }
+    },
+    {
+      "i": 33,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 1081,
+      "sandboxDurationMs": 3548,
+      "ingress": 4991,
+      "egress": 2831,
+      "sessionKeys": {
+        "startedAt": 1792586166937,
+        "requestedStopAt": 1792586169887,
+        "stoppedAt": 1792586170485,
+        "duration": 3548,
+        "vcpus": 1,
+        "activeCpuDurationMs": 1081
+      }
+    },
+    {
+      "i": 34,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 1041,
+      "sandboxDurationMs": 3445,
+      "ingress": 4887,
+      "egress": 2802,
+      "sessionKeys": {
+        "startedAt": 1792586174432,
+        "requestedStopAt": 1792586177608,
+        "stoppedAt": 1792586177877,
+        "duration": 3445,
+        "vcpus": 1,
+        "activeCpuDurationMs": 1041
+      }
+    },
+    {
+      "i": 35,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 974,
+      "sandboxDurationMs": 3189,
+      "ingress": 4991,
+      "egress": 2854,
+      "sessionKeys": {
+        "startedAt": 1792586182607,
+        "requestedStopAt": 1792586185409,
+        "stoppedAt": 1792586185796,
+        "duration": 3189,
+        "vcpus": 1,
+        "activeCpuDurationMs": 974
+      }
+    },
+    {
+      "i": 36,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 1082,
+      "sandboxDurationMs": 3830,
+      "ingress": 4623,
+      "egress": 2727,
+      "sessionKeys": {
+        "startedAt": 1792586189251,
+        "requestedStopAt": 1792586192422,
+        "stoppedAt": 1792586193081,
+        "duration": 3830,
+        "vcpus": 1,
+        "activeCpuDurationMs": 1082
+      }
+    },
+    {
+      "i": 37,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 1069,
+      "sandboxDurationMs": 3133,
+      "ingress": 4631,
+      "egress": 2727,
+      "sessionKeys": {
+        "startedAt": 1792586197164,
+        "requestedStopAt": 1792586199961,
+        "stoppedAt": 1792586200297,
+        "duration": 3133,
+        "vcpus": 1,
+        "activeCpuDurationMs": 1069
+      }
+    },
+    {
+      "i": 38,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 991,
+      "sandboxDurationMs": 3055,
+      "ingress": 4790,
+      "egress": 2831,
+      "sessionKeys": {
+        "startedAt": 1792586204002,
+        "requestedStopAt": 1792586206743,
+        "stoppedAt": 1792586207057,
+        "duration": 3055,
+        "vcpus": 1,
+        "activeCpuDurationMs": 991
+      }
+    },
+    {
+      "i": 39,
+      "status": "stopped",
+      "vcpus": 1,
+      "memory": 2048,
+      "sandboxCpuMs": 1094,
+      "sandboxDurationMs": 3067,
+      "ingress": 4994,
+      "egress": 2883,
+      "sessionKeys": {
+        "startedAt": 1792586210980,
+        "requestedStopAt": 1792586213744,
+        "stoppedAt": 1792586214047,
+        "duration": 3067,
+        "vcpus": 1,
+        "activeCpuDurationMs": 1094
+      }
+    }
+  ],
+  "model": {
+    "rates": {
+      "cpuHr": 0.202,
+      "memGbHr": 0.0334,
+      "create": 0.00006,
+      "netGb": 0.16
+    },
+    "memGb": 2,
+    "totals": {
+      "cpuMs": 41626,
+      "durationMs": 140052,
+      "ingress": 196605,
+      "egress": 113213
+    },
+    "usd": {
+      "cpu": 0.0023356811111111112,
+      "memoryActualDuration": 0.0025987426666666666,
+      "memoryWithMin1Min": 0.04453333333333336,
+      "creates": 0.0024000000000000002,
+      "totalActualDuration": 0.0073344237777777785,
+      "totalWithMin1Min": 0.049269014444444474,
+      "perRequestWithMin1Min": 0.0012317253611111119,
+      "per1000WithMin1Min": 1.2317253611111119
+    }
+  },
+  "finishedAt": "2026-10-21T12:36:57.063Z"
+}

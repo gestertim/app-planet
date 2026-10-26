@@ -1,0 +1,360 @@
+{
+  "startedAt": "2026-10-21T11:12:20.742Z",
+  "snapshotId": "snap_nuGVH6nuqJ184uWoyrsGoBIaMSAG",
+  "names": [
+    "coffee-vast-snake-PFSBdT",
+    "brown-fascinating-toad-MX1GKS",
+    "gold-squealing-bonobo-HD343G",
+    "bronze-bitter-tarantula-VuZNCh",
+    "apricot-anonymous-koala-uSEFza",
+    "ivory-faint-reindeer-HPNMVa",
+    "amber-vague-puffin-yyLMHR",
+    "pink-symbolic-sailfish-Kq33K6",
+    "lime-imperial-octopus-iJ38T6",
+    "chocolate-mature-hippopotamus-5u8kM8",
+    "chocolate-uniform-beetle-sGiWaG",
+    "cyan-creepy-meadowlark-e5Jefi",
+    "chocolate-eerie-parakeet-B1AWeF",
+    "orange-human-bat-KusQBw",
+    "silver-actual-marten-h9UAQ7",
+    "yellow-prickly-horse-fQTH4T",
+    "cyan-fun-wasp-QLALrH",
+    "amber-marked-marten-HtQ7SQ",
+    "turquoise-tragic-vicuna-Nibd2e",
+    "copper-historical-mastodon-KZ5Ckg",
+    "green-cautious-raven-F8TGvY",
+    "brown-linguistic-eel-VPKSEW",
+    "indigo-zygotic-centipede-R9PxN7",
+    "black-grotesque-blackbird-KorQ9x",
+    "peach-naked-raccoon-1JFBMr",
+    "gold-smart-condor-wBhHYc",
+    "plum-damp-skink-FW3Ko4",
+    "rose-equal-whale-w9T9fN",
+    "silver-lengthy-stoat-6Ttd4F",
+    "emerald-sensitive-parrot-4WuRCR"
+  ],
+  "errors": [
+    {
+      "phase": "inflight",
+      "kind": "kill",
+      "e": "Status code 429 is not ok: Concurrency limit exceeded (10). Please wait for a sandbox to finish before creating a new one."
+    },
+    {
+      "phase": "inflight",
+      "kind": "kill",
+      "e": "Status code 429 is not ok: Concurrency limit exceeded (10). Please wait for a sandbox to finish before creating a new one."
+    },
+    {
+      "phase": "inflight",
+      "kind": "kill",
+      "e": "Status code 429 is not ok: Concurrency limit exceeded (10). Please wait for a sandbox to finish before creating a new one."
+    },
+    {
+      "phase": "inflight",
+      "kind": "kill",
+      "e": "Status code 429 is not ok: Concurrency limit exceeded (10). Please wait for a sandbox to finish before creating a new one."
+    },
+    {
+      "phase": "inflight",
+      "kind": "kill",
+      "e": "Status code 429 is not ok: Concurrency limit exceeded (10). Please wait for a sandbox to finish before creating a new one."
+    },
+    {
+      "phase": "inflight",
+      "kind": "kill",
+      "e": "Status code 429 is not ok: Concurrency limit exceeded (10). Please wait for a sandbox to finish before creating a new one."
+    },
+    {
+      "phase": "inflight",
+      "kind": "kill",
+      "e": "Status code 429 is not ok: Concurrency limit exceeded (10). Please wait for a sandbox to finish before creating a new one."
+    },
+    {
+      "phase": "inflight",
+      "kind": "kill",
+      "e": "Status code 429 is not ok: Concurrency limit exceeded (10). Please wait for a sandbox to finish before creating a new one."
+    },
+    {
+      "phase": "inflight",
+      "kind": "kill",
+      "e": "Status code 429 is not ok: Concurrency limit exceeded (10). Please wait for a sandbox to finish before creating a new one."
+    },
+    {
+      "phase": "inflight",
+      "kind": "kill",
+      "e": "Status code 429 is not ok: Concurrency limit exceeded (10). Please wait for a sandbox to finish before creating a new one."
+    },
+    {
+      "phase": "inflight",
+      "kind": "delete",
+      "e": "Status code 429 is not ok: Concurrency limit exceeded (10). Please wait for a sandbox to finish before creating a new one."
+    },
+    {
+      "phase": "inflight",
+      "kind": "delete",
+      "e": "Status code 429 is not ok: Concurrency limit exceeded (10). Please wait for a sandbox to finish before creating a new one."
+    },
+    {
+      "phase": "inflight",
+      "kind": "delete",
+      "e": "Status code 429 is not ok: Concurrency limit exceeded (10). Please wait for a sandbox to finish before creating a new one."
+    },
+    {
+      "phase": "inflight",
+      "kind": "delete",
+      "e": "Status code 429 is not ok: Concurrency limit exceeded (10). Please wait for a sandbox to finish before creating a new one."
+    },
+    {
+      "phase": "inflight",
+      "kind": "delete",
+      "e": "Status code 429 is not ok: Concurrency limit exceeded (10). Please wait for a sandbox to finish before creating a new one."
+    },
+    {
+      "phase": "inflight",
+      "kind": "delete",
+      "e": "Status code 429 is not ok: Concurrency limit exceeded (10). Please wait for a sandbox to finish before creating a new one."
+    },
+    {
+      "phase": "inflight",
+      "kind": "delete",
+      "e": "Status code 429 is not ok: Concurrency limit exceeded (10). Please wait for a sandbox to finish before creating a new one."
+    },
+    {
+      "phase": "inflight",
+      "kind": "delete",
+      "e": "Status code 429 is not ok: Concurrency limit exceeded (10). Please wait for a sandbox to finish before creating a new one."
+    },
+    {
+      "phase": "inflight",
+      "kind": "delete",
+      "e": "Status code 429 is not ok: Concurrency limit exceeded (10). Please wait for a sandbox to finish before creating a new one."
+    },
+    {
+      "phase": "inflight",
+      "kind": "delete",
+      "e": "Status code 429 is not ok: Concurrency limit exceeded (10). Please wait for a sandbox to finish before creating a new one."
+    }
+  ],
+  "rtt": {
+    "restGetSandbox": {
+      "n": 20,
+      "min": 258,
+      "p50": 273,
+      "p95": 308,
+      "max": 580,
+      "mean": 291
+    },
+    "sampleHeaders": {
+      "server": "Vercel",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792581203",
+      "x-vercel-id": "sfo1:sfo1:iad1::lbkbk-1792581142403-c7f1eb6b6561"
+    }
+  },
+  "readBurst": {
+    "requests": 600,
+    "concurrency": 60,
+    "wallMs": 3381,
+    "codes": {
+      "200": 600
+    },
+    "latency": {
+      "n": 600,
+      "min": 244,
+      "p50": 270,
+      "p95": 674,
+      "max": 829,
+      "mean": 317
+    },
+    "rlSamples": [
+      {
+        "x-ratelimit-limit": "1000",
+        "x-ratelimit-remaining": "999",
+        "x-ratelimit-reset": "1792581209"
+      },
+      {
+        "x-ratelimit-limit": "1000",
+        "x-ratelimit-remaining": "998",
+        "x-ratelimit-reset": "1792581209"
+      },
+      {
+        "x-ratelimit-limit": "1000",
+        "x-ratelimit-remaining": "997",
+        "x-ratelimit-reset": "1792581209"
+      }
+    ]
+  },
+  "coldBurst30": {
+    "wallMs": 11920,
+    "ok": 19,
+    "failed": 11,
+    "failures": [
+      "Status code 429 is not ok: Concurrency limit exceeded (10). Please wait for a sandbox to finish before creating a new one.",
+      "Status code 429 is not ok: Concurrency limit exceeded (10). Please wait for a sandbox to finish before creating a new one.",
+      "Status code 429 is not ok: Concurrency limit exceeded (10). Please wait for a sandbox to finish before creating a new one.",
+      "Status code 429 is not ok: Concurrency limit exceeded (10). Please wait for a sandbox to finish before creating a new one.",
+      "Status code 429 is not ok: Concurrency limit exceeded (10). Please wait for a sandbox to finish before creating a new one."
+    ],
+    "toResponse": {
+      "n": 19,
+      "min": 3127,
+      "p50": 4280,
+      "p95": 7747,
+      "max": 7747,
+      "mean": 5361
+    },
+    "create": {
+      "n": 19,
+      "min": 1177,
+      "p50": 1942,
+      "p95": 5860,
+      "max": 5860,
+      "mean": 3217
+    },
+    "apiCalls": 127,
+    "byStatus": {
+      "200": 698,
+      "429": 51
+    }
+  },
+  "inflight": [
+    {
+      "kind": "stop",
+      "revokeCallMs": 3364,
+      "inflightEndedMs": 3364,
+      "settled": {
+        "exit": 143
+      },
+      "newCallAfter": {
+        "ok": true
+      }
+    },
+    {
+      "kind": "stop",
+      "revokeCallMs": 2863,
+      "inflightEndedMs": 2863,
+      "settled": {
+        "exit": 143
+      },
+      "newCallAfter": {
+        "ok": true
+      }
+    },
+    {
+      "kind": "stop",
+      "revokeCallMs": 2595,
+      "inflightEndedMs": 2595,
+      "settled": {
+        "exit": 143
+      },
+      "newCallAfter": {
+        "ok": true
+      }
+    },
+    {
+      "kind": "stop",
+      "revokeCallMs": 2628,
+      "inflightEndedMs": 2628,
+      "settled": {
+        "exit": 143
+      },
+      "newCallAfter": {
+        "ok": true
+      }
+    },
+    {
+      "kind": "stop",
+      "revokeCallMs": 2851,
+      "inflightEndedMs": 2851,
+      "settled": {
+        "exit": 143
+      },
+      "newCallAfter": {
+        "ok": true
+      }
+    },
+    {
+      "kind": "stop",
+      "revokeCallMs": 3146,
+      "inflightEndedMs": 3146,
+      "settled": {
+        "exit": 143
+      },
+      "newCallAfter": {
+        "ok": true
+      }
+    },
+    {
+      "kind": "stop",
+      "revokeCallMs": 3072,
+      "inflightEndedMs": 3072,
+      "settled": {
+        "exit": 143
+      },
+      "newCallAfter": {
+        "ok": true
+      }
+    },
+    {
+      "kind": "stop",
+      "revokeCallMs": 3049,
+      "inflightEndedMs": 3049,
+      "settled": {
+        "exit": 143
+      },
+      "newCallAfter": {
+        "ok": true
+      }
+    },
+    {
+      "kind": "stop",
+      "revokeCallMs": 3051,
+      "inflightEndedMs": 3051,
+      "settled": {
+        "exit": 143
+      },
+      "newCallAfter": {
+        "ok": true
+      }
+    },
+    {
+      "kind": "stop",
+      "revokeCallMs": 2982,
+      "inflightEndedMs": 2982,
+      "settled": {
+        "exit": 143
+      },
+      "newCallAfter": {
+        "ok": true
+      }
+    }
+  ],
+  "inflightSummary": {
+    "stop": {
+      "n": 10,
+      "revokeCall": {
+        "n": 10,
+        "min": 2595,
+        "p50": 2982,
+        "p95": 3364,
+        "max": 3364,
+        "mean": 2960
+      },
+      "inflightEnded": {
+        "n": 10,
+        "min": 2595,
+        "p50": 2982,
+        "p95": 3364,
+        "max": 3364,
+        "mean": 2960
+      },
+      "settledSample": {
+        "exit": 143
+      },
+      "newCallAfterSample": {
+        "ok": true
+      }
+    }
+  }
+}

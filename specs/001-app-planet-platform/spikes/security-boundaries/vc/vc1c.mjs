@@ -1,0 +1,13 @@
+import { Sandbox } from '@vercel/sandbox';
+import { writeFileSync } from 'node:fs';
+const sb = await Sandbox.create({ ports: [], timeout: 120000, persistent: false, networkPolicy: 'deny-all', region: 'hnd1', resources: { vcpus: 1 } });
+const paths = ['/', '/health', '/healthz', '/ports', '/routes', '/api/routes', '/v1/routes', '/v1/ports', '/metrics', '/debug/pprof/', '/expose', '/domain', '/info', '/status'];
+const lines = [];
+for (const m of ['GET', 'POST', 'PUT']) for (const p of paths) lines.push(`printf '%s %s ' ${m} ${p}; curl -s -m 3 -X ${m} -o /dev/null -w '%{http_code}\\n' http://127.0.0.1:23456${p}`);
+await sb.writeFiles([{ path: '/opt/p.sh', content: Buffer.from(lines.join('\n') + '\n') }]);
+const r = await sb.runCommand({ cmd: 'bash', args: ['/opt/p.sh'], sudo: true });
+const o = await r.stdout();
+const after = { routes: (await Sandbox.get({ name: sb.name, resume: false })).routes };
+console.log(o, '\nroutes after in-VM attempts:', JSON.stringify(after.routes));
+writeFileSync('results/vc1c-raw.json', JSON.stringify({ out: o, routesAfter: after.routes }, null, 2));
+await sb.stop().catch(() => {});

@@ -1,0 +1,121 @@
+{
+  "project": "vc-sandbox-test",
+  "max": 4000,
+  "concurrency": 40,
+  "startedAtIso": "2026-10-21T11:27:04.397Z",
+  "perSecond": {
+    "0": {
+      "ok": 1,
+      "r429": 0
+    },
+    "1": {
+      "ok": 65,
+      "r429": 0
+    },
+    "2": {
+      "ok": 63,
+      "r429": 0
+    },
+    "3": {
+      "ok": 76,
+      "r429": 0
+    },
+    "4": {
+      "ok": 74,
+      "r429": 0
+    },
+    "5": {
+      "ok": 86,
+      "r429": 0
+    },
+    "6": {
+      "ok": 80,
+      "r429": 0
+    },
+    "7": {
+      "ok": 88,
+      "r429": 0
+    },
+    "8": {
+      "ok": 91,
+      "r429": 0
+    },
+    "9": {
+      "ok": 97,
+      "r429": 0
+    },
+    "10": {
+      "ok": 92,
+      "r429": 0
+    },
+    "11": {
+      "ok": 98,
+      "r429": 0
+    },
+    "12": {
+      "ok": 93,
+      "r429": 0
+    },
+    "13": {
+      "ok": 103,
+      "r429": 0
+    },
+    "14": {
+      "ok": 95,
+      "r429": 8
+    },
+    "15": {
+      "ok": 24,
+      "r429": 116
+    }
+  },
+  "first429": {
+    "afterRequests": 1234,
+    "atMs": 14901,
+    "at": "2026-10-21T11:27:19.300Z",
+    "headers": {
+      "retry-after": "60",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "0",
+      "x-ratelimit-reset": "1792582100"
+    },
+    "body": "{\"error\":{\"code\":\"rate_limited\",\"name\":\"api-sandboxes-control-plane-hobby\",\"message\":\"Too many requests - try again in 60 seconds (more than 1000, code: \\\"api-sandboxes-control-plane-hobby\\\").\",\"limit"
+  },
+  "codes": {
+    "200": 1226,
+    "429": 124
+  },
+  "headerSamples": [
+    {
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "985",
+      "x-ratelimit-reset": "1792582086"
+    },
+    {
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "998",
+      "x-ratelimit-reset": "1792582086"
+    },
+    {
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "995",
+      "x-ratelimit-reset": "1792582086"
+    }
+  ],
+  "sent": 1350,
+  "wallMs": 15914,
+  "n429": 124,
+  "endedAtIso": "2026-10-21T11:27:20.313Z",
+  "during429": {
+    "create": {
+      "ok": true,
+      "ms": 1771
+    },
+    "runCommand": {
+      "ok": true,
+      "exit": 0,
+      "ms": 742
+    }
+  },
+  "after65s": 200
+}

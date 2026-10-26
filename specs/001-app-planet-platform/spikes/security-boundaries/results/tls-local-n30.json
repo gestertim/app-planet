@@ -1,0 +1,687 @@
+{
+  "startedAt": "2026-10-21T09:44:51.261Z",
+  "tls": "local self-signed (SPKI pinned; NOT publicly trusted)",
+  "n_main": 30,
+  "n_ctrl": 3,
+  "browsers": {
+    "chrome/default": {
+      "version": "Chrome/155.0.8059.84",
+      "cells": {
+        "T2_A1_iframe": {
+          "ok": 30,
+          "fail": 0,
+          "n": 30,
+          "sample": [
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            },
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            }
+          ]
+        },
+        "T1_A0_iframe": {
+          "ok": 3,
+          "fail": 0,
+          "n": 3,
+          "sample": [
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            },
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            }
+          ]
+        },
+        "T3_None_Secure_iframe": {
+          "ok": 3,
+          "fail": 0,
+          "n": 3,
+          "sample": [
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            },
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            }
+          ]
+        },
+        "T4_Lax_iframe": {
+          "ok": 0,
+          "fail": 3,
+          "n": 3,
+          "sample": [
+            {
+              "path": "none"
+            }
+          ]
+        },
+        "T2_other_toplevel_embed_success": "0/5",
+        "T2_direct_navigation_success": "0/5",
+        "T3_other_toplevel_embed_success": "5/5",
+        "T3_direct_navigation_success": "5/5",
+        "prefix_probe_accepted_cookies": "COOKIES:__Host-Http-good"
+      }
+    },
+    "chrome/incognito": {
+      "version": "Chrome/155.0.8059.84",
+      "cells": {
+        "T2_A1_iframe": {
+          "ok": 30,
+          "fail": 0,
+          "n": 30,
+          "sample": [
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            },
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            }
+          ]
+        },
+        "T1_A0_iframe": {
+          "ok": 3,
+          "fail": 0,
+          "n": 3,
+          "sample": [
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            },
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            }
+          ]
+        },
+        "T3_None_Secure_iframe": {
+          "ok": 3,
+          "fail": 0,
+          "n": 3,
+          "sample": [
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            },
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            }
+          ]
+        },
+        "T4_Lax_iframe": {
+          "ok": 0,
+          "fail": 3,
+          "n": 3,
+          "sample": [
+            {
+              "path": "none"
+            }
+          ]
+        },
+        "T2_other_toplevel_embed_success": "0/5",
+        "T2_direct_navigation_success": "0/5",
+        "T3_other_toplevel_embed_success": "5/5",
+        "T3_direct_navigation_success": "5/5",
+        "prefix_probe_accepted_cookies": "COOKIES:__Host-Http-good"
+      }
+    },
+    "chrome/block3p_pref": {
+      "version": "Chrome/155.0.8059.84",
+      "cells": {
+        "T2_A1_iframe": {
+          "ok": 30,
+          "fail": 0,
+          "n": 30,
+          "sample": [
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            },
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            }
+          ]
+        },
+        "T1_A0_iframe": {
+          "ok": 3,
+          "fail": 0,
+          "n": 3,
+          "sample": [
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            },
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            }
+          ]
+        },
+        "T3_None_Secure_iframe": {
+          "ok": 0,
+          "fail": 3,
+          "n": 3,
+          "sample": [
+            {
+              "path": "none"
+            }
+          ]
+        },
+        "T4_Lax_iframe": {
+          "ok": 0,
+          "fail": 3,
+          "n": 3,
+          "sample": [
+            {
+              "path": "none"
+            }
+          ]
+        },
+        "T2_other_toplevel_embed_success": "0/5",
+        "T2_direct_navigation_success": "0/5",
+        "T3_other_toplevel_embed_success": "0/5",
+        "T3_direct_navigation_success": "0/5",
+        "prefix_probe_accepted_cookies": "COOKIES:__Host-Http-good"
+      }
+    },
+    "chrome/phaseout_flag": {
+      "version": "Chrome/155.0.8059.84",
+      "cells": {
+        "T2_A1_iframe": {
+          "ok": 30,
+          "fail": 0,
+          "n": 30,
+          "sample": [
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            },
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            }
+          ]
+        },
+        "T1_A0_iframe": {
+          "ok": 3,
+          "fail": 0,
+          "n": 3,
+          "sample": [
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            },
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            }
+          ]
+        },
+        "T3_None_Secure_iframe": {
+          "ok": 0,
+          "fail": 3,
+          "n": 3,
+          "sample": [
+            {
+              "path": "none"
+            }
+          ]
+        },
+        "T4_Lax_iframe": {
+          "ok": 0,
+          "fail": 3,
+          "n": 3,
+          "sample": [
+            {
+              "path": "none"
+            }
+          ]
+        },
+        "T2_other_toplevel_embed_success": "0/5",
+        "T2_direct_navigation_success": "0/5",
+        "T3_other_toplevel_embed_success": "0/5",
+        "T3_direct_navigation_success": "0/5",
+        "prefix_probe_accepted_cookies": "COOKIES:__Host-Http-good"
+      }
+    },
+    "edge/default": {
+      "version": "Edg/155.0.4283.62",
+      "cells": {
+        "T2_A1_iframe": {
+          "ok": 30,
+          "fail": 0,
+          "n": 30,
+          "sample": [
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            },
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            }
+          ]
+        },
+        "T1_A0_iframe": {
+          "ok": 3,
+          "fail": 0,
+          "n": 3,
+          "sample": [
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            },
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            }
+          ]
+        },
+        "T3_None_Secure_iframe": {
+          "ok": 3,
+          "fail": 0,
+          "n": 3,
+          "sample": [
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            },
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            }
+          ]
+        },
+        "T4_Lax_iframe": {
+          "ok": 0,
+          "fail": 3,
+          "n": 3,
+          "sample": [
+            {
+              "path": "none"
+            }
+          ]
+        },
+        "T2_other_toplevel_embed_success": "0/5",
+        "T2_direct_navigation_success": "0/5",
+        "T3_other_toplevel_embed_success": "5/5",
+        "T3_direct_navigation_success": "5/5",
+        "prefix_probe_accepted_cookies": "COOKIES:__Host-Http-good"
+      }
+    },
+    "edge/incognito": {
+      "version": "Edg/155.0.4283.62",
+      "cells": {
+        "T2_A1_iframe": {
+          "ok": 30,
+          "fail": 0,
+          "n": 30,
+          "sample": [
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            },
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            }
+          ]
+        },
+        "T1_A0_iframe": {
+          "ok": 3,
+          "fail": 0,
+          "n": 3,
+          "sample": [
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            },
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            }
+          ]
+        },
+        "T3_None_Secure_iframe": {
+          "ok": 3,
+          "fail": 0,
+          "n": 3,
+          "sample": [
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            },
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            }
+          ]
+        },
+        "T4_Lax_iframe": {
+          "ok": 0,
+          "fail": 3,
+          "n": 3,
+          "sample": [
+            {
+              "path": "none"
+            }
+          ]
+        },
+        "T2_other_toplevel_embed_success": "0/5",
+        "T2_direct_navigation_success": "0/5",
+        "T3_other_toplevel_embed_success": "5/5",
+        "T3_direct_navigation_success": "5/5",
+        "prefix_probe_accepted_cookies": "COOKIES:__Host-Http-good"
+      }
+    },
+    "edge/block3p_pref": {
+      "version": "Edg/155.0.4283.62",
+      "cells": {
+        "T2_A1_iframe": {
+          "ok": 30,
+          "fail": 0,
+          "n": 30,
+          "sample": [
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            },
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            }
+          ]
+        },
+        "T1_A0_iframe": {
+          "ok": 3,
+          "fail": 0,
+          "n": 3,
+          "sample": [
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            },
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            }
+          ]
+        },
+        "T3_None_Secure_iframe": {
+          "ok": 0,
+          "fail": 3,
+          "n": 3,
+          "sample": [
+            {
+              "path": "none"
+            }
+          ]
+        },
+        "T4_Lax_iframe": {
+          "ok": 0,
+          "fail": 3,
+          "n": 3,
+          "sample": [
+            {
+              "path": "none"
+            }
+          ]
+        },
+        "T2_other_toplevel_embed_success": "0/5",
+        "T2_direct_navigation_success": "0/5",
+        "T3_other_toplevel_embed_success": "0/5",
+        "T3_direct_navigation_success": "0/5",
+        "prefix_probe_accepted_cookies": "COOKIES:__Host-Http-good"
+      }
+    },
+    "edge/phaseout_flag": {
+      "version": "Edg/155.0.4283.62",
+      "cells": {
+        "T2_A1_iframe": {
+          "ok": 30,
+          "fail": 0,
+          "n": 30,
+          "sample": [
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            },
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            }
+          ]
+        },
+        "T1_A0_iframe": {
+          "ok": 3,
+          "fail": 0,
+          "n": 3,
+          "sample": [
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            },
+            {
+              "path": "/",
+              "sub": 200,
+              "data": 200,
+              "ws": "echo",
+              "ls": "1",
+              "jsCookie": ""
+            }
+          ]
+        },
+        "T3_None_Secure_iframe": {
+          "ok": 0,
+          "fail": 3,
+          "n": 3,
+          "sample": [
+            {
+              "path": "none"
+            }
+          ]
+        },
+        "T4_Lax_iframe": {
+          "ok": 0,
+          "fail": 3,
+          "n": 3,
+          "sample": [
+            {
+              "path": "none"
+            }
+          ]
+        },
+        "T2_other_toplevel_embed_success": "0/5",
+        "T2_direct_navigation_success": "0/5",
+        "T3_other_toplevel_embed_success": "0/5",
+        "T3_direct_navigation_success": "0/5",
+        "prefix_probe_accepted_cookies": "COOKIES:__Host-Http-good"
+      }
+    }
+  },
+  "rawClient": {
+    "T1": {
+      "html": 200,
+      "js": 200,
+      "dataGet": 404,
+      "dataPut": 200,
+      "dataDel": 200,
+      "ws": "HTTP/1.1 101 Switching Protocols"
+    },
+    "T2": {
+      "html": 403,
+      "js": 403,
+      "dataGet": 403,
+      "dataPut": 403,
+      "dataDel": 403,
+      "ws": "HTTP/1.1 403 Forbidden"
+    }
+  },
+  "finishedAt": "2026-10-21T09:51:00.483Z"
+}

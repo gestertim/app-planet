@@ -1,0 +1,684 @@
+{
+  "schemaVersion": 1,
+  "scope": "offline-synthetic-research-not-product-acceptance",
+  "executedAt": "2026-10-22T01:07:10.241Z",
+  "environment": {
+    "node": "v24.19.0",
+    "platform": "win32",
+    "arch": "x64"
+  },
+  "sourceSha256": "831e50cd032febf049fb6c500b9a9ba101d78d408b002a5a381e5e32db30f0fa",
+  "fixturesSha256": "736e027d9d9fc1833b6fcdf428f34619bc82625673d5f453f537e52a6da90abd",
+  "fixtures": {
+    "seed": "app-planet-readiness-2026-10-22-v1",
+    "nat": {
+      "actors": 30,
+      "fixedWindowLimit": 20,
+      "burstCapacity": 30,
+      "refillPerSecond": 0.5
+    },
+    "corpus": [
+      {
+        "name": "A-small",
+        "files": 4,
+        "bytesPerFile": 8192
+      },
+      {
+        "name": "A-media",
+        "files": 12,
+        "bytesPerFile": 65536
+      },
+      {
+        "name": "B-small",
+        "files": 24,
+        "bytesPerFile": 16384
+      },
+      {
+        "name": "B-large",
+        "files": 160,
+        "bytesPerFile": 32768
+      }
+    ],
+    "queue": {
+      "arrivals": 20,
+      "concurrency": [
+        1,
+        4,
+        10,
+        20
+      ],
+      "serviceSeconds": [
+        5,
+        15,
+        30
+      ]
+    },
+    "classroom": {
+      "students": 100,
+      "days": 20
+    },
+    "sandboxScenarios": [
+      {
+        "name": "low",
+        "jobsPerDay": 3,
+        "minutes": 2,
+        "activeFraction": 0.3
+      },
+      {
+        "name": "base",
+        "jobsPerDay": 6,
+        "minutes": 4,
+        "activeFraction": 0.5
+      },
+      {
+        "name": "high",
+        "jobsPerDay": 10,
+        "minutes": 8,
+        "activeFraction": 1
+      }
+    ],
+    "sandboxResources": [
+      {
+        "vcpus": 1,
+        "memoryGB": 2
+      },
+      {
+        "vcpus": 2,
+        "memoryGB": 4
+      }
+    ],
+    "agent": {
+      "inputTokens": 25000,
+      "outputTokens": 4000,
+      "rounds": [
+        1,
+        3,
+        6
+      ],
+      "cacheFractions": [
+        0,
+        0.5,
+        0.8
+      ]
+    },
+    "workData": {
+      "works": 20,
+      "rowsPerWork": 100,
+      "bytesPerRow": 512,
+      "readsPerWork": 40,
+      "writesPerWork": 10
+    },
+    "boundExample": {
+      "cacheMs": 300,
+      "replicationMs": 150,
+      "inFlightMs": 100,
+      "clockErrorMs": 50
+    },
+    "overlapExample": {
+      "tokenLifetimeSeconds": 120,
+      "clockErrorSeconds": 10,
+      "propagationSeconds": 30
+    },
+    "researchEnvelope": {
+      "creations": 100,
+      "vcpus": 2,
+      "memoryGB": 4,
+      "intendedMinutes": 10,
+      "worstHours": 24
+    }
+  },
+  "prices": {
+    "verifiedDate": "2026-10-22",
+    "currency": "USD",
+    "vercelIad1": {
+      "activeCpuHour": 0.128,
+      "memoryGBHour": 0.0212,
+      "creation": 6e-7
+    },
+    "e2b": {
+      "cpuSecond": 0.000014,
+      "memoryGiBSecond": 0.0000045,
+      "proMonth": 150
+    },
+    "modelsPerMillion": {
+      "gpt-5.4-mini": {
+        "input": 0.75,
+        "cached": 0.075,
+        "output": 4.5
+      },
+      "gpt-6.1-sol": {
+        "input": 2,
+        "cached": 0.1,
+        "output": 10
+      },
+      "gpt-5.3-codex": {
+        "input": 1.75,
+        "cached": 0.175,
+        "output": 14
+      }
+    }
+  },
+  "result": {
+    "nat": {
+      "simultaneousAttempts": 30,
+      "illustrativeFixedWindow": {
+        "accepted": 20,
+        "rejected": 10
+      },
+      "documentedTokenBucketModel": {
+        "firstBurstAccepted": 30,
+        "additionalAttemptsAt10Seconds": 10,
+        "additionalAccepted": 5
+      }
+    },
+    "corpus": [
+      {
+        "name": "A-small",
+        "files": 4,
+        "bytesPerFile": 8192,
+        "totalBytes": 32768,
+        "totalGzipBytes": 308,
+        "fileSha256": "1e3badd5d352d68a5aa98316b36202da8450ec4a8db607560d57339a26fec982"
+      },
+      {
+        "name": "A-media",
+        "files": 12,
+        "bytesPerFile": 65536,
+        "totalBytes": 786432,
+        "totalGzipBytes": 2580,
+        "fileSha256": "d371276330d2c7d44e34cad45723ff00786658335683c5fd92106ae429690af7"
+      },
+      {
+        "name": "B-small",
+        "files": 24,
+        "bytesPerFile": 16384,
+        "totalBytes": 393216,
+        "totalGzipBytes": 2328,
+        "fileSha256": "a3e04eadd78f150afa7467a64cae0274728437fa3bba80ec7805696518cb8a4d"
+      },
+      {
+        "name": "B-large",
+        "files": 160,
+        "bytesPerFile": 32768,
+        "totalBytes": 5242880,
+        "totalGzipBytes": 21760,
+        "fileSha256": "8e28508d83e748c807b5f914921fe2bfa95de569246276b4600532e16996d02b"
+      }
+    ],
+    "queue": [
+      {
+        "serviceSeconds": 5,
+        "concurrency": 1,
+        "arrivals": 20,
+        "waitP95Seconds": 90,
+        "endToEndP50Seconds": 50,
+        "endToEndP95Seconds": 95,
+        "endToEndMaxSeconds": 100,
+        "assumedErrorCount": 0
+      },
+      {
+        "serviceSeconds": 5,
+        "concurrency": 4,
+        "arrivals": 20,
+        "waitP95Seconds": 20,
+        "endToEndP50Seconds": 15,
+        "endToEndP95Seconds": 25,
+        "endToEndMaxSeconds": 25,
+        "assumedErrorCount": 0
+      },
+      {
+        "serviceSeconds": 5,
+        "concurrency": 10,
+        "arrivals": 20,
+        "waitP95Seconds": 5,
+        "endToEndP50Seconds": 5,
+        "endToEndP95Seconds": 10,
+        "endToEndMaxSeconds": 10,
+        "assumedErrorCount": 0
+      },
+      {
+        "serviceSeconds": 5,
+        "concurrency": 20,
+        "arrivals": 20,
+        "waitP95Seconds": 0,
+        "endToEndP50Seconds": 5,
+        "endToEndP95Seconds": 5,
+        "endToEndMaxSeconds": 5,
+        "assumedErrorCount": 0
+      },
+      {
+        "serviceSeconds": 15,
+        "concurrency": 1,
+        "arrivals": 20,
+        "waitP95Seconds": 270,
+        "endToEndP50Seconds": 150,
+        "endToEndP95Seconds": 285,
+        "endToEndMaxSeconds": 300,
+        "assumedErrorCount": 0
+      },
+      {
+        "serviceSeconds": 15,
+        "concurrency": 4,
+        "arrivals": 20,
+        "waitP95Seconds": 60,
+        "endToEndP50Seconds": 45,
+        "endToEndP95Seconds": 75,
+        "endToEndMaxSeconds": 75,
+        "assumedErrorCount": 0
+      },
+      {
+        "serviceSeconds": 15,
+        "concurrency": 10,
+        "arrivals": 20,
+        "waitP95Seconds": 15,
+        "endToEndP50Seconds": 15,
+        "endToEndP95Seconds": 30,
+        "endToEndMaxSeconds": 30,
+        "assumedErrorCount": 0
+      },
+      {
+        "serviceSeconds": 15,
+        "concurrency": 20,
+        "arrivals": 20,
+        "waitP95Seconds": 0,
+        "endToEndP50Seconds": 15,
+        "endToEndP95Seconds": 15,
+        "endToEndMaxSeconds": 15,
+        "assumedErrorCount": 0
+      },
+      {
+        "serviceSeconds": 30,
+        "concurrency": 1,
+        "arrivals": 20,
+        "waitP95Seconds": 540,
+        "endToEndP50Seconds": 300,
+        "endToEndP95Seconds": 570,
+        "endToEndMaxSeconds": 600,
+        "assumedErrorCount": 0
+      },
+      {
+        "serviceSeconds": 30,
+        "concurrency": 4,
+        "arrivals": 20,
+        "waitP95Seconds": 120,
+        "endToEndP50Seconds": 90,
+        "endToEndP95Seconds": 150,
+        "endToEndMaxSeconds": 150,
+        "assumedErrorCount": 0
+      },
+      {
+        "serviceSeconds": 30,
+        "concurrency": 10,
+        "arrivals": 20,
+        "waitP95Seconds": 30,
+        "endToEndP50Seconds": 30,
+        "endToEndP95Seconds": 60,
+        "endToEndMaxSeconds": 60,
+        "assumedErrorCount": 0
+      },
+      {
+        "serviceSeconds": 30,
+        "concurrency": 20,
+        "arrivals": 20,
+        "waitP95Seconds": 0,
+        "endToEndP50Seconds": 30,
+        "endToEndP95Seconds": 30,
+        "endToEndMaxSeconds": 30,
+        "assumedErrorCount": 0
+      }
+    ],
+    "sandbox": [
+      {
+        "scenario": "low",
+        "vcpus": 1,
+        "memoryGB": 2,
+        "jobs": 6000,
+        "hours": 200,
+        "vercelIad1CpuUSD": 7.68,
+        "vercelIad1MemoryUSD": 8.48,
+        "vercelIad1CreationUSD": 0.0036,
+        "vercelIad1UsageUSD": 16.1636,
+        "e2bUsageUSD": 16.56,
+        "e2bWithProMonthUSD": 166.56
+      },
+      {
+        "scenario": "low",
+        "vcpus": 2,
+        "memoryGB": 4,
+        "jobs": 6000,
+        "hours": 200,
+        "vercelIad1CpuUSD": 15.36,
+        "vercelIad1MemoryUSD": 16.96,
+        "vercelIad1CreationUSD": 0.0036,
+        "vercelIad1UsageUSD": 32.3236,
+        "e2bUsageUSD": 33.12,
+        "e2bWithProMonthUSD": 183.12
+      },
+      {
+        "scenario": "base",
+        "vcpus": 1,
+        "memoryGB": 2,
+        "jobs": 12000,
+        "hours": 800,
+        "vercelIad1CpuUSD": 51.2,
+        "vercelIad1MemoryUSD": 33.92,
+        "vercelIad1CreationUSD": 0.0072,
+        "vercelIad1UsageUSD": 85.1272,
+        "e2bUsageUSD": 66.24,
+        "e2bWithProMonthUSD": 216.24
+      },
+      {
+        "scenario": "base",
+        "vcpus": 2,
+        "memoryGB": 4,
+        "jobs": 12000,
+        "hours": 800,
+        "vercelIad1CpuUSD": 102.4,
+        "vercelIad1MemoryUSD": 67.84,
+        "vercelIad1CreationUSD": 0.0072,
+        "vercelIad1UsageUSD": 170.2472,
+        "e2bUsageUSD": 132.48,
+        "e2bWithProMonthUSD": 282.48
+      },
+      {
+        "scenario": "high",
+        "vcpus": 1,
+        "memoryGB": 2,
+        "jobs": 20000,
+        "hours": 2666.6666666666665,
+        "vercelIad1CpuUSD": 341.333333,
+        "vercelIad1MemoryUSD": 113.066667,
+        "vercelIad1CreationUSD": 0.012,
+        "vercelIad1UsageUSD": 454.412,
+        "e2bUsageUSD": 220.8,
+        "e2bWithProMonthUSD": 370.8
+      },
+      {
+        "scenario": "high",
+        "vcpus": 2,
+        "memoryGB": 4,
+        "jobs": 20000,
+        "hours": 2666.6666666666665,
+        "vercelIad1CpuUSD": 682.666667,
+        "vercelIad1MemoryUSD": 226.133333,
+        "vercelIad1CreationUSD": 0.012,
+        "vercelIad1UsageUSD": 908.812,
+        "e2bUsageUSD": 441.6,
+        "e2bWithProMonthUSD": 591.6
+      }
+    ],
+    "agent": [
+      {
+        "model": "gpt-5.4-mini",
+        "cacheFraction": 0,
+        "rounds": 1,
+        "modeledTaskUSD": 0.03675,
+        "actualModelCalls": 0,
+        "completedAOrBWorks": null
+      },
+      {
+        "model": "gpt-5.4-mini",
+        "cacheFraction": 0,
+        "rounds": 3,
+        "modeledTaskUSD": 0.11025,
+        "actualModelCalls": 0,
+        "completedAOrBWorks": null
+      },
+      {
+        "model": "gpt-5.4-mini",
+        "cacheFraction": 0,
+        "rounds": 6,
+        "modeledTaskUSD": 0.2205,
+        "actualModelCalls": 0,
+        "completedAOrBWorks": null
+      },
+      {
+        "model": "gpt-5.4-mini",
+        "cacheFraction": 0.5,
+        "rounds": 1,
+        "modeledTaskUSD": 0.028313,
+        "actualModelCalls": 0,
+        "completedAOrBWorks": null
+      },
+      {
+        "model": "gpt-5.4-mini",
+        "cacheFraction": 0.5,
+        "rounds": 3,
+        "modeledTaskUSD": 0.084937,
+        "actualModelCalls": 0,
+        "completedAOrBWorks": null
+      },
+      {
+        "model": "gpt-5.4-mini",
+        "cacheFraction": 0.5,
+        "rounds": 6,
+        "modeledTaskUSD": 0.169875,
+        "actualModelCalls": 0,
+        "completedAOrBWorks": null
+      },
+      {
+        "model": "gpt-5.4-mini",
+        "cacheFraction": 0.8,
+        "rounds": 1,
+        "modeledTaskUSD": 0.02325,
+        "actualModelCalls": 0,
+        "completedAOrBWorks": null
+      },
+      {
+        "model": "gpt-5.4-mini",
+        "cacheFraction": 0.8,
+        "rounds": 3,
+        "modeledTaskUSD": 0.06975,
+        "actualModelCalls": 0,
+        "completedAOrBWorks": null
+      },
+      {
+        "model": "gpt-5.4-mini",
+        "cacheFraction": 0.8,
+        "rounds": 6,
+        "modeledTaskUSD": 0.1395,
+        "actualModelCalls": 0,
+        "completedAOrBWorks": null
+      },
+      {
+        "model": "gpt-6.1-sol",
+        "cacheFraction": 0,
+        "rounds": 1,
+        "modeledTaskUSD": 0.09,
+        "actualModelCalls": 0,
+        "completedAOrBWorks": null
+      },
+      {
+        "model": "gpt-6.1-sol",
+        "cacheFraction": 0,
+        "rounds": 3,
+        "modeledTaskUSD": 0.27,
+        "actualModelCalls": 0,
+        "completedAOrBWorks": null
+      },
+      {
+        "model": "gpt-6.1-sol",
+        "cacheFraction": 0,
+        "rounds": 6,
+        "modeledTaskUSD": 0.54,
+        "actualModelCalls": 0,
+        "completedAOrBWorks": null
+      },
+      {
+        "model": "gpt-6.1-sol",
+        "cacheFraction": 0.5,
+        "rounds": 1,
+        "modeledTaskUSD": 0.06625,
+        "actualModelCalls": 0,
+        "completedAOrBWorks": null
+      },
+      {
+        "model": "gpt-6.1-sol",
+        "cacheFraction": 0.5,
+        "rounds": 3,
+        "modeledTaskUSD": 0.19875,
+        "actualModelCalls": 0,
+        "completedAOrBWorks": null
+      },
+      {
+        "model": "gpt-6.1-sol",
+        "cacheFraction": 0.5,
+        "rounds": 6,
+        "modeledTaskUSD": 0.3975,
+        "actualModelCalls": 0,
+        "completedAOrBWorks": null
+      },
+      {
+        "model": "gpt-6.1-sol",
+        "cacheFraction": 0.8,
+        "rounds": 1,
+        "modeledTaskUSD": 0.052,
+        "actualModelCalls": 0,
+        "completedAOrBWorks": null
+      },
+      {
+        "model": "gpt-6.1-sol",
+        "cacheFraction": 0.8,
+        "rounds": 3,
+        "modeledTaskUSD": 0.156,
+        "actualModelCalls": 0,
+        "completedAOrBWorks": null
+      },
+      {
+        "model": "gpt-6.1-sol",
+        "cacheFraction": 0.8,
+        "rounds": 6,
+        "modeledTaskUSD": 0.312,
+        "actualModelCalls": 0,
+        "completedAOrBWorks": null
+      },
+      {
+        "model": "gpt-5.3-codex",
+        "cacheFraction": 0,
+        "rounds": 1,
+        "modeledTaskUSD": 0.09975,
+        "actualModelCalls": 0,
+        "completedAOrBWorks": null
+      },
+      {
+        "model": "gpt-5.3-codex",
+        "cacheFraction": 0,
+        "rounds": 3,
+        "modeledTaskUSD": 0.29925,
+        "actualModelCalls": 0,
+        "completedAOrBWorks": null
+      },
+      {
+        "model": "gpt-5.3-codex",
+        "cacheFraction": 0,
+        "rounds": 6,
+        "modeledTaskUSD": 0.5985,
+        "actualModelCalls": 0,
+        "completedAOrBWorks": null
+      },
+      {
+        "model": "gpt-5.3-codex",
+        "cacheFraction": 0.5,
+        "rounds": 1,
+        "modeledTaskUSD": 0.080062,
+        "actualModelCalls": 0,
+        "completedAOrBWorks": null
+      },
+      {
+        "model": "gpt-5.3-codex",
+        "cacheFraction": 0.5,
+        "rounds": 3,
+        "modeledTaskUSD": 0.240187,
+        "actualModelCalls": 0,
+        "completedAOrBWorks": null
+      },
+      {
+        "model": "gpt-5.3-codex",
+        "cacheFraction": 0.5,
+        "rounds": 6,
+        "modeledTaskUSD": 0.480375,
+        "actualModelCalls": 0,
+        "completedAOrBWorks": null
+      },
+      {
+        "model": "gpt-5.3-codex",
+        "cacheFraction": 0.8,
+        "rounds": 1,
+        "modeledTaskUSD": 0.06825,
+        "actualModelCalls": 0,
+        "completedAOrBWorks": null
+      },
+      {
+        "model": "gpt-5.3-codex",
+        "cacheFraction": 0.8,
+        "rounds": 3,
+        "modeledTaskUSD": 0.20475,
+        "actualModelCalls": 0,
+        "completedAOrBWorks": null
+      },
+      {
+        "model": "gpt-5.3-codex",
+        "cacheFraction": 0.8,
+        "rounds": 6,
+        "modeledTaskUSD": 0.4095,
+        "actualModelCalls": 0,
+        "completedAOrBWorks": null
+      }
+    ],
+    "workData": {
+      "logicalBytes": 1024000,
+      "requests": 1000,
+      "excluded": [
+        "indexes",
+        "row metadata",
+        "backups",
+        "retained previews",
+        "egress",
+        "provider request charges"
+      ]
+    },
+    "revocationBound": {
+      "assumedComponents": {
+        "cacheMs": 300,
+        "replicationMs": 150,
+        "inFlightMs": 100,
+        "clockErrorMs": 50
+      },
+      "additiveIllustrationMs": 600,
+      "cacheOnlyClaimMs": 300,
+      "productionBoundProven": false
+    },
+    "rotation": {
+      "assumedComponents": {
+        "tokenLifetimeSeconds": 120,
+        "clockErrorSeconds": 10,
+        "propagationSeconds": 30
+      },
+      "minimumOverlapAfterLastOldIssuanceSeconds": 160,
+      "realKeyGenerationCount": 0,
+      "productionRotationProven": false
+    },
+    "researchEnvelope": {
+      "intendedSandboxOnlyUSD": 5.68006,
+      "allAt24HoursSandboxOnlyUSD": 817.92006,
+      "twoVercelProPlusOneSupabaseMicroMonthUSD": 65,
+      "completeCostUpperBoundUSD": null,
+      "excluded": [
+        "APAC regional prices",
+        "worker",
+        "domains",
+        "traffic",
+        "storage",
+        "tax",
+        "cleanup failure beyond envelope"
+      ]
+    }
+  },
+  "limitations": [
+    "No network requests, provider accounts, credentials, product dependencies, or real child data.",
+    "Corpus contains repetitive synthetic text, not representative images or actual A/B work bundles.",
+    "Queue service times and zero errors are assumptions, not measured latency or availability.",
+    "Prices are public list rates; regional prices, fixed costs and excluded components prevent a total cost bound.",
+    "All policy numbers remain unapproved. No S-01 through S-15 or formal product matrix is marked passed."
+  ]
+}

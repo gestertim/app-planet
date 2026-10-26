@@ -1,0 +1,21 @@
+services:
+  db:
+    image: public.ecr.aws/supabase/postgres:17.6.1.167
+    restart: "no"
+    environment:
+      POSTGRES_PASSWORD: ${APP_PLANET_PGTAP_POSTGRES_PASSWORD:?generate a local-only test password}
+      JWT_SECRET: ${APP_PLANET_PGTAP_JWT_SECRET:?generate a local-only test secret}
+      JWT_EXP: "3600"
+    ports:
+      - "127.0.0.1:${APP_PLANET_PGTAP_PORT:?select an unused local test port}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+volumes:
+  db-data: {}

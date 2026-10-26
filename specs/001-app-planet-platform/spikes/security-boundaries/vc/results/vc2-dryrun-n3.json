@@ -1,0 +1,310 @@
+{
+  "startedAt": "2026-10-21T11:32:37.166Z",
+  "region": "hnd1",
+  "N": 3,
+  "NCOLD": 2,
+  "ttlMs": 2000,
+  "errors": [],
+  "browser": "Chrome/155.0.8059.84",
+  "coldCreateMs": 1097,
+  "warm": [
+    {
+      "i": 0,
+      "syncMs": 1447.4627,
+      "buildMs": 983.3069000000005,
+      "fetchMs": 1721.8545999999997,
+      "tgzBytes": 139001,
+      "ingestMs": 6.388100000000122,
+      "boundToVisibleMs": 188.47950000000037,
+      "sandboxPartMs": 4159.0442,
+      "e2eMs": 4347.559200000001,
+      "calls": 3
+    },
+    {
+      "i": 1,
+      "syncMs": 1055.2619000000004,
+      "buildMs": 833.4922999999999,
+      "fetchMs": 1730.5764,
+      "tgzBytes": 139000,
+      "ingestMs": 2.7731999999996333,
+      "boundToVisibleMs": 140.94880000000012,
+      "sandboxPartMs": 3622.1161,
+      "e2eMs": 3763.0664000000006,
+      "calls": 3
+    },
+    {
+      "i": 2,
+      "syncMs": 1059.9183000000012,
+      "buildMs": 811.3546999999999,
+      "fetchMs": 1300.3711999999996,
+      "tgzBytes": 139000,
+      "ingestMs": 6.360099999999875,
+      "boundToVisibleMs": 79.9338000000007,
+      "sandboxPartMs": 3178.0264000000006,
+      "e2eMs": 3257.964,
+      "calls": 3
+    }
+  ],
+  "warmSummary": {
+    "n": 3,
+    "sync": {
+      "n": 3,
+      "min": 1055,
+      "p50": 1060,
+      "p95": 1447,
+      "max": 1447,
+      "mean": 1187
+    },
+    "build": {
+      "n": 3,
+      "min": 811,
+      "p50": 833,
+      "p95": 983,
+      "max": 983,
+      "mean": 876
+    },
+    "fetch": {
+      "n": 3,
+      "min": 1300,
+      "p50": 1722,
+      "p95": 1731,
+      "max": 1731,
+      "mean": 1584
+    },
+    "ingest": {
+      "n": 3,
+      "min": 3,
+      "p50": 6,
+      "p95": 6,
+      "max": 6,
+      "mean": 5
+    },
+    "sandboxPart": {
+      "n": 3,
+      "min": 3178,
+      "p50": 3622,
+      "p95": 4159,
+      "max": 4159,
+      "mean": 3653
+    },
+    "boundToVisible": {
+      "n": 3,
+      "min": 80,
+      "p50": 141,
+      "p95": 188,
+      "max": 188,
+      "mean": 136
+    },
+    "e2e": {
+      "n": 3,
+      "min": 3258,
+      "p50": 3763,
+      "p95": 4348,
+      "max": 4348,
+      "mean": 3790
+    },
+    "tgzBytes": 139001
+  },
+  "cold": [
+    {
+      "i": 0,
+      "createMs": 1317.7114000000001,
+      "syncMs": 1064.4837000000007,
+      "buildMs": 1022.1152000000002,
+      "fetchMs": 1749.826399999998,
+      "tgzBytes": 139005,
+      "ingestMs": 4.967899999999645,
+      "boundToVisibleMs": 227.387999999999,
+      "sandboxPartMs": 3841.447500000002,
+      "e2eMs": 4068.8460000000014,
+      "calls": 3,
+      "coldE2eMs": 6878.355899999999
+    },
+    {
+      "i": 1,
+      "createMs": 1726.3716000000022,
+      "syncMs": 1634.4771,
+      "buildMs": 960.3884999999973,
+      "fetchMs": 1724.956100000003,
+      "tgzBytes": 139002,
+      "ingestMs": 3.3470999999990454,
+      "boundToVisibleMs": 89.74859999999899,
+      "sandboxPartMs": 4323.187299999998,
+      "e2eMs": 4412.939200000001,
+      "calls": 3,
+      "coldE2eMs": 7571.899800000003
+    }
+  ],
+  "coldSummary": {
+    "n": 2,
+    "create": {
+      "n": 2,
+      "min": 1318,
+      "p50": 1318,
+      "p95": 1726,
+      "max": 1726,
+      "mean": 1522
+    },
+    "coldE2e": {
+      "n": 2,
+      "min": 6878,
+      "p50": 6878,
+      "p95": 7572,
+      "max": 7572,
+      "mean": 7225
+    }
+  },
+  "parallel20": {
+    "sandboxes": 3,
+    "rounds": 3,
+    "ok": 9,
+    "failed": 0,
+    "failures": [],
+    "sandboxPart": {
+      "n": 9,
+      "min": 2917,
+      "p50": 3330,
+      "p95": 3786,
+      "max": 3786,
+      "mean": 3386
+    }
+  },
+  "egress": {
+    "denyAll_npm": "exit=124",
+    "denyAll_retrieval": "retrieved+ingested",
+    "policyUpdateMs": 1743,
+    "policyUpdate": "ok",
+    "registryOnly_npm": "added 2 packages in 508ms exit=0 is-number is-odd",
+    "registryOnly_example": "http=000 exit=6",
+    "registryOnly_github": "http=000 exit=6",
+    "registryOnly_vercelApi": "http=000 exit=6",
+    "registryOnly_imds": "http=000 exit=7",
+    "backToDenyAllMs": 1035,
+    "afterDenyAll_npm": "exit=124",
+    "afterDenyAll_registry": "http=000 exit=6",
+    "finalPolicy": "\"deny-all\""
+  },
+  "malicious": {
+    "benign": {
+      "retrieved": true,
+      "tgzBytes": 138,
+      "retrieveMs": 1536,
+      "accepted": true,
+      "why": null
+    },
+    "symlink": {
+      "retrieved": true,
+      "tgzBytes": 171,
+      "retrieveMs": 1451,
+      "accepted": false,
+      "why": "not-regular-file"
+    },
+    "hardlink": {
+      "retrieved": true,
+      "tgzBytes": 154,
+      "retrieveMs": 1178,
+      "accepted": false,
+      "why": "not-regular-file"
+    },
+    "dotdot": {
+      "retrieved": true,
+      "tgzBytes": 132,
+      "retrieveMs": 1876,
+      "accepted": false,
+      "why": "bad-path"
+    },
+    "absolute": {
+      "retrieved": true,
+      "tgzBytes": 130,
+      "retrieveMs": 1472,
+      "accepted": false,
+      "why": "bad-path"
+    },
+    "workPrefix": {
+      "retrieved": true,
+      "tgzBytes": 207,
+      "retrieveMs": 2285,
+      "accepted": false,
+      "why": "reserved-prefix"
+    },
+    "disallowedType": {
+      "retrieved": true,
+      "tgzBytes": 165,
+      "retrieveMs": 1500,
+      "accepted": false,
+      "why": "type-not-allowed"
+    },
+    "oversizeFile": {
+      "retrieved": true,
+      "tgzBytes": 2000554,
+      "retrieveMs": 9444,
+      "accepted": false,
+      "why": "file-too-large"
+    },
+    "manyFiles": {
+      "retrieved": true,
+      "tgzBytes": 3761,
+      "retrieveMs": 1872,
+      "accepted": false,
+      "why": "file-count"
+    },
+    "caseDuplicate": {
+      "retrieved": true,
+      "tgzBytes": 158,
+      "retrieveMs": 1446,
+      "accepted": false,
+      "why": "duplicate-path"
+    },
+    "noIndex": {
+      "retrieved": true,
+      "tgzBytes": 129,
+      "retrieveMs": 1868,
+      "accepted": false,
+      "why": "no-index"
+    },
+    "justUnderTotal": {
+      "retrieved": true,
+      "tgzBytes": 2724662,
+      "retrieveMs": 12937,
+      "accepted": true,
+      "why": null
+    },
+    "justOverTotal": {
+      "retrieved": true,
+      "tgzBytes": 4086904,
+      "retrieveMs": 18354,
+      "accepted": false,
+      "why": "total-too-large"
+    }
+  },
+  "revoke": {
+    "ttl2000": [
+      1855.0884999999835,
+      378.66870000000927,
+      1419.9211999999825
+    ],
+    "ttl0": [
+      1.0815000000002328,
+      1.223599999997532,
+      4.753800000005867
+    ]
+  },
+  "revokeSummary": {
+    "ttl2000": {
+      "n": 3,
+      "min": 379,
+      "p50": 1420,
+      "p95": 1855,
+      "max": 1855,
+      "mean": 1218
+    },
+    "ttl2000_noDeny": 0
+  },
+  "apiCalls": {
+    "total": 107,
+    "byStatus": {
+      "200": 107
+    }
+  },
+  "finishedAt": "2026-10-21T11:35:44.026Z"
+}

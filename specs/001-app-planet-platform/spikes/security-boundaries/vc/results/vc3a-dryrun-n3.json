@@ -1,0 +1,197 @@
+{
+  "startedAt": "2026-10-21T10:59:26.203Z",
+  "region": "hnd1",
+  "N": 3,
+  "setup": {
+    "createBaseMs": 1115,
+    "snapshotMs": 1562,
+    "snapshotId": "snap_baytvuP6CKnGswVp5UKtt66W7BxL",
+    "calls": 3
+  },
+  "new": [
+    {
+      "i": 0,
+      "createMs": 4147.103,
+      "writeMs": 1042.446899999999,
+      "runMs": 1322.5037000000011,
+      "toResponseMs": 6512.0536,
+      "stopMs": 2994.306499999999,
+      "totalMs": 9506.360099999998,
+      "calls": 4,
+      "callsToResponse": 3
+    },
+    {
+      "i": 1,
+      "createMs": 1361.3462,
+      "writeMs": 1038.8190000000013,
+      "runMs": 929.239999999998,
+      "toResponseMs": 3329.4051999999992,
+      "stopMs": 3015.1739000000016,
+      "totalMs": 6344.579100000001,
+      "calls": 4,
+      "callsToResponse": 3
+    },
+    {
+      "i": 2,
+      "createMs": 1396.8117999999995,
+      "writeMs": 1125.9475999999995,
+      "runMs": 946.1432000000023,
+      "toResponseMs": 3468.9026000000013,
+      "stopMs": 3362.6432999999997,
+      "totalMs": 6831.545900000001,
+      "calls": 4,
+      "callsToResponse": 3
+    }
+  ],
+  "resume": [
+    {
+      "i": 0,
+      "getMs": 294.0343999999968,
+      "firstCallMs": 6184.9545,
+      "runMs": 917.1726000000053,
+      "toResponseMs": 7396.161500000002,
+      "stopMs": 3861.5184999999983,
+      "totalMs": 11257.68,
+      "calls": 6,
+      "callsToResponse": 5
+    },
+    {
+      "i": 1,
+      "getMs": 329.34799999999814,
+      "firstCallMs": 5825.902500000004,
+      "runMs": 888.7432999999946,
+      "toResponseMs": 7043.993799999997,
+      "stopMs": 2837.5443000000014,
+      "totalMs": 9881.538099999998,
+      "calls": 6,
+      "callsToResponse": 5
+    },
+    {
+      "i": 2,
+      "getMs": 353.39280000000144,
+      "firstCallMs": 5145.833400000003,
+      "runMs": 1279.661500000002,
+      "toResponseMs": 6778.887700000007,
+      "stopMs": 2628.6229999999923,
+      "totalMs": 9407.510699999999,
+      "calls": 6,
+      "callsToResponse": 5
+    }
+  ],
+  "warm": [
+    {
+      "i": 0,
+      "toResponseMs": 2406.095300000001,
+      "calls": 2
+    },
+    {
+      "i": 1,
+      "toResponseMs": 1838.8350999999966,
+      "calls": 2
+    },
+    {
+      "i": 2,
+      "toResponseMs": 2454.0380000000005,
+      "calls": 2
+    }
+  ],
+  "warmParallel": {
+    "wallMs": 2444,
+    "perRequest": {
+      "n": 10,
+      "min": 1657,
+      "p50": 2033,
+      "p95": 2444,
+      "max": 2444,
+      "mean": 2050
+    }
+  },
+  "names": [
+    "purple-civilian-sheep-83eAuE",
+    "green-allied-rat-FXaDKC",
+    "black-dramatic-newt-VA9AgM",
+    "rose-loyal-lungfish-twaqsg",
+    "vc3-resume-mvi02z7e",
+    "amaranth-opposite-bass-D479PM"
+  ],
+  "errors": [],
+  "summary": {
+    "newToResponse": {
+      "n": 3,
+      "min": 3329,
+      "p50": 3469,
+      "p95": 6512,
+      "max": 6512,
+      "mean": 4437
+    },
+    "newCreate": {
+      "n": 3,
+      "min": 1361,
+      "p50": 1397,
+      "p95": 4147,
+      "max": 4147,
+      "mean": 2302
+    },
+    "newStop": {
+      "n": 3,
+      "min": 2994,
+      "p50": 3015,
+      "p95": 3363,
+      "max": 3363,
+      "mean": 3124
+    },
+    "newTotal": {
+      "n": 3,
+      "min": 6345,
+      "p50": 6832,
+      "p95": 9506,
+      "max": 9506,
+      "mean": 7561
+    },
+    "resumeToResponse": {
+      "n": 3,
+      "min": 6779,
+      "p50": 7044,
+      "p95": 7396,
+      "max": 7396,
+      "mean": 7073
+    },
+    "resumeFirstCall": {
+      "n": 3,
+      "min": 5146,
+      "p50": 5826,
+      "p95": 6185,
+      "max": 6185,
+      "mean": 5719
+    },
+    "resumeStop": {
+      "n": 3,
+      "min": 2629,
+      "p50": 2838,
+      "p95": 3862,
+      "max": 3862,
+      "mean": 3110
+    },
+    "warm": {
+      "n": 3,
+      "min": 1839,
+      "p50": 2406,
+      "p95": 2454,
+      "max": 2454,
+      "mean": 2233
+    }
+  },
+  "resumeName": "vc3-resume-mvi02z7e",
+  "apiCalls": {
+    "total": 65,
+    "byStatus": {
+      "200": 61,
+      "201": 1,
+      "410": 3
+    },
+    "byHost": {
+      "vercel.com": 65
+    }
+  },
+  "finishedAt": "2026-10-21T11:00:49.147Z"
+}

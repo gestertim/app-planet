@@ -1,0 +1,98 @@
+{
+  "checks": [
+    {
+      "phase": "setup",
+      "project": "vc-sandbox-test",
+      "name": "blush-clinical-aardwolf-aQb6Mn"
+    },
+    {
+      "phase": "attack",
+      "project": "vc-sandbox-test-2",
+      "name": "Sandbox.get(P1 target)",
+      "allowed": false,
+      "status": 404,
+      "error": "Status code 404 is not ok: Named sandbox 'blush-clinical-aardwolf-aQb6Mn' not found for this project."
+    },
+    {
+      "phase": "attack",
+      "project": "vc-sandbox-test-2",
+      "name": "Sandbox.get(P1 target) + readFile",
+      "allowed": false,
+      "status": 404,
+      "error": "Status code 404 is not ok: Named sandbox 'blush-clinical-aardwolf-aQb6Mn' not found for this project."
+    },
+    {
+      "phase": "attack",
+      "project": "vc-sandbox-test-2",
+      "name": "create sandbox from P1 snapshot",
+      "allowed": false,
+      "status": 404,
+      "error": "Status code 404 is not ok: Snapshot not found."
+    },
+    {
+      "phase": "attack",
+      "project": "vc-sandbox-test-2",
+      "name": "Snapshot.get(P1 snapshot)",
+      "allowed": false,
+      "status": 404,
+      "error": "Status code 404 is not ok: Vercel Sandbox not found."
+    },
+    {
+      "phase": "attack",
+      "project": "vc-sandbox-test-2",
+      "name": "list sandboxes",
+      "allowed": true,
+      "result": {
+        "count": 0,
+        "includesP1Target": false
+      }
+    },
+    {
+      "phase": "attack",
+      "project": "vc-sandbox-test-2",
+      "name": "list snapshots",
+      "allowed": true,
+      "result": {
+        "count": 0,
+        "includesP1Snapshot": false
+      }
+    },
+    {
+      "phase": "attack",
+      "project": "vc-sandbox-test-2",
+      "name": "REST GET target (teamId)",
+      "status": 404,
+      "body": "{\"error\":{\"code\":\"not_found\",\"message\":\"Named sandbox 'blush-clinical-aardwolf-aQb6Mn' not found for this project.\"}}"
+    },
+    {
+      "phase": "attack",
+      "project": "vc-sandbox-test-2",
+      "name": "REST GET target + projectId=P1",
+      "status": 404,
+      "body": "{\"error\":{\"code\":\"not_found\",\"message\":\"Could not find project: prj_ZGkxJPSyLqyuWvgZgV2TviiW611Y\"}}"
+    },
+    {
+      "phase": "attack",
+      "project": "vc-sandbox-test-2",
+      "name": "REST POST fs/read on P1 session",
+      "status": 404,
+      "body": "{\"error\":{\"code\":\"not_found\",\"message\":\"Vercel Sandbox not found.\"}}"
+    },
+    {
+      "phase": "verify",
+      "project": "vc-sandbox-test",
+      "name": "P1 positive control: Sandbox.get + readFile",
+      "allowed": true,
+      "result": {
+        "read": "synthetic-p1-only"
+      }
+    }
+  ],
+  "target": {
+    "name": "blush-clinical-aardwolf-aQb6Mn",
+    "session": "sbx_KxoznNdTcA2T6t85H7Wui7RUyQbN",
+    "projectId": "prj_ZGkxJPSyLqyuWvgZgV2TviiW611Y",
+    "owner": "team_c2chp5VVhQOKr0P4F0ok53VR",
+    "snapshotId": "snap_nuGVH6nuqJ184uWoyrsGoBIaMSAG"
+  }
+}

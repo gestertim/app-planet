@@ -1,0 +1,16 @@
+{
+  "name": "@app-planet/works-edge",
+  "version": "0.0.0",
+  "description": "Gate 前本機骨架：僅宣告 workspace 與 core 相依；works-edge 服務、路由與標頭輸出尚未實作。",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@app-planet/core": "*"
+  }
+}

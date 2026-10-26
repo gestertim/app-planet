@@ -1,0 +1,1126 @@
+{
+  "rl": [
+    {
+      "status": 200,
+      "path": "/api/v3/:id",
+      "method": "POST",
+      "x-ratelimit-limit": "20",
+      "x-ratelimit-remaining": "19",
+      "x-ratelimit-reset": "1792580464"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/fs/write",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580522"
+    },
+    {
+      "status": 201,
+      "path": "/api/v2/:id/:id/:id/:id",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580523"
+    },
+    {
+      "status": 200,
+      "path": "/api/v3/:id",
+      "method": "POST",
+      "x-ratelimit-limit": "21",
+      "x-ratelimit-remaining": "19",
+      "x-ratelimit-reset": "1792580470"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/fs/write",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580529"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/cmd",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580530"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/stop",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580531"
+    },
+    {
+      "status": 200,
+      "path": "/api/v3/:id",
+      "method": "POST",
+      "x-ratelimit-limit": "20",
+      "x-ratelimit-remaining": "19",
+      "x-ratelimit-reset": "1792580478"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/fs/write",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580536"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/cmd",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580537"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/stop",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580538"
+    },
+    {
+      "status": 200,
+      "path": "/api/v3/:id",
+      "method": "POST",
+      "x-ratelimit-limit": "20",
+      "x-ratelimit-remaining": "19",
+      "x-ratelimit-reset": "1792580484"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/fs/write",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580542"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/cmd",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580543"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/stop",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580544"
+    },
+    {
+      "status": 200,
+      "path": "/api/v3/:id",
+      "method": "POST",
+      "x-ratelimit-limit": "20",
+      "x-ratelimit-remaining": "19",
+      "x-ratelimit-reset": "1792580490"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/fs/write",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580551"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/cmd",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580552"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/stop",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580553"
+    },
+    {
+      "status": 200,
+      "path": "/api/v3/:id",
+      "method": "POST",
+      "x-ratelimit-limit": "20",
+      "x-ratelimit-remaining": "19",
+      "x-ratelimit-reset": "1792580499"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/fs/write",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580560"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/cmd",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580561"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/stop",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580562"
+    },
+    {
+      "status": 200,
+      "path": "/api/v3/:id",
+      "method": "POST",
+      "x-ratelimit-limit": "20",
+      "x-ratelimit-remaining": "19",
+      "x-ratelimit-reset": "1792580508"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/fs/write",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580567"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/cmd",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580568"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/stop",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580569"
+    },
+    {
+      "status": 200,
+      "path": "/api/v3/:id",
+      "method": "POST",
+      "x-ratelimit-limit": "20",
+      "x-ratelimit-remaining": "19",
+      "x-ratelimit-reset": "1792580515"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/fs/write",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580573"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/cmd",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580574"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/stop",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580575"
+    },
+    {
+      "status": 200,
+      "path": "/api/v3/:id",
+      "method": "POST",
+      "x-ratelimit-limit": "20",
+      "x-ratelimit-remaining": "19",
+      "x-ratelimit-reset": "1792580522"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/fs/write",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580580"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/cmd",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580581"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/stop",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580582"
+    },
+    {
+      "status": 200,
+      "path": "/api/v3/:id",
+      "method": "POST",
+      "x-ratelimit-limit": "20",
+      "x-ratelimit-remaining": "19",
+      "x-ratelimit-reset": "1792580529"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/fs/write",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580587"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/cmd",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580588"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/stop",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580589"
+    },
+    {
+      "status": 200,
+      "path": "/api/v3/:id",
+      "method": "POST",
+      "x-ratelimit-limit": "20",
+      "x-ratelimit-remaining": "19",
+      "x-ratelimit-reset": "1792580535"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/fs/write",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580593"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/cmd",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580594"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/stop",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580595"
+    },
+    {
+      "status": 200,
+      "path": "/api/v3/:id",
+      "method": "POST",
+      "x-ratelimit-limit": "20",
+      "x-ratelimit-remaining": "19",
+      "x-ratelimit-reset": "1792580541"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/fs/write",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580602"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/cmd",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580604"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/stop",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580605"
+    },
+    {
+      "status": 200,
+      "path": "/api/v3/:id",
+      "method": "POST",
+      "x-ratelimit-limit": "20",
+      "x-ratelimit-remaining": "19",
+      "x-ratelimit-reset": "1792580552"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/fs/write",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580610"
+    },
+    {
+      "status": 200,
+      "path": "/api/v2/:id/:id/:id/cmd",
+      "method": "POST",
+      "x-ratelimit-limit": "1000",
+      "x-ratelimit-remaining": "999",
+      "x-ratelimit-reset": "1792580611"
+    }
+  ],
+  "log": [
+    {
+      "m": "POST",
+      "p": "/api/v3/sandboxes",
+      "s": 200,
+      "ms": 1122
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/fs/write",
+      "s": 200,
+      "ms": 1058
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/snapshot",
+      "s": 201,
+      "ms": 1456
+    },
+    {
+      "m": "POST",
+      "p": "/api/v3/sandboxes",
+      "s": 200,
+      "ms": 5088
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/fs/write",
+      "s": 200,
+      "ms": 1043
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/cmd",
+      "s": 200,
+      "ms": 791
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/stop",
+      "s": 200,
+      "ms": 2977
+    },
+    {
+      "m": "POST",
+      "p": "/api/v3/sandboxes",
+      "s": 200,
+      "ms": 1449
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/fs/write",
+      "s": 200,
+      "ms": 1063
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/cmd",
+      "s": 200,
+      "ms": 884
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/stop",
+      "s": 200,
+      "ms": 3129
+    },
+    {
+      "m": "POST",
+      "p": "/api/v3/sandboxes",
+      "s": 200,
+      "ms": 1369
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/fs/write",
+      "s": 200,
+      "ms": 1058
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/cmd",
+      "s": 200,
+      "ms": 919
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/stop",
+      "s": 200,
+      "ms": 2925
+    },
+    {
+      "m": "POST",
+      "p": "/api/v3/sandboxes",
+      "s": 200,
+      "ms": 3711
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/fs/write",
+      "s": 200,
+      "ms": 1059
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/cmd",
+      "s": 200,
+      "ms": 862
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/stop",
+      "s": 200,
+      "ms": 2950
+    },
+    {
+      "m": "POST",
+      "p": "/api/v3/sandboxes",
+      "s": 200,
+      "ms": 3632
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/fs/write",
+      "s": 200,
+      "ms": 1136
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/cmd",
+      "s": 200,
+      "ms": 799
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/stop",
+      "s": 200,
+      "ms": 2881
+    },
+    {
+      "m": "POST",
+      "p": "/api/v3/sandboxes",
+      "s": 200,
+      "ms": 1966
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/fs/write",
+      "s": 200,
+      "ms": 1455
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/cmd",
+      "s": 200,
+      "ms": 793
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/stop",
+      "s": 200,
+      "ms": 2634
+    },
+    {
+      "m": "POST",
+      "p": "/api/v3/sandboxes",
+      "s": 200,
+      "ms": 1305
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/fs/write",
+      "s": 200,
+      "ms": 1124
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/cmd",
+      "s": 200,
+      "ms": 786
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/stop",
+      "s": 200,
+      "ms": 3016
+    },
+    {
+      "m": "POST",
+      "p": "/api/v3/sandboxes",
+      "s": 200,
+      "ms": 1968
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/fs/write",
+      "s": 200,
+      "ms": 1083
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/cmd",
+      "s": 200,
+      "ms": 1227
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/stop",
+      "s": 200,
+      "ms": 3147
+    },
+    {
+      "m": "POST",
+      "p": "/api/v3/sandboxes",
+      "s": 200,
+      "ms": 1455
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/fs/write",
+      "s": 200,
+      "ms": 1075
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/cmd",
+      "s": 200,
+      "ms": 813
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/stop",
+      "s": 200,
+      "ms": 3002
+    },
+    {
+      "m": "POST",
+      "p": "/api/v3/sandboxes",
+      "s": 200,
+      "ms": 1072
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/fs/write",
+      "s": 200,
+      "ms": 1042
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/cmd",
+      "s": 200,
+      "ms": 975
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/stop",
+      "s": 200,
+      "ms": 2690
+    },
+    {
+      "m": "POST",
+      "p": "/api/v3/sandboxes",
+      "s": 200,
+      "ms": 4077
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/fs/write",
+      "s": 200,
+      "ms": 1581
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/cmd",
+      "s": 200,
+      "ms": 1181
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/stop",
+      "s": 200,
+      "ms": 3233
+    },
+    {
+      "m": "POST",
+      "p": "/api/v3/sandboxes",
+      "s": 200,
+      "ms": 1503
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/fs/write",
+      "s": 200,
+      "ms": 1019
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/cmd",
+      "s": 200,
+      "ms": 1162
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/stop",
+      "s": 200,
+      "ms": 3547
+    },
+    {
+      "m": "POST",
+      "p": "/api/v3/sandboxes",
+      "s": 200,
+      "ms": 1437
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/fs/write",
+      "s": 200,
+      "ms": 1434
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/cmd",
+      "s": 200,
+      "ms": 796
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/stop",
+      "s": 200,
+      "ms": 3100
+    },
+    {
+      "m": "POST",
+      "p": "/api/v3/sandboxes",
+      "s": 200,
+      "ms": 1729
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/fs/write",
+      "s": 200,
+      "ms": 1166
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/cmd",
+      "s": 200,
+      "ms": 1190
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/stop",
+      "s": 200,
+      "ms": 3108
+    },
+    {
+      "m": "POST",
+      "p": "/api/v3/sandboxes",
+      "s": 200,
+      "ms": 1013
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/fs/write",
+      "s": 200,
+      "ms": 1074
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/cmd",
+      "s": 200,
+      "ms": 783
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/stop",
+      "s": 200,
+      "ms": 2596
+    },
+    {
+      "m": "POST",
+      "p": "/api/v3/sandboxes",
+      "s": 200,
+      "ms": 1644
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/fs/write",
+      "s": 200,
+      "ms": 1539
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/cmd",
+      "s": 200,
+      "ms": 1187
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/stop",
+      "s": 200,
+      "ms": 2627
+    },
+    {
+      "m": "POST",
+      "p": "/api/v3/sandboxes",
+      "s": 200,
+      "ms": 1051
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/fs/write",
+      "s": 200,
+      "ms": 1018
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/cmd",
+      "s": 200,
+      "ms": 791
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/stop",
+      "s": 200,
+      "ms": 3047
+    },
+    {
+      "m": "POST",
+      "p": "/api/v3/sandboxes",
+      "s": 200,
+      "ms": 1024
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/fs/write",
+      "s": 200,
+      "ms": 1057
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/cmd",
+      "s": 200,
+      "ms": 1190
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/stop",
+      "s": 200,
+      "ms": 2739
+    },
+    {
+      "m": "POST",
+      "p": "/api/v3/sandboxes",
+      "s": 200,
+      "ms": 1540
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/fs/write",
+      "s": 200,
+      "ms": 1083
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/cmd",
+      "s": 200,
+      "ms": 841
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/stop",
+      "s": 200,
+      "ms": 2919
+    },
+    {
+      "m": "POST",
+      "p": "/api/v3/sandboxes",
+      "s": 200,
+      "ms": 1430
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/fs/write",
+      "s": 200,
+      "ms": 1058
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/cmd",
+      "s": 200,
+      "ms": 781
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/stop",
+      "s": 200,
+      "ms": 2918
+    },
+    {
+      "m": "POST",
+      "p": "/api/v3/sandboxes",
+      "s": 200,
+      "ms": 1398
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/fs/write",
+      "s": 200,
+      "ms": 1029
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/cmd",
+      "s": 200,
+      "ms": 791
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/stop",
+      "s": 200,
+      "ms": 2849
+    },
+    {
+      "m": "POST",
+      "p": "/api/v3/sandboxes",
+      "s": 200,
+      "ms": 1333
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/fs/write",
+      "s": 200,
+      "ms": 1032
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/cmd",
+      "s": 200,
+      "ms": 1215
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/stop",
+      "s": 200,
+      "ms": 3003
+    },
+    {
+      "m": "POST",
+      "p": "/api/v3/sandboxes",
+      "s": 200,
+      "ms": 1471
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/fs/write",
+      "s": 200,
+      "ms": 1070
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/cmd",
+      "s": 200,
+      "ms": 1179
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/stop",
+      "s": 200,
+      "ms": 3142
+    },
+    {
+      "m": "POST",
+      "p": "/api/v3/sandboxes",
+      "s": 200,
+      "ms": 2208
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/fs/write",
+      "s": 200,
+      "ms": 1440
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/cmd",
+      "s": 200,
+      "ms": 753
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/stop",
+      "s": 200,
+      "ms": 2938
+    },
+    {
+      "m": "POST",
+      "p": "/api/v3/sandboxes",
+      "s": 200,
+      "ms": 1431
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/fs/write",
+      "s": 200,
+      "ms": 1054
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/cmd",
+      "s": 200,
+      "ms": 780
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/stop",
+      "s": 200,
+      "ms": 3135
+    },
+    {
+      "m": "POST",
+      "p": "/api/v3/sandboxes",
+      "s": 200,
+      "ms": 1413
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/fs/write",
+      "s": 200,
+      "ms": 1056
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/cmd",
+      "s": 200,
+      "ms": 809
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/stop",
+      "s": 200,
+      "ms": 2849
+    },
+    {
+      "m": "POST",
+      "p": "/api/v3/sandboxes",
+      "s": 200,
+      "ms": 1431
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/fs/write",
+      "s": 200,
+      "ms": 1440
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/cmd",
+      "s": 200,
+      "ms": 786
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/stop",
+      "s": 200,
+      "ms": 3008
+    },
+    {
+      "m": "POST",
+      "p": "/api/v3/sandboxes",
+      "s": 200,
+      "ms": 1224
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/fs/write",
+      "s": 200,
+      "ms": 1044
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/cmd",
+      "s": 200,
+      "ms": 797
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/stop",
+      "s": 200,
+      "ms": 3025
+    },
+    {
+      "m": "POST",
+      "p": "/api/v3/sandboxes",
+      "s": 200,
+      "ms": 1088
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/fs/write",
+      "s": 200,
+      "ms": 1429
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/cmd",
+      "s": 200,
+      "ms": 820
+    },
+    {
+      "m": "POST",
+      "p": "/api/v2/sandboxes/sessions/sbx_*/stop",
+      "s": 200,
+      "ms": 2810
+    },
+    {
+      "m": "POST",
+      "p": "/api/v3/sandboxes",
+      "s": 200,
+      "ms": 1038
+    }
+  ]
+}

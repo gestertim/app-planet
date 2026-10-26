@@ -1,0 +1,46 @@
+# App Planet 本機隔離資料庫設定（T004；Gate 前有界本機範圍）。
+#
+# 權威的資料庫測試入口是 `npm run test:db`（scripts/pgtap-local.ps1）：它以 supabase/pgtap.local.compose.yml
+# 啟動唯一命名的隔離容器、套用 migration、執行 supabase/tests 的 pgTAP 並清理資源。
+# 本檔只供 Supabase CLI 的本機指令讀取，沒有連到任何遠端或付費專案，也不含任何密鑰；
+# 連接埠刻意避開 CLI 預設的 54321～54329，不得與其他本機 Supabase 專案共用。
+project_id = "app-planet-local"
+
+[api]
+enabled = false
+
+[db]
+port = 54422
+shadow_port = 54420
+health_timeout = "2m"
+major_version = 17
+
+[db.migrations]
+enabled = true
+schema_paths = []
+
+# 目前沒有 seed；測試資料一律由 supabase/tests 內的合成 SQL 在測試交易中建立。
+[db.seed]
+enabled = false
+sql_paths = []
+
+[realtime]
+enabled = false
+
+[studio]
+enabled = false
+
+[local_smtp]
+enabled = false
+
+[storage]
+enabled = false
+
+[auth]
+enabled = false
+
+[edge_runtime]
+enabled = false
+
+[analytics]
+enabled = false

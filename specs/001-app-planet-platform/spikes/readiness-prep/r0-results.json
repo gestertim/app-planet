@@ -1,0 +1,563 @@
+{
+  "seed": "app-planet-r0-2026-10-22",
+  "generatedAt": "2026-10-22T01:37:00.910Z",
+  "node": "v24.19.0",
+  "kind": "R0 offline synthetic evidence; not product validation or policy",
+  "caseCount": 20,
+  "runsPerCase": 1,
+  "providerCalls": 0,
+  "cases": [
+    {
+      "id": "W1-A",
+      "input": {
+        "side": 320,
+        "imageCount": 8,
+        "textKiB": [
+          32,
+          24,
+          64,
+          8
+        ],
+        "pixelSeed": 1000
+      },
+      "output": {
+        "manifest": [
+          {
+            "name": "index.html",
+            "mime": "text/html",
+            "bytes": 32768,
+            "sha256": "faeecaaa34d6b8a24f1c4cf5140e267f71e8509f1c71f2cd9af836d997da5c34",
+            "gzipBytes": 176
+          },
+          {
+            "name": "style.css",
+            "mime": "text/css",
+            "bytes": 24576,
+            "sha256": "0d91d54877c2a6ea7b717d9be70983e0d26c61f51d26c8fc60a51f4829025b18",
+            "gzipBytes": 87
+          },
+          {
+            "name": "main.js",
+            "mime": "text/javascript",
+            "bytes": 65536,
+            "sha256": "0749a5c56614cbb437a5faa2d023a785b418896df6c898a438a5a6926cc4414f",
+            "gzipBytes": 152
+          },
+          {
+            "name": "data.json",
+            "mime": "application/json",
+            "bytes": 8192,
+            "sha256": "e0f11c8eb21a3d88634d80f9fcc8ec614d154216a4e16f826dff5c96ab4dd18c",
+            "gzipBytes": 142
+          },
+          {
+            "name": "images/0.png",
+            "mime": "image/png",
+            "bytes": 307678,
+            "sha256": "fd62de481e33ad623f46e26932865d1b2973f1c08b24722bb881e9371634fba2",
+            "gzipBytes": 307791
+          },
+          {
+            "name": "images/1.png",
+            "mime": "image/png",
+            "bytes": 307678,
+            "sha256": "22ebd081d7e3b70dabb26b9cb14f7dd9cd5636b215122960ca1c3137fd6d272b",
+            "gzipBytes": 307791
+          },
+          {
+            "name": "images/2.png",
+            "mime": "image/png",
+            "bytes": 307678,
+            "sha256": "6bae38144a5a97503dec69b31048585636c458d53409c56dbc60e54f070e385e",
+            "gzipBytes": 307791
+          },
+          {
+            "name": "images/3.png",
+            "mime": "image/png",
+            "bytes": 307678,
+            "sha256": "3d4f17146e0027970e632d85360896957dd4a4b57deb31576424958ed467845c",
+            "gzipBytes": 307791
+          },
+          {
+            "name": "images/4.png",
+            "mime": "image/png",
+            "bytes": 307678,
+            "sha256": "235e1039333b437f424bcab149b0929b03cafcf1544554f4e5fe29cf713beb6f",
+            "gzipBytes": 307791
+          },
+          {
+            "name": "images/5.png",
+            "mime": "image/png",
+            "bytes": 307678,
+            "sha256": "d37968d9444626d02c303f5e347bf7f969843183b99e73b4f35d14a153a19438",
+            "gzipBytes": 307791
+          },
+          {
+            "name": "images/6.png",
+            "mime": "image/png",
+            "bytes": 307678,
+            "sha256": "af6d8cdf879bb5b0cb2a16308077106f0169e93e5e244660d9537b037f608821",
+            "gzipBytes": 307791
+          },
+          {
+            "name": "images/7.png",
+            "mime": "image/png",
+            "bytes": 307678,
+            "sha256": "26e17b1a149af8385a6ef1088b12bcaed933326b550e4bcf841ec9ffc9556bb8",
+            "gzipBytes": 307791
+          }
+        ],
+        "fileCount": 12,
+        "totalBytes": 2592496,
+        "maxFileBytes": 307678,
+        "independentGzipBytes": 2462885,
+        "independentGzipRatio": 1.052625680858018,
+        "proposed16MiBHeadroom": 6.47145299356296,
+        "withinProposedByteAndCountCaps": true,
+        "archiveFormatTested": false,
+        "buildExecuted": false,
+        "applicationComplete": false
+      }
+    },
+    {
+      "id": "W1-B",
+      "input": {
+        "side": 256,
+        "imageCount": 4,
+        "textKiB": [
+          32,
+          24,
+          80,
+          24
+        ],
+        "pixelSeed": 1000
+      },
+      "output": {
+        "manifest": [
+          {
+            "name": "index.html",
+            "mime": "text/html",
+            "bytes": 32768,
+            "sha256": "faeecaaa34d6b8a24f1c4cf5140e267f71e8509f1c71f2cd9af836d997da5c34",
+            "gzipBytes": 176
+          },
+          {
+            "name": "style.css",
+            "mime": "text/css",
+            "bytes": 24576,
+            "sha256": "0d91d54877c2a6ea7b717d9be70983e0d26c61f51d26c8fc60a51f4829025b18",
+            "gzipBytes": 87
+          },
+          {
+            "name": "main.js",
+            "mime": "text/javascript",
+            "bytes": 81920,
+            "sha256": "5f5a4b04c1ac2d5200178499e397a975f7fb89b77029f55d76919aa890df5306",
+            "gzipBytes": 169
+          },
+          {
+            "name": "data.json",
+            "mime": "application/json",
+            "bytes": 24576,
+            "sha256": "8c6203014b0a1ed8157fc0c750fe1d869f85ae38784f3a4b2abaf3830a713082",
+            "gzipBytes": 130
+          },
+          {
+            "name": "images/0.png",
+            "mime": "image/png",
+            "bytes": 196992,
+            "sha256": "4e8eff6b29211b2a0e26f1aac1b3487276a17439e835f7ea073f65c878c63e9e",
+            "gzipBytes": 197075
+          },
+          {
+            "name": "images/1.png",
+            "mime": "image/png",
+            "bytes": 196992,
+            "sha256": "7883a112549ef2c3e8c8858668cfdba9e7d0c8f4f6ad5d614f1034cfcaa47fc6",
+            "gzipBytes": 197075
+          },
+          {
+            "name": "images/2.png",
+            "mime": "image/png",
+            "bytes": 196992,
+            "sha256": "314ffe705c4001be9af00c6cf9552b17a7fb73079dd9e5007b43b9b588e8fd54",
+            "gzipBytes": 197075
+          },
+          {
+            "name": "images/3.png",
+            "mime": "image/png",
+            "bytes": 196992,
+            "sha256": "cdf362076048480065f455b32aec6a077f9e0e914a9e4776bdcf0e525062ba3f",
+            "gzipBytes": 197075
+          }
+        ],
+        "fileCount": 8,
+        "totalBytes": 951808,
+        "maxFileBytes": 196992,
+        "independentGzipBytes": 788862,
+        "independentGzipRatio": 1.206558308043739,
+        "proposed16MiBHeadroom": 17.626681011296395,
+        "withinProposedByteAndCountCaps": true,
+        "archiveFormatTested": false,
+        "buildExecuted": false,
+        "applicationComplete": false
+      }
+    },
+    {
+      "id": "PP20-compression-counterexample",
+      "input": {
+        "bytes": 131072,
+        "syntax": "HTML followed by whitespace"
+      },
+      "output": {
+        "gzipBytes": 237,
+        "ratio": 553.0464135021097,
+        "exceedsCandidateRatio100": true,
+        "archivePolicyCompatibilityUnknown": true
+      }
+    },
+    {
+      "id": "C80-continuous",
+      "input": {
+        "lessonMinutes": [
+          40,
+          40
+        ],
+        "breakMinutes": 10,
+        "cleanupMinutes": 10,
+        "lastInteractionMinute": 40
+      },
+      "output": {
+        "activeMinutes": 80,
+        "elapsedMinutes": 90,
+        "illustrativeAbsoluteMinutes": 100,
+        "idleExpiryMinutes": {
+          "idle5": 45,
+          "idle10": 50
+        },
+        "resumeMinute": 50,
+        "idle10BoundaryNeedsExplicitRule": true,
+        "teacherReviewMinutes": null
+      }
+    },
+    {
+      "id": "C80-split",
+      "input": {
+        "lessonStarts": [
+          0,
+          50
+        ],
+        "lessonMinutes": 40,
+        "orientationMinutesPerLesson": 5,
+        "reviewMinutesPerLesson": 5,
+        "cyclesPerLesson": 3
+      },
+      "output": {
+        "illustrativeSessionAbsoluteMinutesEach": 50,
+        "illustrativeCycleBudgetSeconds": 600,
+        "budgetMustAlsoCover": [
+          "AI",
+          "editing",
+          "queue",
+          "build",
+          "retrieval",
+          "validation",
+          "binding",
+          "browser-load",
+          "recovery"
+        ],
+        "measuredBuildTimeoutSeconds": null,
+        "breakRevocationApproved": false
+      }
+    },
+    {
+      "id": "L1-s5-c1",
+      "input": {
+        "arrivals": 20,
+        "arrivalSeconds": 0,
+        "concurrency": 1,
+        "serviceSeconds": 5,
+        "discipline": "FIFO",
+        "assumptions": "identical total service, no failures, no rate limit or shared bottleneck"
+      },
+      "output": {
+        "queueP95Seconds": 90,
+        "endToEndP50Seconds": 50,
+        "endToEndP95Seconds": 95,
+        "maxSeconds": 100,
+        "simulatedErrorRate": 0,
+        "measuredErrorRate": null
+      }
+    },
+    {
+      "id": "L1-s5-c4",
+      "input": {
+        "arrivals": 20,
+        "arrivalSeconds": 0,
+        "concurrency": 4,
+        "serviceSeconds": 5,
+        "discipline": "FIFO",
+        "assumptions": "identical total service, no failures, no rate limit or shared bottleneck"
+      },
+      "output": {
+        "queueP95Seconds": 20,
+        "endToEndP50Seconds": 15,
+        "endToEndP95Seconds": 25,
+        "maxSeconds": 25,
+        "simulatedErrorRate": 0,
+        "measuredErrorRate": null
+      }
+    },
+    {
+      "id": "L1-s5-c10",
+      "input": {
+        "arrivals": 20,
+        "arrivalSeconds": 0,
+        "concurrency": 10,
+        "serviceSeconds": 5,
+        "discipline": "FIFO",
+        "assumptions": "identical total service, no failures, no rate limit or shared bottleneck"
+      },
+      "output": {
+        "queueP95Seconds": 5,
+        "endToEndP50Seconds": 5,
+        "endToEndP95Seconds": 10,
+        "maxSeconds": 10,
+        "simulatedErrorRate": 0,
+        "measuredErrorRate": null
+      }
+    },
+    {
+      "id": "L1-s5-c20",
+      "input": {
+        "arrivals": 20,
+        "arrivalSeconds": 0,
+        "concurrency": 20,
+        "serviceSeconds": 5,
+        "discipline": "FIFO",
+        "assumptions": "identical total service, no failures, no rate limit or shared bottleneck"
+      },
+      "output": {
+        "queueP95Seconds": 0,
+        "endToEndP50Seconds": 5,
+        "endToEndP95Seconds": 5,
+        "maxSeconds": 5,
+        "simulatedErrorRate": 0,
+        "measuredErrorRate": null
+      }
+    },
+    {
+      "id": "L1-s15-c1",
+      "input": {
+        "arrivals": 20,
+        "arrivalSeconds": 0,
+        "concurrency": 1,
+        "serviceSeconds": 15,
+        "discipline": "FIFO",
+        "assumptions": "identical total service, no failures, no rate limit or shared bottleneck"
+      },
+      "output": {
+        "queueP95Seconds": 270,
+        "endToEndP50Seconds": 150,
+        "endToEndP95Seconds": 285,
+        "maxSeconds": 300,
+        "simulatedErrorRate": 0,
+        "measuredErrorRate": null
+      }
+    },
+    {
+      "id": "L1-s15-c4",
+      "input": {
+        "arrivals": 20,
+        "arrivalSeconds": 0,
+        "concurrency": 4,
+        "serviceSeconds": 15,
+        "discipline": "FIFO",
+        "assumptions": "identical total service, no failures, no rate limit or shared bottleneck"
+      },
+      "output": {
+        "queueP95Seconds": 60,
+        "endToEndP50Seconds": 45,
+        "endToEndP95Seconds": 75,
+        "maxSeconds": 75,
+        "simulatedErrorRate": 0,
+        "measuredErrorRate": null
+      }
+    },
+    {
+      "id": "L1-s15-c10",
+      "input": {
+        "arrivals": 20,
+        "arrivalSeconds": 0,
+        "concurrency": 10,
+        "serviceSeconds": 15,
+        "discipline": "FIFO",
+        "assumptions": "identical total service, no failures, no rate limit or shared bottleneck"
+      },
+      "output": {
+        "queueP95Seconds": 15,
+        "endToEndP50Seconds": 15,
+        "endToEndP95Seconds": 30,
+        "maxSeconds": 30,
+        "simulatedErrorRate": 0,
+        "measuredErrorRate": null
+      }
+    },
+    {
+      "id": "L1-s15-c20",
+      "input": {
+        "arrivals": 20,
+        "arrivalSeconds": 0,
+        "concurrency": 20,
+        "serviceSeconds": 15,
+        "discipline": "FIFO",
+        "assumptions": "identical total service, no failures, no rate limit or shared bottleneck"
+      },
+      "output": {
+        "queueP95Seconds": 0,
+        "endToEndP50Seconds": 15,
+        "endToEndP95Seconds": 15,
+        "maxSeconds": 15,
+        "simulatedErrorRate": 0,
+        "measuredErrorRate": null
+      }
+    },
+    {
+      "id": "L1-s30-c1",
+      "input": {
+        "arrivals": 20,
+        "arrivalSeconds": 0,
+        "concurrency": 1,
+        "serviceSeconds": 30,
+        "discipline": "FIFO",
+        "assumptions": "identical total service, no failures, no rate limit or shared bottleneck"
+      },
+      "output": {
+        "queueP95Seconds": 540,
+        "endToEndP50Seconds": 300,
+        "endToEndP95Seconds": 570,
+        "maxSeconds": 600,
+        "simulatedErrorRate": 0,
+        "measuredErrorRate": null
+      }
+    },
+    {
+      "id": "L1-s30-c4",
+      "input": {
+        "arrivals": 20,
+        "arrivalSeconds": 0,
+        "concurrency": 4,
+        "serviceSeconds": 30,
+        "discipline": "FIFO",
+        "assumptions": "identical total service, no failures, no rate limit or shared bottleneck"
+      },
+      "output": {
+        "queueP95Seconds": 120,
+        "endToEndP50Seconds": 90,
+        "endToEndP95Seconds": 150,
+        "maxSeconds": 150,
+        "simulatedErrorRate": 0,
+        "measuredErrorRate": null
+      }
+    },
+    {
+      "id": "L1-s30-c10",
+      "input": {
+        "arrivals": 20,
+        "arrivalSeconds": 0,
+        "concurrency": 10,
+        "serviceSeconds": 30,
+        "discipline": "FIFO",
+        "assumptions": "identical total service, no failures, no rate limit or shared bottleneck"
+      },
+      "output": {
+        "queueP95Seconds": 30,
+        "endToEndP50Seconds": 30,
+        "endToEndP95Seconds": 60,
+        "maxSeconds": 60,
+        "simulatedErrorRate": 0,
+        "measuredErrorRate": null
+      }
+    },
+    {
+      "id": "L1-s30-c20",
+      "input": {
+        "arrivals": 20,
+        "arrivalSeconds": 0,
+        "concurrency": 20,
+        "serviceSeconds": 30,
+        "discipline": "FIFO",
+        "assumptions": "identical total service, no failures, no rate limit or shared bottleneck"
+      },
+      "output": {
+        "queueP95Seconds": 0,
+        "endToEndP50Seconds": 30,
+        "endToEndP95Seconds": 30,
+        "maxSeconds": 30,
+        "simulatedErrorRate": 0,
+        "measuredErrorRate": null
+      }
+    },
+    {
+      "id": "W1-B-distinct-workload",
+      "input": {
+        "works": 20,
+        "optionsPerWork": 4,
+        "logicalBytesPerRow": 256,
+        "readsPerWork": 30,
+        "writesPerWork": 5,
+        "readResponseBytes": 1024,
+        "writeResponseBytes": 256
+      },
+      "output": {
+        "logicalRows": 80,
+        "logicalBytes": 20480,
+        "requests": 700,
+        "responseBodyBytes": 640000,
+        "totalMiBFor20ABundles": 49.44793701171875,
+        "totalMiBFor20BBundles": 18.154296875,
+        "physicalDatabaseAndAuthorizationOverheadBytes": null,
+        "scope": "L1 distinct namespaces, not L3 shared-work atomicity"
+      }
+    },
+    {
+      "id": "RA1-compute-envelope",
+      "input": {
+        "elapsedHours": 48,
+        "conservativeBillableHours": 49,
+        "microUSDPerHour": 0.01344,
+        "assumedProSubscriptionUSD": 25,
+        "assumedSingleCycleComputeCreditUSD": 10
+      },
+      "output": {
+        "grossComputeUSD": 0.65856,
+        "conditionalKnownSubtotalUSD": 25,
+        "completeUpperBoundUSD": null,
+        "taxUSD": null,
+        "cleanupTailMonths": null
+      }
+    },
+    {
+      "id": "RX12-iad1-compute-envelope",
+      "input": {
+        "creations": 12,
+        "vcpus": 2,
+        "memoryGB": 4,
+        "activeSecondsEach": 600,
+        "conservativeMemoryMinutesEach": 11,
+        "cpuUSDPerHour": 0.128,
+        "memoryUSDPerGBHour": 0.0212,
+        "creationUSD": 6e-7,
+        "sourceRegion": "iad1 only; not an APAC quote"
+      },
+      "output": {
+        "grossComputeAndCreationUSD": 0.6985672,
+        "persistenceMustBeExplicitlyDisabled": true,
+        "deployingBackupMayNeedAdditionalSeat": true,
+        "completeUpperBoundUSD": null,
+        "taxUSD": null,
+        "cleanupTailMonths": null
+      }
+    }
+  ]
+}

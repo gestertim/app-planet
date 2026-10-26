@@ -1,0 +1,25 @@
+{
+  "files": [
+    {
+      "path": "index.html",
+      "kind": "file",
+      "bytes": 1200,
+      "content_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+      "media_type": "text/html"
+    },
+    {
+      "path": "assets/app.js",
+      "kind": "file",
+      "bytes": 5400,
+      "content_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+      "media_type": "text/javascript"
+    },
+    {
+      "path": "assets/style.css",
+      "kind": "file",
+      "bytes": 800,
+      "content_hash": "3333333333333333333333333333333333333333333333333333333333333333",
+      "media_type": "text/css"
+    }
+  ]
+}

@@ -1,0 +1,634 @@
+{
+  "startedAt": "2026-10-21T11:17:21.775Z",
+  "snapshotId": "snap_nuGVH6nuqJ184uWoyrsGoBIaMSAG",
+  "names": [
+    "green-medieval-wolf-zJJtxi",
+    "amber-protestant-badger-PyEsBi",
+    "aqua-bottom-boa-3Y4STb",
+    "amaranth-helpful-lobster-pmUNsZ",
+    "indigo-precious-krill-HBwXsW",
+    "lime-varying-coyote-W8jae7",
+    "orange-fixed-guanaco-d6GGzR",
+    "sapphire-wild-peacock-ofRR7B",
+    "chocolate-embarrassing-vicuna-f3aE4R",
+    "purple-sad-tarsier-UL3VzM",
+    "lavender-nice-tarantula-EY5ZQC",
+    "red-acute-swordtail-vvKdta",
+    "sapphire-powerful-chicken-R1oQzY",
+    "aquamarine-agreed-quail-z1tzGq",
+    "aqua-glamorous-bedbug-yU98QZ",
+    "scarlet-golden-newt-cjRkHt",
+    "orange-main-booby-E2dJ3D",
+    "moccasin-digital-anaconda-akuxXN",
+    "red-cooing-centipede-11Pmih",
+    "amaranth-golden-anglerfish-5mGQVX",
+    "apricot-golden-kiwi-TmAeDk",
+    "salmon-novel-earwig-ujTNJk",
+    "sapphire-managerial-bonobo-KtPC3E",
+    "gray-tragic-dove-JD3SLJ",
+    "violet-dangerous-barnacle-bY5nKu",
+    "tan-intelligent-duck-4bSMio",
+    "azure-civilian-hornet-8zVifC",
+    "blue-sweet-vulture-ira8Aq",
+    "amaranth-ministerial-cricket-heY4Tf",
+    "plum-literary-manatee-CVPHFc",
+    "blush-female-sole-HZpw32",
+    "coral-hidden-snail-C9pHeR"
+  ],
+  "errors": [],
+  "inflight": [
+    {
+      "kind": "stop",
+      "revokeCallMs": 4073,
+      "inflightEndedMs": 4073,
+      "settled": {
+        "exit": 143
+      },
+      "newCallAfter": {
+        "ok": true,
+        "exit": 0,
+        "ms": 3305
+      },
+      "statusAfterRevoke": "stopped",
+      "statusAfterNewCall": "running"
+    },
+    {
+      "kind": "stop",
+      "revokeCallMs": 2897,
+      "inflightEndedMs": 2897,
+      "settled": {
+        "exit": 143
+      },
+      "newCallAfter": {
+        "ok": true,
+        "exit": 0,
+        "ms": 2738
+      },
+      "statusAfterRevoke": "stopped",
+      "statusAfterNewCall": "running"
+    },
+    {
+      "kind": "stop",
+      "revokeCallMs": 2983,
+      "inflightEndedMs": 2983,
+      "settled": {
+        "exit": 143
+      },
+      "newCallAfter": {
+        "ok": true,
+        "exit": 0,
+        "ms": 2525
+      },
+      "statusAfterRevoke": "stopped",
+      "statusAfterNewCall": "running"
+    },
+    {
+      "kind": "stop",
+      "revokeCallMs": 2942,
+      "inflightEndedMs": 2942,
+      "settled": {
+        "exit": 143
+      },
+      "newCallAfter": {
+        "ok": true,
+        "exit": 0,
+        "ms": 2096
+      },
+      "statusAfterRevoke": "stopped",
+      "statusAfterNewCall": "running"
+    },
+    {
+      "kind": "stop",
+      "revokeCallMs": 3301,
+      "inflightEndedMs": 3301,
+      "settled": {
+        "exit": 143
+      },
+      "newCallAfter": {
+        "ok": true,
+        "exit": 0,
+        "ms": 2477
+      },
+      "statusAfterRevoke": "stopped",
+      "statusAfterNewCall": "running"
+    },
+    {
+      "kind": "stop",
+      "revokeCallMs": 2593,
+      "inflightEndedMs": 2593,
+      "settled": {
+        "exit": 143
+      },
+      "newCallAfter": {
+        "ok": true,
+        "exit": 0,
+        "ms": 2455
+      },
+      "statusAfterRevoke": "stopped",
+      "statusAfterNewCall": "running"
+    },
+    {
+      "kind": "stop",
+      "revokeCallMs": 2620,
+      "inflightEndedMs": 2620,
+      "settled": {
+        "exit": 143
+      },
+      "newCallAfter": {
+        "ok": true,
+        "exit": 0,
+        "ms": 2203
+      },
+      "statusAfterRevoke": "stopped",
+      "statusAfterNewCall": "running"
+    },
+    {
+      "kind": "stop",
+      "revokeCallMs": 3086,
+      "inflightEndedMs": 3086,
+      "settled": {
+        "exit": 143
+      },
+      "newCallAfter": {
+        "ok": true,
+        "exit": 0,
+        "ms": 2590
+      },
+      "statusAfterRevoke": "stopped",
+      "statusAfterNewCall": "running"
+    },
+    {
+      "kind": "stop",
+      "revokeCallMs": 2597,
+      "inflightEndedMs": 2597,
+      "settled": {
+        "exit": 143
+      },
+      "newCallAfter": {
+        "ok": true,
+        "exit": 0,
+        "ms": 2635
+      },
+      "statusAfterRevoke": "stopped",
+      "statusAfterNewCall": "running"
+    },
+    {
+      "kind": "stop",
+      "revokeCallMs": 3013,
+      "inflightEndedMs": 3013,
+      "settled": {
+        "exit": 143
+      },
+      "newCallAfter": {
+        "ok": true,
+        "exit": 0,
+        "ms": 2709
+      },
+      "statusAfterRevoke": "stopped",
+      "statusAfterNewCall": "running"
+    },
+    {
+      "kind": "kill",
+      "revokeCallMs": 1139,
+      "inflightEndedMs": 1906,
+      "settled": {
+        "exit": 137
+      },
+      "newCallAfter": {
+        "ok": true,
+        "exit": 0,
+        "ms": 1136
+      },
+      "sleepProcsAfterKill": "0",
+      "statusAfterRevoke": "running",
+      "statusAfterNewCall": "running"
+    },
+    {
+      "kind": "kill",
+      "revokeCallMs": 1115,
+      "inflightEndedMs": 2306,
+      "settled": {
+        "exit": 137
+      },
+      "newCallAfter": {
+        "ok": true,
+        "exit": 0,
+        "ms": 1152
+      },
+      "sleepProcsAfterKill": "0",
+      "statusAfterRevoke": "running",
+      "statusAfterNewCall": "running"
+    },
+    {
+      "kind": "kill",
+      "revokeCallMs": 1147,
+      "inflightEndedMs": 2262,
+      "settled": {
+        "exit": 137
+      },
+      "newCallAfter": {
+        "ok": true,
+        "exit": 0,
+        "ms": 741
+      },
+      "sleepProcsAfterKill": "0",
+      "statusAfterRevoke": "running",
+      "statusAfterNewCall": "running"
+    },
+    {
+      "kind": "kill",
+      "revokeCallMs": 724,
+      "inflightEndedMs": 1510,
+      "settled": {
+        "exit": 137
+      },
+      "newCallAfter": {
+        "ok": true,
+        "exit": 0,
+        "ms": 1175
+      },
+      "sleepProcsAfterKill": "0",
+      "statusAfterRevoke": "running",
+      "statusAfterNewCall": "running"
+    },
+    {
+      "kind": "kill",
+      "revokeCallMs": 1139,
+      "inflightEndedMs": 1917,
+      "settled": {
+        "exit": 137
+      },
+      "newCallAfter": {
+        "ok": true,
+        "exit": 0,
+        "ms": 737
+      },
+      "sleepProcsAfterKill": "0",
+      "statusAfterRevoke": "running",
+      "statusAfterNewCall": "running"
+    },
+    {
+      "kind": "kill",
+      "revokeCallMs": 722,
+      "inflightEndedMs": 1930,
+      "settled": {
+        "exit": 137
+      },
+      "newCallAfter": {
+        "ok": true,
+        "exit": 0,
+        "ms": 1176
+      },
+      "sleepProcsAfterKill": "0",
+      "statusAfterRevoke": "running",
+      "statusAfterNewCall": "running"
+    },
+    {
+      "kind": "kill",
+      "revokeCallMs": 789,
+      "inflightEndedMs": 1585,
+      "settled": {
+        "exit": 137
+      },
+      "newCallAfter": {
+        "ok": true,
+        "exit": 0,
+        "ms": 1153
+      },
+      "sleepProcsAfterKill": "0",
+      "statusAfterRevoke": "running",
+      "statusAfterNewCall": "running"
+    },
+    {
+      "kind": "kill",
+      "revokeCallMs": 748,
+      "inflightEndedMs": 1933,
+      "settled": {
+        "exit": 137
+      },
+      "newCallAfter": {
+        "ok": true,
+        "exit": 0,
+        "ms": 727
+      },
+      "sleepProcsAfterKill": "0",
+      "statusAfterRevoke": "running",
+      "statusAfterNewCall": "running"
+    },
+    {
+      "kind": "kill",
+      "revokeCallMs": 762,
+      "inflightEndedMs": 1547,
+      "settled": {
+        "exit": 137
+      },
+      "newCallAfter": {
+        "ok": true,
+        "exit": 0,
+        "ms": 1166
+      },
+      "sleepProcsAfterKill": "0",
+      "statusAfterRevoke": "running",
+      "statusAfterNewCall": "running"
+    },
+    {
+      "kind": "kill",
+      "revokeCallMs": 806,
+      "inflightEndedMs": 1547,
+      "settled": {
+        "exit": 137
+      },
+      "newCallAfter": {
+        "ok": true,
+        "exit": 0,
+        "ms": 785
+      },
+      "sleepProcsAfterKill": "0",
+      "statusAfterRevoke": "running",
+      "statusAfterNewCall": "running"
+    },
+    {
+      "kind": "delete",
+      "revokeCallMs": 447,
+      "inflightEndedMs": 6002,
+      "settled": {
+        "exit": 143
+      },
+      "newCallAfter": {
+        "rejected": "Status code 404 is not ok: Vercel Sandbox not found.",
+        "ms": 302
+      },
+      "statusAfterRevoke": "get-error:Status code 404 is not ok: Named sandbox 'apricot-golden-kiw",
+      "statusAfterNewCall": "get-error:Status code 404 is not ok: Named sandbox 'apricot-golden-kiw"
+    },
+    {
+      "kind": "delete",
+      "revokeCallMs": 422,
+      "inflightEndedMs": 5999,
+      "settled": {
+        "exit": 143
+      },
+      "newCallAfter": {
+        "rejected": "Status code 404 is not ok: Vercel Sandbox not found.",
+        "ms": 713
+      },
+      "statusAfterRevoke": "get-error:Status code 404 is not ok: Named sandbox 'salmon-novel-earwi",
+      "statusAfterNewCall": "get-error:Status code 404 is not ok: Named sandbox 'salmon-novel-earwi"
+    },
+    {
+      "kind": "delete",
+      "revokeCallMs": 821,
+      "inflightEndedMs": 6371,
+      "settled": {
+        "exit": 143
+      },
+      "newCallAfter": {
+        "rejected": "Status code 404 is not ok: Vercel Sandbox not found.",
+        "ms": 286
+      },
+      "statusAfterRevoke": "get-error:Status code 404 is not ok: Named sandbox 'sapphire-manageria",
+      "statusAfterNewCall": "get-error:Status code 404 is not ok: Named sandbox 'sapphire-manageria"
+    },
+    {
+      "kind": "delete",
+      "revokeCallMs": 1050,
+      "inflightEndedMs": 6225,
+      "settled": {
+        "exit": 143
+      },
+      "newCallAfter": {
+        "rejected": "Status code 404 is not ok: Vercel Sandbox not found.",
+        "ms": 706
+      },
+      "statusAfterRevoke": "get-error:Status code 404 is not ok: Named sandbox 'gray-tragic-dove-J",
+      "statusAfterNewCall": "get-error:Status code 404 is not ok: Named sandbox 'gray-tragic-dove-J"
+    },
+    {
+      "kind": "delete",
+      "revokeCallMs": 864,
+      "inflightEndedMs": 6466,
+      "settled": {
+        "exit": 143
+      },
+      "newCallAfter": {
+        "rejected": "Status code 404 is not ok: Vercel Sandbox not found.",
+        "ms": 321
+      },
+      "statusAfterRevoke": "get-error:Status code 404 is not ok: Named sandbox 'violet-dangerous-b",
+      "statusAfterNewCall": "get-error:Status code 404 is not ok: Named sandbox 'violet-dangerous-b"
+    },
+    {
+      "kind": "delete",
+      "revokeCallMs": 815,
+      "inflightEndedMs": 6371,
+      "settled": {
+        "exit": 143
+      },
+      "newCallAfter": {
+        "rejected": "Status code 404 is not ok: Vercel Sandbox not found.",
+        "ms": 317
+      },
+      "statusAfterRevoke": "get-error:Status code 404 is not ok: Named sandbox 'tan-intelligent-du",
+      "statusAfterNewCall": "get-error:Status code 404 is not ok: Named sandbox 'tan-intelligent-du"
+    },
+    {
+      "kind": "delete",
+      "revokeCallMs": 415,
+      "inflightEndedMs": 5827,
+      "settled": {
+        "exit": 143
+      },
+      "newCallAfter": {
+        "rejected": "Status code 404 is not ok: Vercel Sandbox not found.",
+        "ms": 323
+      },
+      "statusAfterRevoke": "get-error:Status code 404 is not ok: Named sandbox 'azure-civilian-hor",
+      "statusAfterNewCall": "get-error:Status code 404 is not ok: Named sandbox 'azure-civilian-hor"
+    },
+    {
+      "kind": "delete",
+      "revokeCallMs": 798,
+      "inflightEndedMs": 6219,
+      "settled": {
+        "exit": 143
+      },
+      "newCallAfter": {
+        "rejected": "Status code 404 is not ok: Vercel Sandbox not found.",
+        "ms": 694
+      },
+      "statusAfterRevoke": "get-error:Status code 404 is not ok: Named sandbox 'blue-sweet-vulture",
+      "statusAfterNewCall": "get-error:Status code 404 is not ok: Named sandbox 'blue-sweet-vulture"
+    },
+    {
+      "kind": "delete",
+      "revokeCallMs": 698,
+      "inflightEndedMs": 5866,
+      "settled": {
+        "exit": 143
+      },
+      "newCallAfter": {
+        "rejected": "Status code 404 is not ok: Vercel Sandbox not found.",
+        "ms": 316
+      },
+      "statusAfterRevoke": "get-error:Status code 404 is not ok: Named sandbox 'amaranth-ministeri",
+      "statusAfterNewCall": "get-error:Status code 404 is not ok: Named sandbox 'amaranth-ministeri"
+    },
+    {
+      "kind": "delete",
+      "revokeCallMs": 429,
+      "inflightEndedMs": 5985,
+      "settled": {
+        "exit": 143
+      },
+      "newCallAfter": {
+        "rejected": "Status code 404 is not ok: Vercel Sandbox not found.",
+        "ms": 307
+      },
+      "statusAfterRevoke": "get-error:Status code 404 is not ok: Named sandbox 'plum-literary-mana",
+      "statusAfterNewCall": "get-error:Status code 404 is not ok: Named sandbox 'plum-literary-mana"
+    }
+  ],
+  "inflightSummary": {
+    "stop": {
+      "n": 10,
+      "revokeCall": {
+        "n": 10,
+        "min": 2593,
+        "p50": 2942,
+        "p95": 4073,
+        "max": 4073,
+        "mean": 3011
+      },
+      "inflightEnded": {
+        "n": 10,
+        "min": 2593,
+        "p50": 2942,
+        "p95": 4073,
+        "max": 4073,
+        "mean": 3011
+      },
+      "settled": [
+        "{\"exit\":143}"
+      ],
+      "newCallAfter": {
+        "ok": 10
+      },
+      "statusAfterRevoke": [
+        "stopped"
+      ],
+      "statusAfterNewCall": [
+        "running"
+      ]
+    },
+    "kill": {
+      "n": 10,
+      "revokeCall": {
+        "n": 10,
+        "min": 722,
+        "p50": 789,
+        "p95": 1147,
+        "max": 1147,
+        "mean": 909
+      },
+      "inflightEnded": {
+        "n": 10,
+        "min": 1510,
+        "p50": 1906,
+        "p95": 2306,
+        "max": 2306,
+        "mean": 1844
+      },
+      "settled": [
+        "{\"exit\":137}"
+      ],
+      "newCallAfter": {
+        "ok": 10
+      },
+      "statusAfterRevoke": [
+        "running"
+      ],
+      "statusAfterNewCall": [
+        "running"
+      ]
+    },
+    "delete": {
+      "n": 10,
+      "revokeCall": {
+        "n": 10,
+        "min": 415,
+        "p50": 698,
+        "p95": 1050,
+        "max": 1050,
+        "mean": 676
+      },
+      "inflightEnded": {
+        "n": 10,
+        "min": 5827,
+        "p50": 6002,
+        "p95": 6466,
+        "max": 6466,
+        "mean": 6133
+      },
+      "settled": [
+        "{\"exit\":143}"
+      ],
+      "newCallAfter": {
+        "rejected": 10
+      },
+      "statusAfterRevoke": [
+        "get-error:Status code 404 is not ok: Named sandbox 'apricot-golden-kiw",
+        "get-error:Status code 404 is not ok: Named sandbox 'salmon-novel-earwi",
+        "get-error:Status code 404 is not ok: Named sandbox 'sapphire-manageria",
+        "get-error:Status code 404 is not ok: Named sandbox 'gray-tragic-dove-J",
+        "get-error:Status code 404 is not ok: Named sandbox 'violet-dangerous-b",
+        "get-error:Status code 404 is not ok: Named sandbox 'tan-intelligent-du",
+        "get-error:Status code 404 is not ok: Named sandbox 'azure-civilian-hor",
+        "get-error:Status code 404 is not ok: Named sandbox 'blue-sweet-vulture",
+        "get-error:Status code 404 is not ok: Named sandbox 'amaranth-ministeri",
+        "get-error:Status code 404 is not ok: Named sandbox 'plum-literary-mana"
+      ],
+      "statusAfterNewCall": [
+        "get-error:Status code 404 is not ok: Named sandbox 'apricot-golden-kiw",
+        "get-error:Status code 404 is not ok: Named sandbox 'salmon-novel-earwi",
+        "get-error:Status code 404 is not ok: Named sandbox 'sapphire-manageria",
+        "get-error:Status code 404 is not ok: Named sandbox 'gray-tragic-dove-J",
+        "get-error:Status code 404 is not ok: Named sandbox 'violet-dangerous-b",
+        "get-error:Status code 404 is not ok: Named sandbox 'tan-intelligent-du",
+        "get-error:Status code 404 is not ok: Named sandbox 'azure-civilian-hor",
+        "get-error:Status code 404 is not ok: Named sandbox 'blue-sweet-vulture",
+        "get-error:Status code 404 is not ok: Named sandbox 'amaranth-ministeri",
+        "get-error:Status code 404 is not ok: Named sandbox 'plum-literary-mana"
+      ]
+    }
+  },
+  "limits": {
+    "egress": {
+      "example": "http=000 exit=6",
+      "cloudflareIp": "http=000 exit=28",
+      "imds": "http=000 exit=7",
+      "vercelApi": "http=000 exit=6",
+      "npmRegistry": "http=000 exit=6",
+      "openai": "http=000 exit=6"
+    },
+    "resources": "1 Mem: 2287 182 2130 0 98 2104 /dev/vdb 64G 3.5G 61G 6% /",
+    "memoryHog": "exit=137 bash: line 1: 667 Killed node -e \"const a=[];try{for(let i=0;i<64;i++){a.push(Buffer.alloc(100*1024*1024,1));}console.log('allocated MB',a.length*100)}catch(e){console.log('JS error',e.message)}\"",
+    "abort": {
+      "result": "aborted: AbortError",
+      "ms": 2002
+    },
+    "sleepAfterAbort": "1",
+    "sandboxTimeout": {
+      "configuredMs": 15000,
+      "observedStopMsFromCreateStart": 17774
+    }
+  },
+  "apiCalls": {
+    "total": 271,
+    "byStatus": {
+      "200": 221,
+      "404": 40,
+      "410": 10
+    }
+  },
+  "finishedAt": "2026-10-21T11:22:56.634Z"
+}

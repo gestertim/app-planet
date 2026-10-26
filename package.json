@@ -1,0 +1,39 @@
+{
+  "name": "app-planet-local-foundation",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "workspaces": [
+    "apps/web",
+    "apps/worker",
+    "apps/works-edge",
+    "packages/core"
+  ],
+  "scripts": {
+    "dev": "npm --workspace @app-planet/web run dev --",
+    "build": "npm --workspace @app-planet/web run build",
+    "verify:workspaces": "node scripts/verify-workspace-compat.ts",
+    "typecheck": "npm run typecheck:workspaces && npm run typecheck:tests",
+    "typecheck:workspaces": "npm --workspace @app-planet/core run typecheck && npm --workspace @app-planet/worker run typecheck && npm --workspace @app-planet/works-edge run typecheck && npm --workspace @app-planet/web run typecheck",
+    "typecheck:tests": "tsc --noEmit -p tests/tsconfig.json",
+    "test": "vitest run",
+    "test:unit": "vitest run --project unit",
+    "test:contract": "vitest run --project contract",
+    "test:e2e": "playwright test",
+    "test:e2e:edge": "node scripts/edge-smoke.mjs",
+    "test:db": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pgtap-local.ps1",
+    "test:authorization:db": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pgtap-local.ps1 -Scenario Authorization",
+    "test:projects:db": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pgtap-local.ps1 -Scenario Projects",
+    "test:usage:db": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pgtap-local.ps1 -Scenario Usage"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.15.5",
+    "pg": "^8.16.3",
+    "typescript": "^7.0.2",
+    "vitest": "^4.0.0"
+  }
+}

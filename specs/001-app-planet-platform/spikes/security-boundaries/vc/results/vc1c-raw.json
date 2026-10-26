@@ -1,0 +1,4 @@
+{
+  "out": "GET / 404\nGET /health 404\nGET /healthz 404\nGET /ports 404\nGET /routes 404\nGET /api/routes 404\nGET /v1/routes 404\nGET /v1/ports 404\nGET /metrics 404\nGET /debug/pprof/ 404\nGET /expose 404\nGET /domain 404\nGET /info 404\nGET /status 404\nPOST / 404\nPOST /health 404\nPOST /healthz 404\nPOST /ports 404\nPOST /routes 404\nPOST /api/routes 404\nPOST /v1/routes 404\nPOST /v1/ports 404\nPOST /metrics 404\nPOST /debug/pprof/ 404\nPOST /expose 404\nPOST /domain 404\nPOST /info 404\nPOST /status 404\nPUT / 404\nPUT /health 404\nPUT /healthz 404\nPUT /ports 404\nPUT /routes 404\nPUT /api/routes 404\nPUT /v1/routes 404\nPUT /v1/ports 404\nPUT /metrics 404\nPUT /debug/pprof/ 404\nPUT /expose 404\nPUT /domain 404\nPUT /info 404\nPUT /status 404\n",
+  "routesAfter": []
+}

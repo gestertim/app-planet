@@ -1,0 +1,16 @@
+{
+  "name": "@app-planet/worker",
+  "version": "0.0.0",
+  "description": "Gate 前本機骨架：僅含 T012 白名單日誌；Worker 服務、租約與 job runner 尚未實作（T010）。",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@app-planet/core": "*"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "app-planet-security-boundaries-spike",
+  "private": true,
+  "version": "0.0.0",
+  "description": "一次性安全邊界 Spike（合成資料；非產品程式；無第三方依賴）",
+  "scripts": {
+    "test": "node --test a/a.test.js b/b.test.js",
+    "browser-server": "node a/browser-server.js"
+  }
+}

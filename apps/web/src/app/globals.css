@@ -1,0 +1,491 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  --ink: #14213d;
+  --muted: #58677f;
+  --surface: #ffffff;
+  --canvas: #f3f7fc;
+  --line: #d9e3ef;
+  --blue: #2457d6;
+  --blue-soft: #eaf0ff;
+  --amber: #805000;
+  --amber-soft: #fff4d6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: Arial, "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+}
+
+a {
+  color: inherit;
+}
+
+.page-shell {
+  min-height: 100vh;
+}
+
+.topbar {
+  align-items: center;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 1rem max(1.25rem, calc((100vw - 1120px) / 2));
+}
+
+.brand {
+  color: var(--ink);
+  font-size: 1.15rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.brand span {
+  color: var(--blue);
+}
+
+.preview-tag,
+.eyebrow {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.preview-tag {
+  background: var(--blue-soft);
+  border-radius: 999px;
+  padding: 0.45rem 0.75rem;
+}
+
+.main {
+  margin: 0 auto;
+  max-width: 1120px;
+  padding: 2rem 1.25rem 4rem;
+}
+
+.hero {
+  margin: 1rem 0 2rem;
+  max-width: 760px;
+}
+
+.hero h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  letter-spacing: -0.04em;
+  line-height: 1.08;
+  margin: 0.6rem 0 1rem;
+}
+
+.hero p,
+.muted {
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  box-shadow: 0 8px 24px rgb(20 33 61 / 5%);
+  padding: 1.25rem;
+}
+
+.card h2,
+.card h3 {
+  margin: 0 0 0.65rem;
+}
+
+.role-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 190px;
+}
+
+.button-link,
+.nav-link {
+  border-radius: 0.65rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.button-link {
+  align-items: center;
+  background: var(--blue);
+  color: white;
+  display: inline-flex;
+  justify-content: center;
+  margin-top: auto;
+  min-height: 2.75rem;
+  padding: 0.65rem 1rem;
+}
+
+.button-link:hover {
+  background: #1947ba;
+}
+
+.navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 1.5rem;
+}
+
+.nav-link {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  padding: 0.55rem 0.8rem;
+}
+
+.nav-link:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+.notice {
+  background: var(--amber-soft);
+  border: 1px solid #f0d28a;
+  border-radius: 0.85rem;
+  color: var(--amber);
+  line-height: 1.65;
+  margin: 1rem 0 1.5rem;
+  padding: 1rem 1.1rem;
+}
+
+.notice strong {
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.status {
+  align-items: center;
+  background: #f1f4f8;
+  border-radius: 0.55rem;
+  color: #34445b;
+  display: inline-flex;
+  font-size: 0.9rem;
+  font-weight: 700;
+  min-height: 2rem;
+  padding: 0.35rem 0.65rem;
+}
+
+.action-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.closed-action {
+  background: #eef1f5;
+  border: 1px solid #d7dee8;
+  border-radius: 0.65rem;
+  color: #657186;
+  cursor: not-allowed;
+  min-height: 2.6rem;
+  padding: 0.6rem 0.85rem;
+}
+
+.closed-action:disabled {
+  opacity: 1;
+}
+
+.sample-label {
+  color: var(--blue);
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.list-row {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+  padding: 0.9rem 0;
+}
+
+.list-row:first-of-type {
+  border-top: 0;
+}
+
+.workspace-preview {
+  display: grid;
+  gap: 1rem;
+}
+
+.workspace-preview-heading {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.workspace-preview-heading .muted {
+  margin-bottom: 0;
+}
+
+.workspace-scenario-picker {
+  display: grid;
+  font-weight: 700;
+  gap: 0.4rem;
+  min-width: min(100%, 20rem);
+}
+
+.workspace-scenario-picker select {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 0.65rem;
+  color: var(--ink);
+  font: inherit;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.75rem;
+}
+
+.workspace-shared {
+  align-items: start;
+}
+
+.workspace-shared h3 {
+  margin: 1.25rem 0 0.4rem;
+}
+
+.workspace-shared .status {
+  margin: 0.35rem 0;
+}
+
+.workspace-drafts {
+  margin-top: 0;
+}
+
+.workspace-draft-list {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
+}
+
+.workspace-draft {
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+  min-width: 0;
+  padding: 0.9rem;
+}
+
+.workspace-draft-heading {
+  align-items: start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.workspace-draft-heading h3 {
+  margin: 0;
+}
+
+.workspace-draft .muted {
+  font-size: 0.9rem;
+  margin: 0.6rem 0;
+}
+
+.workspace-draft-text {
+  background: #f7f9fc;
+  border-radius: 0.55rem;
+  font: inherit;
+  line-height: 1.6;
+  margin: 0;
+  overflow-wrap: anywhere;
+  padding: 0.7rem;
+  white-space: pre-wrap;
+}
+
+.workspace-tabs {
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.workspace-tab {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-bottom: 3px solid transparent;
+  border-radius: 0.65rem 0.65rem 0 0;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  min-height: 2.75rem;
+  padding: 0.6rem 0.9rem;
+}
+
+.workspace-tab[aria-selected="true"] {
+  background: var(--blue-soft);
+  border-bottom-color: var(--blue);
+  color: var(--blue);
+}
+
+.workspace-tab:focus-visible,
+.workspace-tab-panel:focus-visible,
+.workspace-scenario-picker select:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.workspace-tab-panel,
+.workspace-actions,
+.workspace-result-message {
+  margin-top: 0;
+}
+
+.workspace-tab-panel h2,
+.workspace-actions h2,
+.workspace-result-message h2 {
+  margin-bottom: 0.5rem;
+}
+
+.workspace-tab-panel p,
+.workspace-result-message p {
+  line-height: 1.65;
+}
+
+.save-simulation {
+  display: grid;
+  gap: 1rem;
+}
+
+.save-simulation-warning {
+  background: var(--amber-soft);
+  border-color: #f0d28a;
+  color: var(--amber);
+  line-height: 1.65;
+}
+
+.save-simulation-warning p {
+  margin-bottom: 0;
+}
+
+.save-simulation-editor {
+  display: grid;
+  gap: 1rem;
+}
+
+.save-simulation-toolbar {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.save-simulation-toolbar label {
+  display: grid;
+  font-weight: 700;
+  gap: 0.4rem;
+  min-width: min(100%, 22rem);
+}
+
+.save-simulation-toolbar select,
+.save-simulation-editor textarea {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 0.65rem;
+  color: var(--ink);
+  font: inherit;
+  padding: 0.65rem 0.8rem;
+  width: 100%;
+}
+
+.save-simulation-editor textarea {
+  line-height: 1.6;
+  resize: vertical;
+  white-space: pre-wrap;
+}
+
+.save-simulation-toolbar select:focus-visible,
+.save-simulation-editor textarea:focus-visible,
+.save-switch-prompt button:focus-visible,
+.save-conflict-controls button:focus-visible,
+.save-simulation button:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.save-status-dirty {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.save-operation-status,
+.save-simulation-notice {
+  background: #f1f4f8;
+  border-radius: 0.65rem;
+  line-height: 1.6;
+  margin: 0;
+  padding: 0.8rem 1rem;
+}
+
+.save-switch-prompt,
+.save-conflict-controls {
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  padding: 0.9rem;
+}
+
+.save-switch-prompt p,
+.save-conflict-controls p,
+.save-simulation-pending p {
+  line-height: 1.65;
+  margin-top: 0;
+}
+
+.save-simulation button {
+  background: var(--blue);
+  border: 1px solid var(--blue);
+  border-radius: 0.65rem;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  min-height: 2.7rem;
+  padding: 0.55rem 0.85rem;
+}
+
+.save-simulation button:disabled {
+  background: #eef1f5;
+  border-color: #d7dee8;
+  color: #657186;
+  cursor: not-allowed;
+}
+
+.save-simulation-pending {
+  border-color: var(--blue);
+}
+
+.footer-note {
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin-top: 2rem;
+  padding-top: 1rem;
+}

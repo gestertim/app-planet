@@ -1,0 +1,60 @@
+{
+  "project1": "vc-sandbox-test",
+  "project2": "vc-sandbox-test-2",
+  "sameTeam": true,
+  "checks": [
+    {
+      "name": "P2 token: Sandbox.get(P1 named sandbox)",
+      "allowed": false,
+      "status": 404,
+      "error": "Status code 404 is not ok: Named sandbox 'vc3-resume-mvi08z8i' not found for this project."
+    },
+    {
+      "name": "P2 token + P1 projectId override: Sandbox.get",
+      "allowed": false,
+      "status": 404,
+      "error": "Status code 404 is not ok: Could not find project: prj_ZGkxJPSyLqyuWvgZgV2TviiW611Y"
+    },
+    {
+      "name": "P2 token: create sandbox from P1 snapshot",
+      "allowed": false,
+      "status": 402,
+      "error": "Status code 402 is not ok: Pro trial plan usage limit exceeded for Snapshots Storage. Limit will be reset on 2026-11-01T00:00:00.000Z. Please upgrade to a Pro p"
+    },
+    {
+      "name": "P2 token: Snapshot.get(P1 snapshot)",
+      "allowed": false,
+      "status": 404,
+      "error": "Status code 404 is not ok: Vercel Sandbox not found."
+    },
+    {
+      "name": "P2 token: list sandboxes (should not include P1 names)",
+      "allowed": true,
+      "result": {
+        "count": 0,
+        "includesP1Resume": false
+      }
+    },
+    {
+      "name": "P1 token (positive control): Sandbox.get(P1 named sandbox)",
+      "allowed": false,
+      "status": 404,
+      "error": "Status code 404 is not ok: Could not find project: prj_ZGkxJPSyLqyuWvgZgV2TviiW611Y"
+    },
+    {
+      "name": "P2 token REST GET P1 sandbox",
+      "status": 404,
+      "body": "{\"error\":{\"code\":\"not_found\",\"message\":\"Named sandbox 'vc3-resume-mvi08z8i' not found for this project.\"}}"
+    },
+    {
+      "name": "P2 token REST GET P1 sandbox + projectId=P1",
+      "status": 404,
+      "body": "{\"error\":{\"code\":\"not_found\",\"message\":\"Could not find project: prj_ZGkxJPSyLqyuWvgZgV2TviiW611Y\"}}"
+    },
+    {
+      "name": "P2 token REST GET without teamId",
+      "status": 404,
+      "body": "{\"error\":{\"code\":\"not_found\",\"message\":\"Named sandbox 'vc3-resume-mvi08z8i' not found for this project.\"}}"
+    }
+  ]
+}
