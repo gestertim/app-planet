@@ -23,6 +23,10 @@
     "test:contract": "vitest run --project contract",
     "test:e2e": "playwright test",
     "test:e2e:edge": "node scripts/edge-smoke.mjs",
+    "test:auth:local": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-auth-local.ps1",
+    "test:auth:integration": "vitest run --config vitest.auth.config.ts",
+    "test:e2e:auth": "playwright test --config playwright.auth.config.ts",
+    "test:foundations": "node scripts/test-foundations.mjs",
     "test:db": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pgtap-local.ps1",
     "test:authorization:db": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pgtap-local.ps1 -Scenario Authorization",
     "test:projects:db": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pgtap-local.ps1 -Scenario Projects",
@@ -34,6 +38,7 @@
     "@types/pg": "^8.15.5",
     "pg": "^8.16.3",
     "typescript": "^7.0.2",
+    "vite": "^8.3.5",
     "vitest": "^4.0.0"
   }
 }

@@ -16,12 +16,19 @@ $script:MigrationFiles = @(
   (Join-Path $script:RepoRoot 'supabase\migrations\0009_projects_stages.sql'),
   (Join-Path $script:RepoRoot 'supabase\migrations\0010_projects_unclassified_create.sql'),
   (Join-Path $script:RepoRoot 'supabase\migrations\0011_project_requirements_classification.sql'),
-  (Join-Path $script:RepoRoot 'supabase\migrations\0012_stage_drafts.sql')
+  (Join-Path $script:RepoRoot 'supabase\migrations\0012_stage_drafts.sql'),
+  (Join-Path $script:RepoRoot 'supabase\migrations\0020_job_status_snapshot.sql'),
+  (Join-Path $script:RepoRoot 'supabase\migrations\0021_usage_account_row_lock_privileges.sql')
 )
 if ($UsageUpgrade) {
   if ($Scenario -ne 'Usage') { throw 'UsageUpgrade 只適用 Usage scenario。' }
   $usageMigration = Join-Path $script:RepoRoot 'supabase\migrations\0003_usage_jobs.sql'
-  $script:MigrationFiles = @($script:MigrationFiles | Where-Object { $_ -ne $usageMigration }) + @($usageMigration)
+  $jobStatusMigration = Join-Path $script:RepoRoot 'supabase\migrations\0020_job_status_snapshot.sql'
+  $usageLockMigration = Join-Path $script:RepoRoot 'supabase\migrations\0021_usage_account_row_lock_privileges.sql'
+  # 0020 依賴 0003 的 jobs 表；0021 的鎖定權限也排在 usage schema 建立之後。
+  $script:MigrationFiles = @($script:MigrationFiles | Where-Object {
+      $_ -ne $usageMigration -and $_ -ne $jobStatusMigration -and $_ -ne $usageLockMigration
+    }) + @($usageMigration, $jobStatusMigration, $usageLockMigration)
 }
 $script:ProjectLegacyMigrationFile =
   Join-Path $script:RepoRoot 'supabase\migrations\0010_projects_unclassified_create.sql'
@@ -121,7 +128,27 @@ if ($Scenario -eq 'Usage') {
     'apps\worker\src\jobs\runner.ts',
     'apps\worker\src\jobs\checkpoint.ts',
     'tests\integration\usage-worker.test.ts',
-    'vitest.usage.config.ts'
+    'vitest.usage.config.ts',
+    'apps\web\src\server\http.ts',
+    'apps\web\src\server\idempotency.ts',
+    'apps\web\src\server\jobs.ts',
+    'tests\integration\http-harness.ts',
+    'tests\integration\http-foundation.test.ts',
+    'vitest.foundation.config.ts',
+    'apps\web\package.json',
+    'apps\web\src\components\app-shell.tsx',
+    'apps\web\src\components\operation-state.tsx',
+    'apps\web\src\components\operation-presentation.ts',
+    'apps\web\src\components\stage-draft-save-simulation.tsx',
+    'apps\web\src\components\project\save-controller.ts',
+    'apps\web\src\components\project\http-save-adapter.ts',
+    'apps\web\src\components\project\stage-draft-editor.tsx',
+    'apps\web\src\server\foundation-handlers.ts',
+    'tests\e2e\foundation-save-host.tsx',
+    'tests\e2e\shell.spec.ts',
+    'tests\unit\http-save-adapter.test.ts',
+    'tests\unit\operation-presentation.test.ts',
+    'scripts\test-foundations.mjs'
   ) | ForEach-Object { Join-Path $script:RepoRoot $_ }
 }
 
@@ -1235,6 +1262,17 @@ GRANT app_usage_executor, app_job_executor TO app_usage_test WITH ADMIN FALSE, I
           command_id = $usage.CommandId
         })
         Assert-CommandSuccess -Result $usage
+        $foundation = Invoke-Captured -Name 'application-http-foundation-integration' -FilePath 'node' -Arguments @(
+          (Join-Path $script:RepoRoot 'node_modules\vitest\vitest.mjs'),
+          'run', '--config', (Join-Path $script:RepoRoot 'vitest.foundation.config.ts')
+        )
+        $script:TestResults.Add([ordered]@{
+          file = 'tests/integration/http-foundation.test.ts'
+          result = $(if ($foundation.ExitCode -eq 0) { 'passed' } else { 'failed' })
+          exit_code = $foundation.ExitCode
+          command_id = $foundation.CommandId
+        })
+        Assert-CommandSuccess -Result $foundation
       }
       finally {
         $usageDrop = Invoke-DbSql -Name 'usage-actor-drop' -Role 'supabase_admin' -Sql 'DROP ROLE app_usage_test;' -PsqlOptions @('-q')

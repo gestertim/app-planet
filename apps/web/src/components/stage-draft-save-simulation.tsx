@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AppShell } from "./app-shell";
+import { OperationStatusBanner } from "./operation-state";
+import { presentSaveState, type SaveSignal } from "./operation-presentation";
 import {
   StageDraftSaveController,
   type StageDraftSaveAdapter,
@@ -99,37 +101,17 @@ function makeSimulationResponse(
   };
 }
 
-function operationMessage(state: ReturnType<StageDraftSaveController["getState"]>): string {
-  switch (state.operation.status) {
-    case "idle":
-      return "目前沒有保存操作。";
-    case "saving":
-      return "模擬保存中；你仍可繼續編輯，已送出的快照不會改變。";
-    case "saved":
-      return `模擬保存成功：此操作確認版本 ${state.operation.receipt.row_version}。`;
-    case "replayed":
-      return `模擬重播 receipt 版本 ${state.operation.receipt.row_version}；` +
-        (state.operation.currentDraft
-          ? `current 版本 ${state.operation.currentDraft.row_version}。`
-          : "未取得可用 current，不以 receipt 當成目前草稿。");
-    case "conflict":
-      return `模擬版本衝突：伺服器 current 版本 ${state.operation.conflict.current.version ?? "無草稿"}，` +
-        `本次 submitted 版本 ${state.operation.conflict.submitted.version ?? "首次保存"}；本地文字仍保留。`;
-    case "failed":
-      if (state.operation.reason === "outcome_unknown") {
-        return "模擬保存結果尚不確定；保留原操作，可用同一快照與操作鍵明確重試。";
-      }
-      return "模擬保存失敗；本地編輯保留，沒有顯示為已保存。";
-  }
-}
-
 export function StageDraftSaveSimulation() {
   const [pending, setPending] = useState<PendingSimulation | null>(null);
   const [requestedTarget, setRequestedTarget] = useState<StageDraftTarget | null>(null);
   const [notice, setNotice] = useState("");
+  const [offline, setOffline] = useState(false);
+  const [signal, setSignal] = useState<SaveSignal>("none");
+  const offlineRef = useRef(false);
   const switchDecisionSequence = useRef(0);
   const adapter: StageDraftSaveAdapter = {
     save(request) {
+      if (offlineRef.current) return Promise.reject(new Error("offline"));
       return new Promise((resolve) => setPending({ request, resolve }));
     },
   };
@@ -173,14 +155,27 @@ export function StageDraftSaveSimulation() {
     }
   }
 
-  function completeSimulation(mode: "saved" | "failed" | "conflict" | "replayed") {
+  function completeSimulation(mode: "saved" | "failed" | "conflict" | "replayed" | "expired") {
     if (!pending) return;
-    pending.resolve(makeSimulationResponse(pending.request, mode));
+    if (mode === "expired") {
+      setSignal("session_expired");
+      pending.resolve({
+        target: { project_id: pending.request.project_id, stage: pending.request.stage },
+        result: { outcome: "denied", reason: "policy_denied" },
+      });
+    } else {
+      setSignal(mode === "failed" ? "dependency_unavailable" : "none");
+      pending.resolve(makeSimulationResponse(pending.request, mode));
+    }
     setPending(null);
   }
 
   const activeValue = `${state.target.project_id}:${state.target.stage}`;
   const operation = state.operation;
+  const presentation = presentSaveState({
+    operation, dirty: state.dirty, connectivity: offline ? "offline" : "online",
+    signal, hasTrustedPrincipal: true,
+  });
   const retryable = operation.status === "failed" && operation.retryable;
   const hasConflict = operation.status === "conflict";
 
@@ -260,9 +255,15 @@ export function StageDraftSaveSimulation() {
               </button>
             )}
           </div>
-          <p className="save-operation-status" role="status" aria-live="polite">
-            {operationMessage(state)}
-          </p>
+          <label className="save-offline-toggle">
+            <input
+              checked={offline}
+              onChange={(event) => { offlineRef.current = event.currentTarget.checked; setOffline(event.currentTarget.checked); }}
+              type="checkbox"
+            />
+            模擬離線（保存會因連線失敗而結果未確認）
+          </label>
+          <OperationStatusBanner presentation={presentation} />
 
           {hasConflict && (
             <div className="save-conflict-controls" aria-label="處理模擬版本衝突">
@@ -292,6 +293,7 @@ export function StageDraftSaveSimulation() {
               <button type="button" onClick={() => completeSimulation("failed")}>模擬保存失敗／結果不確定</button>
               <button type="button" onClick={() => completeSimulation("conflict")}>模擬保存衝突</button>
               <button type="button" onClick={() => completeSimulation("replayed")}>模擬重播 receipt／current</button>
+              <button type="button" onClick={() => completeSimulation("expired")}>模擬登入失效</button>
             </div>
           </section>
         )}

@@ -4180,3 +4180,146 @@ G0、治理 Checkpoint／完整 MVP Readiness Gate 未通過；正式審議／�
 **下一個可直接執行的基礎實作批次**（依真實依賴調整）：T009（`0003_usage_jobs.sql`＋`usage/ledger.ts`：原子預留／結算／釋放／unknown 與 jobs 交易骨架，依賴 T007 已有本機基礎，Q-BUDGET 以明確輸入／缺值拒絕處理）→ T010（Worker runner／checkpoint，依 T008、T009）→ T011（`http.ts`／`idempotency.ts`，依 T006、T008、T009）→ T014（依 T011）→ T015 完整回歸。T008 仍需 Q-SCHOOL 才能結案。注意：現有 migration 0010～0012 與 tasks 規劃的 T060／T068／T072 編號重疊，本批未新增 migration、未重新編號，須在 T060 前另行處理。
 
 **保護核對**：以修改前 219 檔逐檔 bytes／SHA-256 比對，無刪除；新增 24 檔、修改 14 檔（`.gitignore`、`package.json`、`package-lock.json`、`vitest.config.ts`、`apps/web/package.json`、`packages/core/{index.ts,package.json,contracts/common.ts,policy/logging.ts}`、`tests/tsconfig.json`、`supabase/tests/identity_audit.test.sql`、tasks／readiness／roadmap 三份文件；`apps/web/next-env.d.ts` 經 dev／build 重新產生後已用 build 還原為與修改前相同雜湊）。migration 0001～0012、`pgtap-local.ps1`、`apps/web/src/**`、正式契約（spec／plan／data-model／quickstart／contracts／decision-register）、`spikes/` 既有研究來源與 `.specify`／`.github` 均與基線相同；專案根未追蹤的 `0`、`1` 保留。G0、Checkpoint／完整 Gate 未通過，正式審議／簽核未執行，真實產品功能仍關閉；本節不是常設許可，完成後停止，未 commit／push／部署。
+
+## 77. 2026-10-26 T011／T014／T015 有界本機基礎批次（教育者本 session 授權；先登錄）
+
+**授權範圍**：基準 `3c0869e`、工作分支 `work/t011-t015-local-foundation`。僅限 T011（HTTP／冪等／If-Match 接線）、T014（操作狀態介面）、T015（基礎整合回歸）的必要程式、測試、migration、配置與最小文件同步；隔離本機 PostgreSQL／Docker、本機 HTTP 與 Edge 測試、合成資料。不接真 Auth／AI／郵件／遠端資源，不使用真實學生資料，不 commit／push／部署。D-06 (a)／M1／R-a／D-32 已批准不重送；D-03 α 與「重新審查」差異仍待決，未視為已批准；D-04 (b)／D-05 (a) 只依實際批准範圍；A-9 本批不實作。Checkpoint／完整 Gate 未通過，正式審議／簽核未執行；本節不是常設許可。
+
+**§77.1 實作**：
+- T011：新增 `apps/web/src/server/{http,idempotency,jobs}.ts`（固定錯誤碼註冊表＋繁中下一步、problem+json／request_id／`no-store`、409 衝突欄位白名單、202＋Location、Job 快照、白名單日誌、關閉中的 `closedPrincipalResolver`、冪等鍵／意圖指紋／D-32 `secret_receipt_only` 重播政策、`runGuarded` 不確定結果）；冪等與並行仍由既有 DB 函式（`save_stage_draft`、`usage_reserve` 的 UNIQUE 鍵與同交易重驗）保證，未新增程序記憶體狀態、TTL 或 journal。`0020_job_status_snapshot.sql` 補 `app.jobs` 的 `created_at／started_at／updated_at` 與 owner-only `app.job_status`（0004～0019 為 tasks.md 規劃占用編號，不複用）。`tests/integration/http-harness.ts` 為獨立測試專用 HTTP harness，測試身分只在此檔；`apps/web/src` 不含測試身分入口（有來源掃描測試）。
+- T014：`operation-presentation.ts`（純函式：closed／未修改／未保存／保存中／已保存／版本衝突／離線／拒絕／依賴失敗／結果待確認／202 已接受）、`OperationStatusBanner`、`project/http-save-adapter.ts`（只送 Idempotency-Key／If-Match／內容，不送自報身分；首次建立無已核定 HTTP 契約故不送出）、`AppShell` 改為由 `capabilities` 屬性決定導覽（預設關閉，移除示範角色切換連結）、保存模擬頁改用狀態橫幅。
+- 未做：產品端點、正式 principal provider（M3 未啟用，維持 401）、各 kind 成功 `result`、A-9 實作、HTTP 首次建立語意、Tailwind／Radix 導入、真實 server 導覽能力來源。
+
+**§77.2 驗證**（均為本機、硬 timeout）：`verify:workspaces`、`typecheck`、`build` exit 0；`npm test` 24 檔 711 測試 exit 0；Usage 情境（隔離 PostgreSQL，含 `-UsageUpgrade` 升級順序）exit 0：http-foundation 24／24（真實 HTTP＋PG：未授權、跨帳號、停用／降權重送、同鍵並行單次寫入、同鍵異意圖 422、並行 If-Match 一勝多 409、response-loss 重送、Job 入列／預留原子與回滾、狀態查詢、日誌白名單、控制器經 HTTP adapter 的成功／衝突／失效／離線／重試／草稿保留）＋usage-worker 31／31 不退化；Normal、Authorization（29）、Projects（203）情境 exit 0；Edge e2e 7／7。Docker 容器／卷／網路與 3107 連接埠零殘留。
+**未執行／僅 adapter 驗證**：UI e2e 使用合成 adapter，未走真實 HTTP；`supabase/tests/account_gate.test.sql` 與 `tests/contract/foundations.test.ts` 未新增；Job 取消僅以 SQL 設定狀態驗證映射，非 worker 取消流程重跑；真實 Auth、Worker 連線、各 kind 成功結果、A-9。
+
+**結案狀態**：T011、T014、T015 均為部分完成，不勾選；T014 依賴 T011、T015 依賴 T008／T010～T014 不變。本批完成即停止。
+
+## 78. 2026-10-26 T011／T014／T015 基礎整合閉環補齊（一次性授權）
+
+**授權與邊界**：依本 session 教育者明確批准，只處理 T011／T014／T015 基礎 HTTP、UI、隔離 DB／Worker／Edge 整合、必要套件／配置、回歸入口與本節必要文件同步。使用合成資料及唯一隔離 PostgreSQL／Docker；不接真 Auth／AI／郵件／遠端 DB／付費資源，不啟用產品、不擴 M3、不實作 A-9，不 commit／push／merge／部署。D-06 (a)／M1／R-a／D-32 已批准不重問；D-03 描述差異、D-04 (b)／D-05 (a) 僅遵循已批准範圍。Checklist、Checkpoint、完整 Gate 與正式簽核狀態均不變；本節不是常設許可。
+
+**§78.1 共用 handler 與 UI／HTTP／DB**：
+- `apps/web/src/server/foundation-handlers.ts` 將階段保存、Job 建立／查詢／取消 handler 集中在 server；沿用既有 HTTP、冪等、Job、授權及交易核心。`tests/integration/http-harness.ts` 僅承載 HTTP 測試傳輸、合成 principal／cookie 與故障注入，呼叫同一 handler；server 不匯入 tests／測試 principal。預設 `closedPrincipalResolver` 明確拒絕，正式 Route Handler 與正式 principal provider 本批未建立。Job 取消只經 harness `/test/jobs/{id}/cancel` 傳輸，不宣稱存在正式取消 API。
+- `http-save-adapter.ts` 對一般成功、冪等 replay 與 409 使用正式 strict Zod schema 驗證完整資料、專案／階段關聯、版本與內容；畸形 `current_draft` 回 `invalid_response`，不再靜默降為 not-found，未以斷言繞過 schema。Strict 測試位於 `tests/unit/http-save-adapter.test.ts`。
+- `StageDraftEditor` 是共用 React 產品元件，使用該 adapter／controller、Tailwind utility classes 及 Radix Dialog；測試專用 Vite host 位於 `tests/e2e/`，不進產品入口。Edge 透過真實 fetch 打到本機 HTTP handler，測試 server 控制 HttpOnly 合成 session；首次畫面資料由 harness 專用 fixture transport 呼叫既有 `readOwnedStageDraftSubset`，在隔離 PostgreSQL 以 RLS／owner gate 讀取，不是記憶體假資料；保存由共用 handler 寫入同一 DB，以 HTTP、UI DOM 與 DB 查詢交叉核對。涵蓋保存確認前狀態、保存期間續編、If-Match 衝突保留草稿、COMMIT 後 response loss／同鍵 replay、畸形成功／replay、離線後同鍵重試、登入失效／停用／降權及實際 DOM 隱藏受保護 server 資料。Radix 對話框驗證鍵盤／Esc 與焦點回復，狀態以 aria-live 朗讀；未提供可信 principal／capabilities 時維持關閉。既有 Tailwind 4 已存在，本批補 Radix Dialog 並實際套用元件；非全站改版。
+- 修正離線有 dirty 草稿時保存按鈕被停用、導致無法建立同鍵重試的狀態呈現；離線嘗試可明確轉為待確認，恢復後只用相同 operation key／payload 重試。
+
+**§78.2 HTTP→Worker→費用與 T015**：
+- Job 取消 handler 沿用 `UsageLedger.cancel`／`app.job_cancel`，不直接 UPDATE `jobs.state`。隔離 PostgreSQL 整合經 Worker checkpoint 驗證 owner／跨帳號／失格拒絕、重複取消、尚未執行釋放、partial 成果及費用、外部效果 in-flight／unknown 不假稱終止、不任意釋放、done／租約競態、舊 fence、HTTP status 與 DB 狀態一致。202 只代表已接受／取消請求，不等於完成。正式 provider、各 kind handler 未完成者仍未完成。
+- 新增 `npm run test:foundations`，依序執行 workspace compatibility、typecheck、production build、unit、contract、隔離 PostgreSQL＋HTTP／Worker／Edge；每個子命令有硬 timeout，失敗停止並傳遞非零 exit。這是 T015 的 runner 等效組織，未為符合檔名複製測試或新增空 wrapper。`supabase/tests/account_gate.test.sql` 已由本次 Usage 情境執行，無需為增加測試數而改寫；沒有發現需新增的本批 gate 測試缺口。未新增 migration；沿用先前 §77 的 `0020_job_status_snapshot.sql`。
+
+**§78.3 契約依據 A／B／C**：
+
+| 分類 | 現況／處理 |
+| --- | --- |
+| A：契約明確 | COMMON 明定 problem+json、UUID 冪等同鍵規則、row 更新 strong `If-Match`、Job `202`／Location／快照與非終態 result/failure 為 null；P-3 指定 stage `PUT` 路徑與 owner；COMMON 明定取消旗標不是終態。按已明確部分接通 handler／狀態查詢／測試傳輸；不把 202 認作完成，也不添加未明定的正式取消端點。 |
+| B：已有設計、程式未完成 | data-model §4.1／§45 明確階段草稿首次資料層保存使用 `expected_row_version=null` 並建立版本 0；COMMON 與 P-3 沒有明定它如何映射到 HTTP precondition。正式 principal 設計為 Supabase session cookie 辨識身分並由 DB 即時授權，但 provider／正式 Route Handler 未接線且本批禁止真 Auth；均如實標示未完成。Agent Job 已有 queued／running／failed／cancelled 的有限狀態映射；成功 `done` 不輸出。 |
+| C：需明確產品決定／契約補充 | (1) 首次 stage 草稿 HTTP 寫入要用何種 precondition 表達「目前不存在」：COMMON 禁止 `If-Match: *`，資料層 null 不能直接推定 wire 語意；本批不送出首次 HTTP 保存。(2) Agent 成功 `result` 的安全 DTO／欄位及 `done` 對外映射，COMMON 明確要求逐 kind 定義，現有契約尚未給出；本批回 unsupported，不虛構結果。本 session 使用者選擇維持建議的保守處理：首次 HTTP 寫入保持關閉、Agent `done` 維持 unsupported，兩者待另批契約核定；不擴張本批實作。 |
+
+**§78.4 驗證結果**：`npm run test:foundations`（外層硬 timeout 1,200 秒；各子命令另有限時）exit 0，6／6 layer 通過；workspace 相容檢查 13 項、typecheck、build 均通過。Unit 4 files／17 tests；Contract 21 files／699 tests。隔離 PostgreSQL Usage runner `Status=passed`、`Revocation=verified`、`Cleanup=complete`；pgTAP：identity_audit 78 assertions、account_gate 53、project migration compatibility 15；應用整合分別為 Authorization 1 file／29 tests、Projects 7／203、usage-worker 1／31、http-foundation 1／32（Edge browser cases 包含在最後 32 項，不重複加總）。最終 runner 證據：`C:\\Users\\geste\\AppData\\Local\\Temp\\AppPlanet-pgtap-20261026-234247-acaa1b2b60`；測試使用合成身分，**不代表真實 Auth 已驗證**。
+
+驗證期間第一輪 Edge 測試出現兩個失敗：一項把「不確定是否已保存」的安全文案誤判為成功，改為檢查 `data-kind=outcome_unknown`；另一項暴露離線保存按鈕禁用問題，修正狀態呈現並增加 unit regression。修正後 Usage／Edge runner 及完整 foundations runner 均 exit 0。首次 typecheck 中 Vite 不接受 `jsxFactory` 欄位，改用受支援的 `jsxInject` 並移除重複 React import 後通過。沒有因失敗降低驗收。
+
+**§78.5 清理、基線與未執行項目**：Usage runner 最終回報權限撤銷及 Docker cleanup 完成；獨立以本次唯一 Compose project label 查核 containers／volumes／networks 均為 0，PostgreSQL port `59040` listener／active connection／TIME_WAIT 均清零，相關 Edge／Node／PostgreSQL／Docker 測試程序為 0；runner 的 `afterAll` 關閉 Edge、HTTP server、Vite、DB pools，並驗證無 idle-in-transaction 連線。本批沒有新增 migration，因此未另跑 migration upgrade 情境；先前 `0020` 的新庫／升級驗證維持 §77 原紀錄。修改前 ZIP 的使用者提供大小／SHA-256 已核對，ZIP 內容作為上一批來源恢復基準；先前 `pre-batch-baseline.json` 產生時間晚於少數本批初始修改，不能宣稱它是完整的逐檔修改前 snapshot，原有 `0`、`1` 與 VC console untracked 證據均保留。其餘未執行／未驗證：正式 Next Route Handler／principal／Auth、HTTP 首次建立語意、Agent 成功 result DTO、正式 worker/provider/kind handlers、遠端服務、付費資源、部署、Gate 與正式簽核。
+
+**任務／Gate 狀態**：T011／T014／T015 均僅部分完成，136 項任務維持未勾選，依賴不變；T014 依賴 T011，T015 依賴 T008／T010～T014。G0／Checkpoint／完整 MVP Readiness Gate 未通過，正式審議／簽核未執行，真實產品功能保持關閉。本節為單次授權，不構成後續工作許可。
+
+## 79. 2026-10-27 階段草稿首次 HTTP 保存（本 session 一次性批准；修改前登錄）
+
+**授權與前置**：教育者明確批准「契約同步＋本機實作＋整合驗收」，並確認保留 checklist 未完成狀態繼續，不再就相同狀態詢問。Git root／feature 正確，分支 `work/t011-t015-local-foundation`、HEAD `3c0869eee90cd3826a8566d33d3d9b9f5ea70192`；既有未提交來源全部保留，不 checkout／reset／clean／stash。既有交付目錄 `C:\Users\geste\spec-kit\AppPlanet-T011-T015-delivery` 的 `AppPlanet-T011-T015-foundations-2026-10-26.zip` 實核 524,814 bytes、SHA-256 `aab3f8d78fa457b55fce12f7e9b58b6f217d43919d242b314a32d5405df29476`，不以 ZIP 覆蓋工作樹。無適用 AGENTS.md／extension hooks；沿用專案指引、憲章與 §78。
+
+**確實先於首項來源修改的基線**：專案外 `C:\Users\geste\.copilot\session-state\a4d374a0-6a7b-4f65-9bcf-e59191ad345b\files\first-http-20261027`，`source-baseline.json` SHA-256 `7b6ce047900668a488dcd78156ae4b70619071a55471bf47c023a4472f1e1943`，267 檔逐檔 bytes／SHA-256 及 `before` 原檔副本。範圍為全部非生成來源、指示、設定、原始 results、0、1（含未追蹤）；排除 `.git`、`node_modules`、`.next`、`dist`、`coverage`、`test-results`、`playwright-report`、`.turbo`、reparse points、`.env*`、`*.tsbuildinfo`。不讀密鑰。本節是第一項來源修改，非事後快照。
+
+**批准內容**：僅此草稿 PUT 端點的 `If-None-Match: *`→null 首建 201／版本 0／Location／ETag，strong `If-Match` 更新 200，重放 200／原 receipt 與 current 分離，缺前置 400 `precondition_required`、非法 400 `invalid_precondition`、新鍵已存在 412 `draft_already_exists`；同鍵改意圖 422。先格式／當下授權，再同鍵辨識，再新操作存在性／版本條件；DB 再驗資格與交易原子性。沿用共用 handler、adapter、React／Radix、既有 receipt／交易與隔離 PostgreSQL／Edge；先補測試再實作，必要 COMMON／P-3／錯誤碼／Quickstart／決議／tasks 集中同步，不重做研究。硬 timeout、唯一隔離資源、finally 清理及獨立核對，交付來源／證據 ZIP 與外置驗證。
+
+**不授權**：正式 principal／Route Handler／Auth、產品測試登入、付費或遠端服務、部署、Agent 成功映射／run／快照模型。Agent result 維持 unsupported，五欄 receipt 僅 T064／T068 待實作方向。T011／T014／T015 與相關任務只按實際子集記錄，不提前勾選、不改依賴；G0／Checkpoint／完整 Gate 未通過，正式審議／簽核未執行。不 commit／push／merge。本批完成交付即停止，非後續常設許可。
+
+### 79.1 契約與實作差異
+
+本次新決議為 [D-33](./decision-register.md#d-33-階段草稿首次-http-保存2026-10-27本-session-明確批准)，未覆用 D-32 或回填 §78 歷史；[COMMON](./contracts/README.md#階段草稿首次-http-保存補充d-33僅-p-3-未確認草稿子集)、[P-3](./contracts/projects-agent-sandbox.md)、[plan 修訂紀錄](./plan.md#修訂紀錄與未改動事項)、[Quickstart](./quickstart.md) 與 [tasks 最新進度](./tasks.md) 同批同步。data-model §4.1 已明定 null→0，沒有矛盾，不改模型。
+
+| 意圖／條件 | 本批實際行為 |
+| --- | --- |
+| 首建，僅 If-None-Match: * | 共用 handler 傳 DB null；真正新建 201，正式 strict DTO／版本 0、編碼後草稿 Location、ETag `"0"` |
+| 更新，僅強 If-Match: "n" | 200／n+1；不存在時 404（`"0"` 不可首建）；版本不符 409 version_conflict |
+| 新鍵首建遇已存在 | 412 draft_already_exists，不更新、不留下失敗 receipt／audit |
+| 原鍵原意圖重放 | 200／Idempotent-Replay: true；原 operation receipt＋當下 current_draft；ETag 僅對應 current，null 時省略；不回 201、不改報 412、不復活刪除草稿 |
+| 缺前置／並存／非法／重複／多值 | 400 precondition_required／invalid_precondition；只限草稿端點，其他 readRowIfMatch 行為不改 |
+| 同鍵改本文／目標／前置 | 422 idempotency_key_reuse；null 與 0 不混用；格式及當下授權不可被重放跳過 |
+
+沿用 `saveOwnedStageDraftSubset`／`0012 app.save_stage_draft` 的 DB 即時 edit/read gate＋owner、UUID 鍵唯一約束、資源 transaction advisory lock、row lock／PK 與同交易 receipt。既有結構化 conflict 明確含 submitted=null／current=數字，handler 可精確映射首建競爭 412，不捕捉任意 SQL 錯誤猜測；因此沒有新增／改寫／重編 migration，沒有應用記憶體鎖、先 GET 再無條件 INSERT 或新 journal。原 receipt 與目前讀取分開；重放若 read gate 拒絕，不以 null 掩蓋拒絕。
+
+HTTP adapter 對 null 送 If-None-Match，非 null 送強 If-Match；201 只接受首建完整版本 0 DTO，200 更新／replay 分別驗正式 strict schema、target、預期版本與提交本文；202／僅 row_version／畸形 operation／current 均不確認成功。控制器 412 保留本地並阻擋 save／retry 換鍵；明確重讀可信 DTO→Radix 比對→選保留本地或採用目前，才解除衝突並使用讀得版本更新。無 initialDraft 不合成草稿，空稿也未保存；確認 201 才顯示版本 0，保存期間後續編輯保持 dirty。Response loss 以原鍵／原本文重試，畫面分列原 receipt 與較新 current；失權清除可見 server 資料。本機測試重讀 callback 只接 tests 宿主，沒有新增產品 GET／測試登入。
+
+### 79.2 實際驗證與失敗修復
+
+所有外部命令從首次起經既有 bounded runner／DB runner 限時；測試命令未安裝或升級依賴。先紅後綠與中途失敗均保留於本節專案外 evidence。
+
+| 實際執行 | 結果（exit 均為 0，除明列紅燈／修復輪） |
+| --- | --- |
+| 先補 adapter 目標測試 | `red-adapter` exit 1；8 項中新增 4 項失敗，原 4 項通過，明確證明 null 首建原未支援 |
+| 實作前真實 PG／HTTP | `red-db-http` exit 1；新增 HTTP 首建 7 項及前置碼 1 項失敗；撤權 verified／cleanup complete |
+| 受影響 unit／controller 最終 | 3 files／36 tests，全通過（非另加到完整 suite） |
+| `npm run test:foundations` 最終 | `foundations-verified` exit 0、6／6 layers；Node 24.19.0、workspace compatibility 13 項、完整 workspace＋tests typecheck、production build 通過 |
+| Unit／Contract | 分別 4 files／22 tests、21 files／701 tests |
+| pgTAP（Usage runner） | identity_audit 78 assertions、account_gate 53、project migration compatibility 15；含既有 0009→0010→0011→0012 六筆歷史資料相容檢查 |
+| DB 應用整合 | Authorization 1 file／29 tests；Projects 7／203；usage-worker 1／31（保留 Worker／取消／費用）；HTTP foundation 1／46 |
+| HTTP foundation 內的 Edge | 9 項實際 React→fetch→共用 handler→PG，已包含在上述 46，**不重複加總**；首建／8 路並行／rollback 等其餘 HTTP 案例同一真實 PG |
+| 既有頁面 Edge | 7／7，exit 0；沿用原 Playwright 設定與 msedge，以唯一 port 63295／專案外 `--output` 執行，不覆寫原 results；此套仍是原合成頁面測試，不冒稱真 Auth |
+| Edge dev 後型別複核 | `typecheck-after-edge` exit 0；Next dev 自動改動 next-env.d.ts 已精確回復修改前 SHA-256，再驗完整 typecheck |
+
+最終 DB evidence：`C:\Users\geste\AppData\Local\Temp\AppPlanet-pgtap-20261027-001423-8b1b0a7e48`，`Status=passed／Revocation=verified／Cleanup=complete`。HTTP 46 項涵蓋新建 Location／ETag、空本文與含斜線階段編碼、既有版本 0 更新、不存在更新不首建、新鍵 412 無副作用、8 路不同鍵恰一個 201、8 路同鍵恰一個 201／其餘 200 replay、COMMIT 後丟回應、較新 current／刪除後 null、三類同鍵異意圖、缺漏／非法／重複前置、跨帳號／失效／停用／降權、handler gate 後 DB 再拒絕、receipt 更新故障整筆回滾與原鍵重試、產品 resolver 關閉與產品來源無測試身分旁路。成功流程未用 mock／page.route.fulfill。
+
+**中途失敗與修復**：第一輪 adapter/typecheck 暴露 412 分支誤置於 409 區塊（1 test／2 type errors），移出後全通過。第一次新增 Edge 整合 3 項失敗，定位到「never_saved」誤置於 unknown 分支：移至 idle 呈現並新增優先序 unit regression，後續目標及兩次完整 foundations 通過。獨立清理腳本前兩次 exit 1 是讀到自身尚空 log 的 null regex 輸入，改成顯式非空檢查，第三次 exit 0；不是產品／DB 失敗，不隱藏前兩次紀錄。既有 Edge stderr 的 renderer fallback provider 訊息未造成失敗，原文保留。未降低驗收或以歷史數量代替本輪。
+
+**not_run／不宣稱**：真實 Auth／正式 principal／Next Route Handler、正式產品保存頁／跨端點完整角色矩陣、Agent 成功 result／provider、付費／遠端服務、部署、Gate／簽核；另無新 migration，故未另跑 UsageUpgrade（既有 upgrade 歷史不冒稱本輪重跑），未重跑 NotOk／SqlError runner 故障自測或正式瀏覽器矩陣。Usage 已實際涵蓋各 DB suite，不把未另啟 Normal／Authorization／Projects scenario 稱為各自另跑完成。
+
+### 79.3 清理、來源保護與交付
+
+獨立 `cleanup-independent.json` 核對本批 6 次唯一 Compose labels（含兩次失敗）全部 container／volume／network 為 0；每次 runner 撤權 verified／cleanup complete。最終 HTTP harness ports 49891／60172 均 listening=false，Edge isConnected=false，4 個 PG pools totalCount 全 0，DB 無 idle-in-transaction。獨立檢查 DB port 60047、上述 HTTP ports 與頁面 Edge port 63295，listener／active／TIME_WAIT **全狀態 TCP 記錄 0**。測試 PID 10804、兩個 Edge PID 28584／7620 均已退出，相關 Node／測試 profile Edge 程序 0；owned process 退出後其 timer 不殘留，bounded timer 依 close 清除，不宣稱系統或 VS Code 的 timer 全為 0。未終止任何他人程序／共用資源。
+
+與首項修改前 267 檔基線核對：預期只變更 20 檔（7 程式、7 文件、6 測試／宿主），其餘 247 檔不變、0 遺失、0 新增來源；根目錄 0／1、原始 results、`.specify/feature.json`、checklists、全部舊 migration、dependency manifests／lockfile 及其他先前未提交內容完整保留。136 條任務正文／依賴／勾選不變。Next dev 自動生成的 next-env 差異已回復基線，未藉機清理其他修改。最終逐檔 before／after／SHA-256 及必要差異以專案外 `source-protection.json` 與交付 manifest 為準。
+
+交付於既有 `C:\Users\geste\spec-kit\AppPlanet-T011-T015-delivery` 新增本批來源／證據 ZIP，不覆寫舊 ZIP；包含 manifest、修改前基線、必要 before／after 差異及去敏測試／清理證據，不包含密鑰、`.env`、Git、依賴、生成建置、DB volume 或 browser profile。ZIP 逐 entry bytes／SHA-256／CRC、安全路徑、大小寫／Unicode／檔目錄碰撞與封裝前後來源一致性獨立驗證；**獨立 ZIP 驗證紀錄放 ZIP 外**，精確大小與整包 SHA-256 以外置紀錄及本次交付回報為準，避免自我雜湊循環。
+
+T011 已消除首建 HTTP／前置／重放／存在衝突缺口，仍缺正式 principal／產品端點接線、其他端點完整行為、各 kind 成功結果與 A-9。T014 已消除無初稿／201／412 保留及可信重讀比對／原鍵重試呈現缺口，仍缺真實能力來源、正式產品頁與完整角色操作。T015 本機原子性／HTTP／Edge 及既有 Worker／取消／費用回歸通過，仍缺真 Auth／正式 provider／kind 與完整角色／正式瀏覽器／政策分支驗收。原依賴保留，全部任務仍未完整結案；T064／T068 不勾選。G0／Checkpoint／完整 Gate 未通過，正式審議／簽核未執行；未 commit／push／merge／部署，完成本批交付即停止。
+
+## 80. 2026-10-27 真實本機 Auth、產品路由與頁面接線（一次性有界授權；先登錄）
+
+**授權與來源基準**：教育者本 session 明確批准以隔離本機原生 Auth、合成帳號／session、隔離 PostgreSQL、實際 Next Route Handler 與真實頁面，完成 T008／T011／T014／T015 本批列明子集；checklist 未完成項維持原狀，不代表 Gate 通過。Git root `C:\Users\geste\spec-kit\app-planet`、分支 `work/t011-t015-local-foundation`、feature `.specify/feature.json` 指向 `specs/001-app-planet-platform`、HEAD `3c0869eee90cd3826a8566d33d3d9b9f5ea70192`。工作樹含既有未提交／未追蹤變更，全部保留；不 reset、stash、清理或覆寫。適用 AGENTS.md／extension hooks 未發現。
+
+**先於本節以外任何本批修改保存基線**：專案外 `C:\Users\geste\.copilot\session-state\6f0f073d-3e46-49ee-bfe7-1823b58d5ba5\files\t008-t011-t014-t015-20261027`；`source-baseline.json` SHA-256 `75653cd86c7484f96051f6073faab310fa3346a129533fe0ec3f304c2851da3b`，266 個逐檔 bytes／SHA-256 及 `before` 副本。排除密鑰檔、`.env*` 與生成／建置／測試輸出；不讀取或複製密鑰。基線取自本節開始前已存在工作樹，包含既有使用者修改，並非乾淨 HEAD 快照。
+
+**接線目標與既有沿用項目**：沿用共用 `createFoundationHandlers`、草稿／Job DB 核心、既有 account gate／owner check、strong `If-Match`／`If-None-Match`／冪等 receipt、HTTP adapter 與 `StageDraftSaveController`；新增固定受信任 Auth `/user` 當次 session 驗證、非 service-role DB context、正式 Next 路由、可信 server 頁面載入／導覽與真實 Auth／瀏覽器驗收。產品 resolver 不讀 caller 自報身分／角色／學校、不解碼 JWT 作授權、不接受任意 Auth host；Auth 不可用、逾時、格式異常一律拒絕，DB gate／資源 owner 關係仍每次查核。Auth access token 過期／撤銷時拒絕；不從 refresh token 靜默續期，也不宣稱 `/user` 證明所有 session 條件、撤銷窗口或在途操作終結。
+
+**不授權／保持關閉**：不實作完整產品註冊、登入碼核發／A-9、未核准 Auth issuer／audience／TTL／scope／key 決策、M2／M3、Agent 成功 result／run／snapshot、service-role 產品資料授權、部署／遠端資源／正式啟用。A-1 產品登入碼流程與 Q-AUTH 未決範圍不由本機原生 Auth 測試旁路或宣稱解決。Cookie 必須 HttpOnly、SameSite、Secure，變更請求須同源／CSRF 防護；本機 HTTP 若無法安全符合條件，該環境拒絕而不降級。
+
+**任務邊界**：T008 僅在本批實際驗證的帳號 gate／可信身分／作品 owner 子集；T011 僅既有草稿讀取／首建／更新及 Job 狀態／取消路由；T014 僅受可信 server session／能力結果控制的草稿頁面與操作狀態；T015 僅本批真 Auth、產品 Route Handler、隔離 PG、瀏覽器所涵蓋的案例。原 T008→T011→T014、T015 對 T008／T010～T014 依賴均保留；Q-SCHOOL／Q-AUTH、D-14／PP、T001／T002 及其他未驗收條件不得因本批局部通過而宣稱滿足。以上全是本 session 一次性範圍，不授予階段推進、常設開發、產品啟用或正式驗收。
+
+### 本批接線與驗收結果
+
+**沿用／新增**：沿用共用 `createFoundationHandlers`、草稿與 Job PostgreSQL 核心、account gate／owner check、冪等 receipt／版本條件、`StageDraftSaveController`、HTTP adapter 與既有 UI 狀態元件；先前只有 harness 的 Next／真 Auth／瀏覽器產品路徑已補上。本批新增固定伺服端 Auth `/auth/v1/user` 驗證、資料庫 session context、草稿 GET／PUT、Job GET／取消及 logout Route Handler、可信 server page loader、測試 setup 與真實頁面驗收。Auth host 僅讀受保護的伺服端設定；拒絕 caller 自報 user／role／school／principal、解碼 JWT 授權、任意 header、Auth 逾時／不可用／畸形回應及未知狀態。Auth user id 僅建立 principal；每次請求仍由 DB 查核帳號 gate、能力及資源 owner。產品資料路徑未使用 `service_role` 或超級使用者繞過授權。
+
+**HTTP／Cookie**：實際接通 `GET/PUT /api/v1/projects/{id}/stages/{stage}`、`GET /api/v1/jobs/{id}`、`POST /api/v1/agent-runs/{id}/stop`；browser 驗收由 server-rendered 草稿頁呼叫第一條產品路由。Session cookie 為 HttpOnly／Secure／SameSite=Strict，變更請求檢查來源；隔離瀏覽器以 localhost 自簽 HTTPS 測試，不將 HTTP 降級帶入正式模式。原生 Auth `/user` 對失效 session 實測回 403，與 401 一併映射為未登入；不靜默 refresh。直接原生 signup 請求實測 422；本機只在 email password provider 啟用、top-level signup 仍關閉。此測試用 setup 建立原生 session，未驗收互動式產品登入／登入碼 UI。
+
+**資料庫增量**：真實 Job 預留曾遇 SQLSTATE 42501，定位為既有函式 owner `postgres` 對 `app.profiles.id`／`app.schools.id` 缺少 `FOR SHARE` 所需欄位 UPDATE 權限。新增 `0021_usage_account_row_lock_privileges.sql`，只授權該函式 owner 兩個 `id` 欄位；不授權 runtime role。已驗證全新 Usage migration 順序及舊 schema 升級順序（`0003`→`0020`→`0021`）；升級 runner 現已納入 0021，歷史 migration 未改寫。
+
+**實際驗證**：
+
+- `npm run test:auth:local`：真實本機 Auth→實際 Next Route Handler→隔離 PostgreSQL 整合 6/6；真實 Next 頁面 Playwright 1/1。涵蓋本人讀取／201 首建／200 更新／同鍵 replay、並行首建、412／409／422、未登入／跨帳號／偽造 caller 身分、Auth 不可用／逾時／畸形回應、DB gate 變更、原生 logout／管理改碼後舊 session 拒絕及另一有效 session／新 session 可用、Job owner-only 查詢／取消與 Worker 釋放未送出預留。未推論最大撤銷時間或在途操作已排空。
+- Playwright 由原生 Auth setup session 完成草稿首建、更新、衝突保留及失權後隱藏資料；未驗收產品登入 UI。無法確認成功仍顯示待確認；412 不自動覆寫。
+- `npm run test:foundations`：修改後最終 7/7 layers 通過：workspace 相容、typecheck、production build、unit 26、contract 701、全新隔離 PostgreSQL／HTTP／Worker／Edge、原生 Auth／產品路由／browser。DB layer 分項：pgTAP 78／53／15 assertions，Authorization 29、Projects 203、Usage Worker 31、HTTP foundation 46 tests。build 確認產品路由輸出包含草稿、Job、取消與 logout。
+- 新增 migration 的升級驗證：`node scripts\\bounded.mjs 900 usage-upgrade powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\pgtap-local.ps1 -Scenario Usage -UsageUpgrade`，Status=passed、Revocation=verified、Cleanup=complete；全新 DB 則由上述 foundations 的 Usage layer 套用 0021 並通過。
+- 首次測試曾遇 Auth password grant 422（隔離 provider 設定）、Auth `/user` 403 未辨識、row-lock SQLSTATE 42501、偽造 Origin 被測試 helper 覆蓋、Playwright fixture workspace 載入及 SSR/client online 初值不一致；均已修正隔離 runner／resolver／最小 migration／測試 helper／UI hydration，重跑後全數通過。最終未留下已知失敗。
+
+**目標任務狀態（皆維持未勾選）**：
+
+- T008：本批涵蓋 Auth principal 與即時 account gate／owner 的部分範圍。仍缺教師凍結、完整角色／資源能力共用案例與全量跨層驗收；T006／T007、Q-SCHOOL 依賴未解除。
+- T011：草稿 GET／首建／更新、Job GET／取消已經產品 Route Handler 並真實驗收。仍缺其他正式端點／完整 kind 成功 result、A-9；取消路由目前回 202 而 G-3 契約要求 200，需先決定應以何者為準。T006／T008／T009 原依賴保留。
+- T014：真實草稿頁面由可信 server session／DB 能力控制，驗證衝突保留及失權隱藏。仍缺 A-1／Q-AUTH 核准登入流程、完整角色導覽與完整操作狀態驗收；依賴 T011 未結案。
+- T015：本批 Auth／路由／隔離 DB／瀏覽器子集與完整 foundations 均通過。仍缺完整角色、provider、kind、政策及原依賴矩陣；checklist 不改，T008、T010～T014 依賴未全滿足。
+
+**阻擋範圍**：A-1／Q-AUTH 只阻擋產品登入／核發流程及 T014／T015 相應結案，不阻擋本次原生 Auth 驗證；G-3 200／202 差異阻擋 T011 完整結案，不影響已驗證的路由行為；Q-SCHOOL、教師凍結與完整角色政策只阻擋相應完整矩陣。Agent 成功 result 維持 unsupported；不實作 provider、Agent run／snapshot、M3／M2 或 A-9。G0、Checkpoint、完整 Gate、正式審議／簽核與產品啟用狀態不變。
+
+**資源與交付**：最終 Docker 清單未見本專案測試容器／volume／network；僅見標籤與 workdir 明確屬 `C:\\Users\\geste\\spec-kit\\go-anywhere` 的既有 stack，未觸碰。無本批 test／Playwright／Next 子程序；54321–54327 listener 全屬 `go-anywhere`，未停用。根目錄 `test-results\\.last-run.json` 是本批前既存檔，保留；已清除本批產生的本機 TLS 測試憑證／私鑰與 TypeScript build metadata。精簡來源 ZIP 共 34 檔，另附 ZIP 外 JSON manifest 與 SHA-256 sidecar；已解壓到獨立暫存目錄逐檔比對大小與 SHA-256，檔案清單及封存雜湊一致，JWT／Supabase token pattern scan 無命中，驗證後移除暫存目錄。全程不 commit／push／merge／部署。

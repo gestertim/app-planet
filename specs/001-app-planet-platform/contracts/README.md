@@ -44,6 +44,20 @@ HTTP 通則的「公開訪客端點僅靜態」補正：合格 B 另有同源 `/
 
 **If-Match 操作交互（D-28）**：GET 與成功更新回應應提供該資源版本的 `ETag`，客戶端更新原樣帶回單一 strong quoted 值。成功更新的 row version 必須改變且不得重用；初始值／正值限制未另定，同內容檔案可維持同一 hash。對原本要求冪等鍵的操作，冪等內容指紋包含目標、方法、允許的本文與 `If-Match`；同一操作重送須先重驗目前身分／權限，再回原結果（登入碼秘密回應依上列明示例外），即使目前版本已更新也不把原成功改報 `409`。409 後人工合併視為新操作；只有原端點要求冪等鍵時才使用新鍵，不把 POST 的既定規則擴張為所有 PUT／PATCH。
 
+### 階段草稿首次 HTTP 保存補充（D-33；僅 P-3 未確認草稿子集）
+
+本節為 [D-33](../decision-register.md#d-33-階段草稿首次-http-保存2026-10-27本-session-明確批准) 明確批准的端點特例；不改其他端點原有 `if_match_required`／`invalid_if_match` 或 409 行為。所有保存需 UUID `Idempotency-Key`，本文 strict `{ content: { text: string } }`，不接受 state／owner／角色。
+
+| 意圖 | 唯一前置條件（另一標頭不得提供） | DB expected_row_version | 成功 | 回應版本／標頭 |
+| --- | --- | --- | --- | --- |
+| 首次建立 | `If-None-Match: *` | null | 201 Created＋完整草稿 DTO | row_version=0；`Location: /api/v1/projects/{id}/stages/{stage}`（參數 URL 編碼）；`ETag: "0"` |
+| 更新 | 單一強 `If-Match: "n"`（canonical、0～2147483647） | n | 200＋完整草稿 DTO | row_version=n+1；ETag 為新版本；`"0"` 不可建立不存在草稿 |
+| 原成功重放 | 原操作同鍵／同本文／同目標／同前置條件 | 原 null 或 n，不互換 | 200＋`{ operation, current_draft }` | `Idempotent-Replay: true`；ETag 只對應 current_draft，null 時不送；不回 201／不重做建立 |
+
+新操作兩種標頭都缺→400 `precondition_required`；並存、不支持值、重複／多值→400 `invalid_precondition`。`If-Match: *` 仍禁止，If-None-Match 僅單一 `*`，不接受 ETag 或清單。新鍵首建遇既有草稿→412 `draft_already_exists`（「草稿已存在；本地內容仍保留，請重新載入並比對」），不覆寫且不保留失敗 receipt／audit。合法更新版本不符仍 409 `version_conflict`；不存在／非 owner 沿 404 隱匿；失效／停用／降權依既定 401／403 拒絕，不回目標本文。
+
+處理順序為合法格式解析、當下帳號／目標授權，再於同交易辨識既有鍵意圖，最後才判斷新操作的存在性／版本。相同鍵改本文、目標或首建／更新條件→422 `idempotency_key_reuse`；格式與授權不能被 replay 略過。原首建已成功不因現有資料而改報 412；operation 永遠是原 receipt，current_draft 為當下有權讀取的目前 DTO，草稿已不存在可為 null，不以 receipt 充當 current、不復活資料。UI 分別呈現原操作與目前版本；不確定結果只以原鍵原本文重試。沿用既有 receipt、資源鎖／唯一約束、DB 即時重驗與交易回滾，不新增 journal／run／快照模型；非 Agent 成功 result 契約。
+
 **P-1 建立冪等等同性（COMMON 通則的本機具體化；readiness §41）**：作用域為可信主體＋`project_create_v1` 建立操作＋UUID 操作鍵。本文比對 title 的 UTF-8 位元組與 tier 是否提供及其值；不 trim、不正規化、不補 tier，也不把省略欄位換成其他語意。相同鍵與相同本文重放原建立結果；不同本文回本機衝突結果，不覆寫原列。冪等紀錄與專案同一交易提交／回滾，重放前以當下 `edit_saved_content` 重新授權；併發衝突由唯一鍵序列化。紀錄 expires_at 至少 24 小時，僅在過期同鍵重用時刪除，不新增永久保存政策或排程清理。這只記錄資料層契約，不新增 HTTP handler／正式 HTTP 錯誤碼；P-1 已有 HTTP 草案映射不代表本輪實作。
 
 ### Job 快照與狀態（D-25）

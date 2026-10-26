@@ -1,5 +1,46 @@
 # 快速驗證指南（Quickstart）：AI APP 超級創客｜App Planet 平台首版
 
+### §80 真實本機 Auth、產品路由與頁面驗收（一次性本機子集）
+
+Node 24、Docker／Supabase CLI 及 Microsoft Edge 可用時，由專案根目錄執行：
+
+```powershell
+npm run test:auth:local
+npm run test:foundations
+```
+
+第一個命令建立唯一隔離 Supabase Auth／PostgreSQL stack、合成帳號與 session，套用原 migrations，執行真實 Next Route Handler 整合及 HTTPS Edge 頁面流程，最後清理 stack。只重跑瀏覽器層可用 `npm run test:auth:local -- -BrowserOnly`；它仍會建立／清理同一隔離 stack。原生 Auth email password provider 僅在此測試 stack 開啟，top-level signup 仍關閉；匿名 signup 實測 HTTP 422。瀏覽器測試由 setup 透過原生 Auth 建立 session，並非 A-1 產品登入碼 UI；不代表正式 issuer／TTL／scope 決策或產品啟用。Auth `/user` 只證明當次 access-token 驗證結果，不證明所有 session 條件、最大撤銷窗口或在途操作均已終結。
+
+草稿與 Job 路由及差異、真實驗收結果與任務缺口見 [readiness §80](./readiness-review.md)。工作狀態取消實作回 202，但 G-3 契約目前寫 200；此規格差異未由測試替政策決定。
+
+### §79 階段草稿首建 HTTP 驗收（D-33；本機限定）
+
+現行契約見 [COMMON D-33](./contracts/README.md#階段草稿首次-http-保存補充d-33僅-p-3-未確認草稿子集) 與 [P-3](./contracts/projects-agent-sandbox.md)：首次 `If-None-Match: *`（DB null）→201／版本 0／Location／ETag；更新 `If-Match: "n"`→200／n+1；原鍵原意圖重放→200／原 receipt＋current（非再建／412）；新鍵首建已存在→412。缺前置／非法為端點專用 400，版本衝突仍 409，同鍵異意圖 422；不得把 null 當成 0。其他端點錯誤規則不改。
+
+重現受影響案例及完整回歸（每層硬 timeout，合成資料）：
+
+```powershell
+node scripts\bounded.mjs 180 first-save-unit node node_modules\vitest\vitest.mjs run tests\unit\http-save-adapter.test.ts tests\unit\operation-presentation.test.ts tests\contract\stage-draft-save-controller.test.ts
+node scripts\bounded.mjs 900 first-save-http-db powershell -NoProfile -ExecutionPolicy Bypass -File scripts\pgtap-local.ps1 -Scenario Usage
+node scripts\bounded.mjs 1200 first-save-foundations cmd /d /c npm run test:foundations
+```
+
+Edge 真實 React→fetch→共用 handler→隔離 PostgreSQL 覆蓋無初稿／空稿首建、保存期間續編、雙視窗首建碰撞、412 保留與明確重新載入／Radix 比對、COMMIT 後丟回應原鍵重試、原 receipt／較新 current 分離、畸形 201／replay、失權隱藏資料；不以 mock／page.route.fulfill 取代成功流程。fixture 先以 DB owner/read gate 確認合法專案，沒有草稿回 null，不合成版本 0。重讀僅測試宿主 callback，未新增產品 GET 或測試登入。無 migration，既有 0012 不改；模型無矛盾故 data-model 不改。實際 exit／分層數／清理與來源保護見 [readiness §79](./readiness-review.md)。
+
+§79 當時正式 principal／Next Route Handler／Auth 仍關閉；本狀態已由後續 §80 有界子集更新。Agent 成功 result 仍 unsupported，五欄 receipt 僅 T064／T068 待實作方向，無 run／快照模型。T011／T014／T015 尚未完整結案，原依賴、checklist／G0／Checkpoint／完整 Gate／簽核狀態不變。
+
+### §78 T011／T014／T015 基礎整合回歸（2026-10-26；不啟用產品）
+
+於專案根目錄執行單一命令（Node 24、已安裝 Edge、可用的本機 Docker）：
+
+```powershell
+npm run test:foundations
+```
+
+依序執行 workspace 相容性、typecheck、production build、unit、contract，以及 `Usage` 隔離 PostgreSQL 情境。最後一層包含 pgTAP、Authorization／Projects／Usage Worker／HTTP foundation 整合和 Edge 真實瀏覽器保存測試；各 layer 失敗會停止並傳遞非零 exit。命令分別列出各 Vitest suite 測試數及 pgTAP assertions，不把 aggregate 與其子測試重複相加。各子命令設有硬 timeout；Usage runner finally 撤銷測試 grant 並清理隔離 Docker 資源。
+
+Edge 測試由測試專用 React/Vite host 載入共用產品 editor 與 fetch adapter；初始草稿透過 harness 專用 fixture transport 與既有 owner/read gate 從隔離 PostgreSQL 讀取，保存則走共用 handler 並寫入同一 DB。測試 server 控制 HttpOnly 合成 session。這不是正式 Next Route Handler、真實 Auth 或產品啟用；server 正式 resolver 仍 fail-closed。§78 當時首次 HTTP 草稿建立語意與 Agent 成功 `result` DTO 尚未完成（首建缺口現依 §79 補齊，Agent 維持 unsupported），不能將此子集視為完整 T011／T014／T015、Gate 或產品驗收通過。詳細狀態及各項數量見 [readiness-review.md §78](./readiness-review.md)；任務維持未勾選，Gate／簽核狀態不變。
+
 ### §76 本機費用／Worker 與 Edge 重現入口（不啟用產品）
 
 於專案根目錄執行（Node 24、既有本機 Docker／PostgreSQL 映像、已安裝 Edge）：
@@ -14,7 +55,7 @@ $env:NEXT_TELEMETRY_DISABLED='1'
 node scripts\bounded.mjs 240 build cmd /d /c npm run build
 ```
 
-`Usage` 沿用原 runner：全新 DB 依 0001→0002→0003→0009→0010→0011→0012；`UsageUpgrade` 先建原 0001／0002／0009～0012 及六筆歷史資料，再補 0003，驗證相同授權／Projects／費用／Worker 測試；既有 migration 不搬移、不改寫。0003 只依賴 0001／0002，resource 由可信 adapter 授權，不提早 FK 到 0009。須由具必要權限的隔離 `supabase_admin` 套用以授出 auth.uid 最小權限，再把表／函式 owner 固定 postgres；不授 authenticated／service_role 新入口。每個 child command 硬上限 180 秒，外層 900 秒；finally 撤權／清理及去敏 run-summary 保留真實失敗／exit。測試 actor 僅隔離 runner 建立／刪除。
+`Usage` 沿用原 runner：全新 DB 依 0001→0002→0003→0009→0010→0011→0012→0020→0021；`UsageUpgrade` 先建原 0001／0002／0009～0012 及六筆歷史資料，再按 0003→0020→0021 順序補 migration，驗證相同授權／Projects／費用／Worker 測試；既有 migration 不搬移、不改寫。0003 只依賴 0001／0002，resource 由可信 adapter 授權，不提早 FK 到 0009；0021 僅在鎖定所需 account／school 欄位授權 `postgres`，不授 runtime role 權限。須由具必要權限的隔離 `supabase_admin` 套用以授出 auth.uid 最小權限，再把表／函式 owner 固定 postgres；不授 authenticated／service_role 新入口。每個 child command 硬上限 180 秒，外層 900 秒；finally 撤權／清理及去敏 run-summary 保留真實失敗／exit。測試 actor 僅隔離 runner 建立／刪除。
 
 `npm run test:e2e:edge` 固定 `msedge`、180 秒硬上限、單 worker；實測 2／2。這是**本機 Microsoft Edge**，不是 Playwright 內建 Chromium 已驗證，也不核定 PP-24 正式矩陣。Edge 啟動的 webServer 有 120 秒 readiness 上限，測試 30 秒上限，結束由 Playwright 清理。`bounded.mjs` 的逾時自測 exit 124，不偽裝成功；預設證據放忽略的 `test-results\batch`，可用 `APP_PLANET_BATCH_EVIDENCE` 指定本批非秘密證據目錄。
 

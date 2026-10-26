@@ -9,5 +9,10 @@
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["**/*.ts", "../playwright.config.ts"]
+  "include": [
+    "**/*.ts",
+    "../playwright.config.ts",
+    "../playwright.auth.config.ts",
+    "../vitest.auth.config.ts"
+  ]
 }

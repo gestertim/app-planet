@@ -29,6 +29,7 @@ export type StageDraftSaveResult =
   | { outcome: "replayed"; operation: StageDraftDto; current_draft: StageDraftReadResult }
   | { outcome: "conflict"; reason: "version_conflict"; conflict: DraftConflict }
   | { outcome: "conflict"; reason: "idempotency_mismatch" }
+  | { outcome: "conflict"; reason: "draft_already_exists" }
   | { outcome: "not_found" }
   | DraftDenied | DraftFailure;
 

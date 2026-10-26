@@ -1,5 +1,18 @@
 # 待決事項與政策參數登錄：AI APP 超級創客｜App Planet 平台首版
 
+## D-33 階段草稿首次 HTTP 保存（2026-10-27；本 session 明確批准）
+
+**來源／範圍**：教育者於本 session 批准「契約同步＋本機實作＋整合驗收」，並再次確認繼續；不是將 §78 當時關閉的首建回填為當時已批准。僅 `PUT /api/v1/projects/{id}/stages/{stage}` 的未確認草稿子集，不套到其他端點。
+
+- 首建只帶 `If-None-Match: *`（不帶 If-Match），對應既有 DB `expected_row_version=null`；真正新建回 201、完整正式 DTO／版本 0、該草稿資源 Location 與 ETag `"0"`。
+- 更新只帶單一強 `If-Match: "n"`，成功 200／n+1；`"0"` 不建立不存在的草稿，不存在沿既定 404 隱匿，版本不符仍 409 `version_conflict`。禁止 `If-Match: *`。
+- 兩者皆無：400 `precondition_required`；並存、非法、重複／多值：400 `invalid_precondition`。If-None-Match 只接受單一 `*`；新鍵遇已存在草稿：412 `draft_already_exists`，不覆寫、不自動改成更新。
+- 全部保存需 UUID Idempotency-Key；合法格式與當下帳號／目標授權後，在既有同一交易先辨識同鍵意圖，再判新操作的不存在／版本條件。同鍵同意圖成功後重放回 200＋`Idempotent-Replay: true`，envelope 的 `operation` 是原 receipt、`current_draft` 是當下可讀取草稿或不存在時 null。ETag 只對應 current，null 不送 ETag，不回 201／不重建／不轉成 412。同鍵改本文、目標或前置條件回 422 `idempotency_key_reuse`；null 與 0 不等同，格式／授權不能被 replay 略過。
+- 沿用既有 `save_stage_draft` 交易、唯一鍵、資源鎖、receipt、DB 即時 gate 與 RLS；既有結構化 conflict 的 submitted=null／current=數字可明確辨識首建競爭，無需猜 SQL 錯誤或新 journal／migration。失敗整筆回滾；COMMIT／回應不確定只以原鍵原本文重試。
+- React 無 initialDraft 時不合成已保存版本，首建確認前顯示未保存；保存期間續編保持 dirty。412 保留本地且阻擋再次保存，使用者明確重新載入可信版本、比對及選擇後才可更新。重放原 receipt 與較新 current 分開呈現；失權隱藏受保護 server 資料。
+
+COMMON／P-3／錯誤碼／Quickstart／tasks 同步及一次性本機驗證見 [readiness §79](./readiness-review.md)。正式 principal／產品 Route Handler／真 Auth 不接通，測試身分只在 tests；Agent 成功 result 維持 unsupported，五欄 receipt 僅 T064／T068 待實作方向，不新增 run／快照模型。任務／依賴／checklist／G0／Checkpoint／Gate／簽核狀態不變；非後續常設授權。
+
 ## 2026-10-26 本批前置收斂（T001／T002；readiness §76）
 
 責任統一為**專案管理員（本次指示者）**：兼任管理、政策決策、技術驗證協調、供應商聯絡與證據保管；不新增產品角色，不推定姓名，不替代法務／兒少保護等適用專業審閱。下表「管理員」均指此人；專業審閱仍待取得。分類：**A** 已有可直接核對證據；**B** 政策決定；**C** 外部證據；**D** 程式／測試缺口；**E** 原定較晚的正式產品驗收／上線條件；一列可同時含多類，不把 E 一律提前阻擋本批本機實作。

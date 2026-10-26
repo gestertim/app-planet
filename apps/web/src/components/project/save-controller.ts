@@ -46,6 +46,7 @@ type SafeFailureReason =
   | "save_rejected"
   | "policy_denied"
   | "project_not_found"
+  | "draft_already_exists"
   | "idempotency_conflict";
 
 export type StageDraftSaveOperationState =
@@ -341,6 +342,10 @@ function parseResponse(
           hasExactKeys(result, ["outcome", "reason"])) {
         return { kind: "failed", reason: "idempotency_conflict", retryable: false };
       }
+      if (result.reason === "draft_already_exists" && request.expected_row_version === null &&
+          hasExactKeys(result, ["outcome", "reason"])) {
+        return { kind: "failed", reason: "draft_already_exists", retryable: false };
+      }
       return null;
     }
     case "failed":
@@ -430,6 +435,9 @@ export class StageDraftSaveController {
     if (resource.operation.status === "failed" && resource.operation.retryable) {
       return { outcome: "blocked", reason: "retry_required" };
     }
+    if (resource.operation.status === "failed" && resource.operation.reason === "draft_already_exists") {
+      return { outcome: "blocked", reason: "conflict" };
+    }
     if (resource.operation.status === "conflict") {
       return { outcome: "blocked", reason: "conflict" };
     }
@@ -487,6 +495,33 @@ export class StageDraftSaveController {
       resource.editorText = resource.confirmedDraft?.content.text ?? "";
     }
     resource.operation = idleOperation;
+    this.emit();
+  }
+
+  compareExistingDraft(value: StageDraftDto, target?: StageDraftTarget): void {
+    const resource = this.getResource(target ?? this.activeTarget);
+    if (resource.operation.status !== "failed" ||
+        resource.operation.reason !== "draft_already_exists" ||
+        !resource.operation.submitted) throw new TypeError("no_existing_draft_conflict");
+    const current = freezeDraft(value, resource.target);
+    if (!current) throw new TypeError("invalid_current_draft");
+    const submitted = resource.operation.submitted;
+    resource.confirmedDraft = current;
+    resource.operation = Object.freeze({
+      status: "conflict",
+      conflict: freezeConflict({
+        current: { version: current.row_version, content: current.content },
+        submitted: { version: null, content: submitted.request.content },
+      }),
+      submitted,
+    });
+    this.emit();
+  }
+
+  rejectCurrentAccess(reason: "policy_denied" | "project_not_found", target?: StageDraftTarget): void {
+    const resource = this.getResource(target ?? this.activeTarget);
+    resource.confirmedDraft = null;
+    resource.operation = Object.freeze({ status: "failed", reason, retryable: false, submitted: null });
     this.emit();
   }
 
@@ -594,7 +629,7 @@ export class StageDraftSaveController {
         this.emit();
         return { outcome: "saved" };
       case "replayed":
-        if (parsed.currentDraft) resource.confirmedDraft = parsed.currentDraft;
+        resource.confirmedDraft = parsed.currentDraft;
         resource.operation = Object.freeze({
           status: "replayed",
           receipt: freezeDraft(parsed.operation, resource.target)!,
@@ -620,7 +655,7 @@ export class StageDraftSaveController {
           status: "failed",
           reason: parsed.reason,
           retryable: parsed.retryable,
-          submitted: parsed.retryable ? submitted : null,
+          submitted: parsed.retryable || parsed.reason === "draft_already_exists" ? submitted : null,
         });
         this.emit();
         return { outcome: "failed", reason: parsed.reason };

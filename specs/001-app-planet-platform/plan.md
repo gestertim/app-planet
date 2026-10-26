@@ -433,6 +433,8 @@ tests/
 
 ## 修訂紀錄與未改動事項
 
+**2026-10-27（D-33／readiness §79）**：本 session 批准階段草稿首次 HTTP 保存：僅 P-3 未確認草稿的 If-None-Match 首建 201、If-Match 更新 200、同鍵重放 200、存在衝突 412 與端點專用 400；同步 COMMON／P-3／決議／Quickstart／tasks，沿用既有 DB null→0／receipt／鎖與交易，無模型矛盾、無 migration／journal。共用 handler／adapter／React／隔離 PG／Edge 的本機子集，不接正式 principal／Route Handler／Auth，不實作 Agent 成功 result。原任務／依賴／checklist、技術棧與 Gate／簽核狀態不變；不是另開文件批次。
+
 **2026-10-26（D-32／readiness §72）**：同步四項已批准契約原則及七組必要文件；將本檔「重發原子失效」限縮為平台 DB 內可共同提交資料及成功後舊碼拒絕，不承諾跨 Auth 回滾；補 unknown 受控暫停、非秘密 receipt／最多一次輸出機會及啟用阻擋。保留原技術棧、FR／US／AC／SC、角色／學校政策與所有任務 ID／正文／依賴／勾選；不改程式／SQL／runner／依賴、不執行任何產品測試或服務，不採用 M3、不作 Gate／簽核宣稱。
 
 | 日期 | 內容 |

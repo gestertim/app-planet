@@ -19,6 +19,58 @@ const targetA = { project_id: projectA, stage: "Specification" as const };
 const targetB = { project_id: projectB, stage: "Specification" as const };
 const targetOtherStage = { project_id: projectA, stage: "UX/UI" as const };
 
+describe("§79 首建存在衝突必須明確讀取及比對", () => {
+  it("412 保留本地，禁止 save／retry 換鍵；可信目前 DTO 與明確選擇後才能更新", async () => {
+    const calls: StageDraftSaveRequest[] = [];
+    const controller = new StageDraftSaveController({
+      initialTarget: targetA,
+      createOperationKey: () => calls.length === 0 ? firstKey : secondKey,
+      adapter: {
+        async save(request) {
+          calls.push(request);
+          return calls.length === 1
+            ? response(targetA, { outcome: "conflict", reason: "draft_already_exists" })
+            : saved(request);
+        },
+      },
+    });
+    expect(controller.getState()).toMatchObject({ confirmedDraft: null, editorText: "" });
+    controller.edit("local-first");
+    await controller.save();
+    expect(controller.getState()).toMatchObject({
+      confirmedDraft: null, editorText: "local-first",
+      operation: { status: "failed", reason: "draft_already_exists", retryable: false },
+    });
+    expect(await controller.save()).toEqual({ outcome: "blocked", reason: "conflict" });
+    expect(await controller.retry()).toEqual({ outcome: "blocked", reason: "retry_required" });
+    expect(calls).toHaveLength(1);
+    expect(() => controller.compareExistingDraft(draft(projectB, "Specification", 7, "wrong-target")))
+      .toThrow("invalid_current_draft");
+    controller.compareExistingDraft(draft(projectA, "Specification", 7, "current"));
+    expect(await controller.save()).toEqual({ outcome: "blocked", reason: "conflict" });
+    controller.resolveConflict("keep_local");
+    expect(controller.getState().editorText).toBe("local-first");
+    expect((await controller.save()).outcome).toBe("saved");
+    expect(calls[1]).toMatchObject({
+      expected_row_version: 7, idempotency_key: secondKey, content: { text: "local-first" },
+    });
+  });
+
+  it("重新載入發現失權即隱藏可信草稿，但不刪除本地編輯", async () => {
+    const controller = new StageDraftSaveController({
+      initialTarget: targetA,
+      initialDraft: draft(projectA, "Specification", 3, "protected"),
+      adapter: { async save(request) { return saved(request); } },
+    });
+    controller.edit("local");
+    controller.rejectCurrentAccess("policy_denied");
+    expect(controller.getState()).toMatchObject({
+      confirmedDraft: null, editorText: "local",
+      operation: { status: "failed", reason: "policy_denied" },
+    });
+  });
+});
+
 function draft(
   projectId: string,
   stage: StageDraftSaveRequest["stage"],
