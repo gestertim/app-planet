@@ -1,8 +1,10 @@
 "use client";
 
 import * as Dialog from "@radix-ui/react-dialog";
-import { useEffect, useState } from "react";
-import type { StageDraftDto } from "@app-planet/core";
+import { useEffect, useRef, useState } from "react";
+import { UnsavedChangesGuard } from "./unsaved-changes-guard.tsx";
+import type { StageDraftDto, StageConfirmationStatus } from "@app-planet/core";
+import { StageConfirmationPanel } from "./stage-confirmation-panel.tsx";
 import type { StageDraftReadResult } from "../../server/stage-drafts.ts";
 import { presentSaveState, type Connectivity } from "../operation-presentation.ts";
 import { OperationStatusBanner } from "../operation-state.tsx";
@@ -10,14 +12,18 @@ import { createHttpSaveAdapter } from "./http-save-adapter.ts";
 import { stageDraftDtoSchema } from "@app-planet/core";
 import {
   StageDraftSaveController,
+  type StageDraftSwitchChoice,
   type StageDraftTarget,
 } from "./save-controller.ts";
+import { classifyGuardCondition, type GuardResult } from "./unsaved-changes-guard.tsx";
 
 export interface StageDraftEditorProps {
   readonly target: StageDraftTarget;
+  readonly accountScope: string;
   readonly initialDraft?: StageDraftDto | null;
   readonly hasTrustedPrincipal?: boolean;
   readonly readCurrentDraft?: () => Promise<StageDraftReadResult>;
+  readonly initialConfirmation?: StageConfirmationStatus | null;
 }
 
 function buildSaveUrl(target: StageDraftTarget): string {
@@ -44,9 +50,11 @@ async function readDraftFromRoute(target: StageDraftTarget): Promise<StageDraftR
 
 export function StageDraftEditor({
   target,
+  accountScope,
   initialDraft,
   hasTrustedPrincipal = false,
   readCurrentDraft,
+  initialConfirmation,
 }: Readonly<StageDraftEditorProps>) {
   const [adapter] = useState(() => createHttpSaveAdapter({
     buildUrl: buildSaveUrl,
@@ -63,6 +71,12 @@ export function StageDraftEditor({
   const [serverDraft, setServerDraft] = useState<StageDraftDto | null>(initialDraft ?? null);
   const [reloadError, setReloadError] = useState<string | null>(null);
   const [reloadPending, setReloadPending] = useState(false);
+  const composingRef = useRef(false);
+  const [composing, setComposing] = useState(false);
+  const setComposition = (value: boolean) => {
+    composingRef.current = value;
+    setComposing(value);
+  };
 
   useEffect(() => controller.subscribe(() => {
     const next = controller.getState(target);
@@ -94,9 +108,29 @@ export function StageDraftEditor({
     hasConfirmedDraft: state.confirmedDraft !== null,
   });
   const conflict = state.operation.status === "conflict" ? state.operation.conflict : null;
+  const leave = async (choice: StageDraftSwitchChoice): Promise<GuardResult> => {
+    const result = await controller.requestLeave(choice);
+    return result.outcome === "superseded"
+      ? { outcome: "blocked", reason: "still_dirty" }
+      : result;
+  };
 
   return (
     <section aria-label="階段草稿編輯器" className="mx-auto grid max-w-4xl gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <UnsavedChangesGuard
+        identity={{ accountScope, projectId: target.project_id, resourceId: `stage-draft:${target.stage}` }}
+        condition={classifyGuardCondition(state)}
+        actions={{
+          saveThenLeave: () => leave("save_then_switch"),
+          retryThenLeave: async () => {
+            await controller.retry(target);
+            return leave("save_then_switch");
+          },
+          discardAndLeave: () => leave("discard_and_switch"),
+        }}
+        composingRef={composingRef}
+      />
+      <p className="text-sm text-slate-600">草稿編輯僅保留在目前頁面記憶體；離開前可保存至伺服器，重新載入或關閉分頁不會保留未保存內容。</p>
       <OperationStatusBanner presentation={presentation} />
       {!presentation.hideServerData && state.operation.status === "replayed" && (
         <p data-testid="operation-receipt">
@@ -117,6 +151,9 @@ export function StageDraftEditor({
             aria-describedby="operation-status"
             className="min-h-48 rounded-lg border border-slate-300 p-3 font-normal focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
             onChange={(event) => controller.edit(event.currentTarget.value, target)}
+            onCompositionStart={() => setComposition(true)}
+            onCompositionEnd={() => setComposition(false)}
+            onBlur={() => setComposition(false)}
             value={state.editorText}
           />
         </label>
@@ -125,7 +162,7 @@ export function StageDraftEditor({
         <div className="flex flex-wrap items-center gap-3">
           <button
             className="min-h-11 rounded-lg bg-blue-700 px-5 font-bold text-white hover:bg-blue-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400"
-            disabled={!presentation.canSave}
+            disabled={!presentation.canSave || composing}
             onClick={() => void controller.save(target)}
             type="button"
           >
@@ -220,6 +257,15 @@ export function StageDraftEditor({
             </Dialog.Root>
           )}
         </div>
+      )}
+      {!presentation.hideServerData && hasTrustedPrincipal && (
+        <StageConfirmationPanel
+          target={target}
+          initialStatus={initialConfirmation ?? null}
+          savedDraft={serverDraft}
+          dirty={state.dirty}
+          saving={state.operation.status === "saving"}
+        />
       )}
     </section>
   );

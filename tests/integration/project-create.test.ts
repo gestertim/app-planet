@@ -35,6 +35,22 @@ function rendezvous(participants: number) {
 }
 const create = (n = 1, body: unknown = { title }, operationKey = key(1)) =>
   createOwnedProjectSubset(context(n), body, operationKey);
+const replay = (
+  n = 1,
+  body: { title: string; tier?: "A" | "B" } = { title },
+  operationKey = key(1),
+  pool = authorization,
+  synchronize?: () => Promise<void>,
+) => syntheticCreationContext(pool, account(n), { synchronize }).runTransaction(async (query) => {
+    const result = await query.query(`
+      SELECT app.replay_unclassified_project($1::text,$2::text,$3::boolean,$4::uuid) AS result
+    `, [body.title, body.tier ?? null, Object.hasOwn(body, "tier"), operationKey]);
+    const row = result.rows[0];
+    if (typeof row !== "object" || row === null || Array.isArray(row) || !("result" in row)) {
+      throw new Error("缺少 replay-only DB 結果");
+    }
+    return row.result;
+  });
 const created = async (n: number, body: unknown, operationKey: string) => {
   const result = await create(n, body, operationKey);
   expect(result.outcome).toBe("created");
@@ -106,6 +122,176 @@ afterAll(async () => {
 });
 
 describe("T051 方案 B：隔離本機 PostgreSQL 建立／唯讀", () => {
+  it("COMMIT 後 response-loss 只走 replay-only，回原結果且專案仍只有一列", async () => {
+    const initial = await created(1, { title }, key(22));
+    const result = await replay(1, { title }, key(22));
+    expect(result).toEqual({ outcome: "replayed", project: initial.project });
+    expect((await control.query(
+      "SELECT count(*)::int AS count FROM app.projects WHERE owner_id=$1 AND title=$2",
+      [account(1), title],
+    )).rows).toEqual([{ count: 1 }]);
+  });
+
+  it("receipt 到期、不存在或不完整時 replay-only 受控失敗且不增加專案", async () => {
+    const initial = await created(1, { title }, key(23));
+    await control.query(`
+      UPDATE app.project_create_idempotency
+      SET created_at=created_at-interval '25 hours', expires_at=expires_at-interval '25 hours'
+      WHERE owner_id=$1 AND idempotency_key=$2
+    `, [account(1), key(23)]);
+    expect(await replay(1, { title }, key(23))).toEqual({ outcome: "unrecoverable" });
+    expect(await replay(1, { title }, key(24))).toEqual({ outcome: "unrecoverable" });
+    await control.query(`
+      INSERT INTO app.project_create_idempotency (
+        owner_id,operation_scope,idempotency_key,request_title,requested_tier,
+        tier_was_provided,project_id,response,created_at,expires_at
+      ) VALUES ($1,'project_create_v1',$2,$3,NULL,false,NULL,NULL,statement_timestamp(),
+        statement_timestamp()+interval '24 hours')
+    `, [account(1), key(25), title]);
+    expect(await replay(1, { title }, key(25))).toEqual({ outcome: "unrecoverable" });
+    expect((await control.query(
+      "SELECT count(*)::int AS count FROM app.projects WHERE owner_id=$1",
+      [account(1)],
+    )).rows).toEqual([{ count: 2 }]);
+    expect(initial.project.id).toBeTruthy();
+  });
+
+  it("原始 P-1 API 在 receipt 到期後仍保留同鍵可新建語意", async () => {
+    const initial = await created(1, { title }, key(26));
+    await control.query(`
+      UPDATE app.project_create_idempotency
+      SET created_at=created_at-interval '25 hours', expires_at=expires_at-interval '25 hours'
+      WHERE owner_id=$1 AND idempotency_key=$2
+    `, [account(1), key(26)]);
+    const next = await created(1, { title }, key(26));
+    expect(next.project.id).not.toBe(initial.project.id);
+    expect((await control.query(
+      "SELECT count(*)::int AS count FROM app.projects WHERE owner_id=$1 AND title=$2",
+      [account(1), title],
+    )).rows).toEqual([{ count: 2 }]);
+  });
+
+  it("不同帳號、失權及異意圖不會由 replay-only 新增或讀取資源", async () => {
+    const initial = await created(1, { title, tier: "B" }, key(27));
+    expect(await replay(2, { title, tier: "B" }, key(27))).toEqual({ outcome: "unrecoverable" });
+    expect(await replay(1, { title: `${title}-other`, tier: "B" }, key(27)))
+      .toEqual({ outcome: "idempotency_conflict" });
+    await control.query("UPDATE app.profiles SET status='disabled' WHERE id=$1", [account(1)]);
+    expect(await replay(1, { title, tier: "B" }, key(27))).toEqual({ outcome: "denied" });
+    expect((await control.query("SELECT id::text FROM app.projects WHERE id=$1", [initial.project.id])).rows)
+      .toEqual([{ id: initial.project.id }]);
+  });
+
+  it("原建立交易未提交時 recovery 等待同鍵鎖；提交後只回原結果，不建立第二列", async () => {
+    const client = await authorization.connect();
+    let transactionOpen = false;
+    let recoveryFinished = false;
+    try {
+      await client.query("BEGIN ISOLATION LEVEL READ COMMITTED READ WRITE");
+      transactionOpen = true;
+      await client.query("SET LOCAL ROLE authenticated");
+      await client.query("SELECT set_config('request.jwt.claim.sub',$1,true)", [account(1)]);
+      const original = await client.query(
+        "SELECT app.create_unclassified_project($1::text,NULL,false,$2::uuid) AS result",
+        [`${title}-uncommitted`, key(28)],
+      );
+      expect(original.rows[0].result).toMatchObject({ outcome: "created" });
+
+      const recovering = replay(1, { title: `${title}-uncommitted` }, key(28), parallelAuthorization)
+        .then((result) => {
+          recoveryFinished = true;
+          return result;
+        });
+      let waiting = 0;
+      for (let attempt = 0; attempt < 100 && waiting === 0; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        waiting = (await parallelAuthorization.query(`
+          SELECT count(*)::int AS count FROM pg_stat_activity
+          WHERE usename='app_authorization_test' AND wait_event_type='Lock'
+            AND query LIKE '%replay_unclassified_project%'
+        `)).rows[0].count;
+      }
+      expect(waiting).toBeGreaterThan(0);
+      expect(recoveryFinished).toBe(false);
+      expect((await control.query(
+        "SELECT count(*)::int AS count FROM app.projects WHERE owner_id=$1 AND title=$2",
+        [account(1), `${title}-uncommitted`],
+      )).rows).toEqual([{ count: 0 }]);
+
+      await client.query("COMMIT");
+      transactionOpen = false;
+      expect(await recovering).toMatchObject({
+        outcome: "replayed", project: { title: `${title}-uncommitted` },
+      });
+      expect((await control.query(
+        "SELECT count(*)::int AS count FROM app.projects WHERE owner_id=$1 AND title=$2",
+        [account(1), `${title}-uncommitted`],
+      )).rows).toEqual([{ count: 1 }]);
+    } finally {
+      if (transactionOpen) await client.query("ROLLBACK");
+      client.release();
+    }
+  });
+
+  it("鎖等待期間 receipt 到期後，重放以鎖取得後 DB 時間判定且不建立", async () => {
+    const initial = await created(1, { title }, key(29));
+    const holder = await control.connect();
+    let transactionOpen = false;
+    try {
+      await holder.query("BEGIN");
+      transactionOpen = true;
+      await holder.query(`
+        SELECT pg_advisory_xact_lock(pg_catalog.hashtextextended(
+          $1::uuid::text || ':project_create_v1:' || $2::uuid::text, 0
+        ))
+      `, [account(1), key(29)]);
+      await holder.query(`
+        UPDATE app.project_create_idempotency
+        SET created_at=created_at-interval '25 hours', expires_at=expires_at-interval '25 hours'
+        WHERE owner_id=$1 AND idempotency_key=$2
+      `, [account(1), key(29)]);
+      const recovering = replay(1, { title }, key(29), parallelAuthorization);
+      let waiting = 0;
+      for (let attempt = 0; attempt < 100 && waiting === 0; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        waiting = (await parallelAuthorization.query(`
+          SELECT count(*)::int AS count FROM pg_stat_activity
+          WHERE usename='app_authorization_test' AND wait_event_type='Lock'
+            AND query LIKE '%replay_unclassified_project%'
+        `)).rows[0].count;
+      }
+      expect(waiting).toBeGreaterThan(0);
+      await holder.query("COMMIT");
+      transactionOpen = false;
+      expect(await recovering).toEqual({ outcome: "unrecoverable" });
+      expect((await holder.query(
+        "SELECT count(*)::int AS count FROM app.projects WHERE id=$1",
+        [initial.project.id],
+      )).rows).toEqual([{ count: 1 }]);
+      expect((await holder.query(
+        "SELECT count(*)::int AS count FROM app.projects WHERE owner_id=$1 AND title=$2",
+        [account(1), title],
+      )).rows).toEqual([{ count: 1 }]);
+    } finally {
+      if (transactionOpen) await holder.query("ROLLBACK");
+      holder.release();
+    }
+  });
+
+  it("同鍵並行 recovery 全部回原 receipt，不新增專案", async () => {
+    const initial = await created(1, { title }, key(30));
+    const synchronize = rendezvous(8);
+    const results = await Promise.all(Array.from({ length: 8 }, () =>
+      replay(1, { title }, key(30), parallelAuthorization, synchronize)));
+    expect(results).toEqual(Array.from({ length: 8 }, () => ({
+      outcome: "replayed", project: initial.project,
+    })));
+    expect((await control.query(
+      "SELECT count(*)::int AS count FROM app.projects WHERE owner_id=$1 AND title=$2",
+      [account(1), title],
+    )).rows).toEqual([{ count: 1 }]);
+  });
+
   it.each([
     [{ title }, null],
     [{ title, tier: "A" }, "A"],
@@ -390,6 +576,41 @@ describe("T051 方案 B：隔離本機 PostgreSQL 建立／唯讀", () => {
       authenticated_execute: true, anon_execute: false, service_execute: false,
     });
     expect(functionInfo.proconfig).toContain("search_path=pg_catalog");
+    const replayer = (await control.query(`
+      SELECT owner.rolname AS owner,p.prosecdef,p.proconfig,
+        has_function_privilege('authenticated',p.oid,'EXECUTE') AS authenticated_execute,
+        has_function_privilege('anon',p.oid,'EXECUTE') AS anon_execute,
+        has_function_privilege('service_role',p.oid,'EXECUTE') AS service_execute,
+        has_table_privilege('app_project_replayer','app.projects','INSERT') AS project_insert,
+        has_table_privilege('app_project_replayer','app.project_create_idempotency','INSERT') AS receipt_insert,
+        has_table_privilege('app_project_replayer','app.project_create_idempotency','UPDATE') AS receipt_update,
+        has_table_privilege('app_project_replayer','app.project_create_idempotency','DELETE') AS receipt_delete
+      FROM pg_proc p JOIN pg_roles owner ON owner.oid=p.proowner
+      WHERE p.oid='app.replay_unclassified_project(text,text,boolean,uuid)'::regprocedure
+    `)).rows[0];
+    expect(replayer).toMatchObject({
+      owner: "app_project_replayer", prosecdef: true,
+      authenticated_execute: true, anon_execute: false, service_execute: false,
+      project_insert: false, receipt_insert: false, receipt_update: false, receipt_delete: false,
+    });
+    expect(replayer.proconfig).toContain("search_path=pg_catalog");
+    const replaySource = (await control.query(`
+      SELECT lower(pg_get_functiondef(
+        'app.replay_unclassified_project(text,text,boolean,uuid)'::regprocedure
+      )) AS definition
+    `)).rows[0].definition as string;
+    expect(replaySource).not.toContain("insert into app.projects");
+    expect(replaySource).not.toContain("delete from app.project_create_idempotency");
+    expect((await control.query(`
+      SELECT has_function_privilege('authenticated',
+          'app.lock_project_create_operation(uuid,uuid)','EXECUTE') AS actor_execute,
+        has_function_privilege('anon','app.lock_project_create_operation(uuid,uuid)','EXECUTE') AS anon_execute,
+        pg_has_role('authenticated','app_project_replayer','MEMBER') AS member,
+        (SELECT NOT rolsuper AND NOT rolbypassrls AND NOT rolcanlogin
+         FROM pg_roles WHERE rolname='app_project_replayer') AS role_safe
+    `)).rows).toEqual([{
+      actor_execute: false, anon_execute: false, member: false, role_safe: true,
+    }]);
     expect((await control.query("SELECT pg_has_role('authenticated','app_project_writer','MEMBER') AS member"))
       .rows).toEqual([{ member: false }]);
     expect((await control.query(`

@@ -1,5 +1,7 @@
 # MVP Readiness 準備與集中決策表
 
+**2026-10-27 最新批次入口：§82**：可信 session 接 P-1 建立、P-2 本人詳情、server-rendered 本人清單及既有草稿頁；僅本批本機範圍，不是 Gate／簽核／產品啟用。原 §81 未提交程式及任務歸屬同步保留，不倒填歷史。
+
 **2026-10-26 最新批次入口：§76**（本檔保留原 §75 全文於其後）：本 session 僅 T001／T002 收斂＋T009／T010 與併入修正的有界本機實作／測試；結果及剩餘缺口見 §76.1～76.3。後續較早「最新」入口均為歷史快照，不能替代現行決議；Gate／正式簽核未通過。
 
 **2026-10-25 最新一次性結果入口**：§60 真實 JWT→PostgREST→RLS 隔離批次已停止，研究執行未完整：三次全新 stack 啟動額度用盡、累計18/120 HTTP、2/6建立請求、首次資源啟動至最後清理374.816秒；三次實際 stack 的 finally 均清理完成，並於04:22Z另以精確 project labels 獨立確認 container／volume／network零殘留及敏感目錄不存在。最後一輪 Auth A／B 建立與登入、ID一致、真實 token 非簽章觀測均成功；研究 schema／A、B fixture 已建立，但錯誤的 actor catalog gate 在任何資料 HTTP 前中止，PostgREST 實際 actor、RLS 正負向、寫入與四類 JWT 負向均未執行。主機publishing缺口仍未解決；Gate／正式簽核狀態不變，詳§60.2。
@@ -4323,3 +4325,230 @@ T011 已消除首建 HTTP／前置／重放／存在衝突缺口，仍缺正式 
 **阻擋範圍**：A-1／Q-AUTH 只阻擋產品登入／核發流程及 T014／T015 相應結案，不阻擋本次原生 Auth 驗證；G-3 200／202 差異阻擋 T011 完整結案，不影響已驗證的路由行為；Q-SCHOOL、教師凍結與完整角色政策只阻擋相應完整矩陣。Agent 成功 result 維持 unsupported；不實作 provider、Agent run／snapshot、M3／M2 或 A-9。G0、Checkpoint、完整 Gate、正式審議／簽核與產品啟用狀態不變。
 
 **資源與交付**：最終 Docker 清單未見本專案測試容器／volume／network；僅見標籤與 workdir 明確屬 `C:\\Users\\geste\\spec-kit\\go-anywhere` 的既有 stack，未觸碰。無本批 test／Playwright／Next 子程序；54321–54327 listener 全屬 `go-anywhere`，未停用。根目錄 `test-results\\.last-run.json` 是本批前既存檔，保留；已清除本批產生的本機 TLS 測試憑證／私鑰與 TypeScript build metadata。精簡來源 ZIP 共 34 檔，另附 ZIP 外 JSON manifest 與 SHA-256 sidecar；已解壓到獨立暫存目錄逐檔比對大小與 SHA-256，檔案清單及封存雜湊一致，JWT／Supabase token pattern scan 無命中，驗證後移除暫存目錄。全程不 commit／push／merge／部署。
+
+## 81. 2026-10-27 G-3 Run／Job 錯接修正、Auth 異常補強與角色／資源授權覆蓋（一次性有界授權；本批範圍登錄）
+
+**授權與基準**：教育者本 session 明確批准本批有界本機修正與授權整合；checklist 未完成狀態已獲准保留，不重複要求確認，不宣告完整 Gate 通過。起點為已推送且遠端 SHA 與本機一致的 commit `b53fcde489d2ff9f1d4e659873e0f03ac1eb6cfe`（分支 `work/t011-t015-local-foundation`），由此建立 `work/auth-cancel-authorization`；既有未追蹤檔（`0`、`1`、`spikes/security-boundaries/vc/results/*-console.txt`）原樣保留，不 reset／clean／stash。修改前基線＝上述 commit 的已追蹤檔（本節在實作後補登，未另建工作樹快照）。
+
+**範圍**：(A) G-3 取消路由 Run／Job 識別；(B) `verifyAccessToken` 異常；(C) T008／T015 已有明確契約的角色／資源授權案例。不實作 A-9、Agent provider／成功 result／快照、M2／M3、不聯絡供應商、不部署、不啟用正式產品；不 commit／push。
+
+### A. G-3：安全關閉（未虛構 Run→Job 關聯）
+
+**調查**：`app.jobs` 無 run 欄位，migrations 無 `agent_runs`，無 G-1／G-2 建立 Run 的實作；因此沒有可信、持久化的 Run→Job 關聯。原 `POST /api/v1/agent-runs/{id}/stop` 直接 `cancelJob(request, id)`，把路徑 ID 當 Job ID，屬錯接（連測試也以 Job ID 呼叫）。
+
+**修正**：新增 `stopAgentRun` handler（`foundation-handlers.ts`）並由該產品路由呼叫；通過方法／同源／身分驗證後：非 UUID → 404，其餘一律 403 `ai_not_open`，不查 DB、不取消任何 Job、不洩漏存在性。不令兩種 ID 相等，不新增公開 Job 取消 API；內部 `cancelJob` 核心、`/test/jobs/{id}/cancel` harness 路由與全部既有核心測試保留。
+
+**缺口登錄**：缺 `app.agent_runs`（data-model §agent_runs）、Run→Job 持久關聯與 G-1／G-2 建立流程；契約由 T056 承接、實作由 T064 承接，但目前沒有任務明列 `agent_runs` 遷移，歸屬須教育者確認。G-3 契約的 200／冪等／`cancel_requested`、已完成與錯配案例待 Run 關聯存在後才能實作與驗收；先前 202／200 差異因此暫無可比對的產品行為。
+
+**測試**：HTTP foundation 新增 Job ID 不能冒充 Run ID（擁有者／跨帳號／不存在 Run／非 UUID／未登入／停用／錯誤方法皆無副作用：Job 仍 `queued`、預留 `reserved`、計數不變、Worker 仍可領取）；真 Auth 整合以產品 Route Handler 證明同結果，並改以直接建立的 handler 工廠（非產品路由）保留真 Auth 下內部取消核心 owner-only、Worker 釋放預留驗證。
+
+### B. Auth `/user` 異常處理
+
+`verifyAccessToken` 改為單一 deadline 涵蓋 fetch 與 response body 讀取；`AbortController`＋可忽略 signal 的 transport 也由競賽式 abort 中止；body 讀取上限 64 KiB、UTF-8 fatal 解碼、JSON 與 `{id: uuid}` 驗證；任何例外（headers 後 body 中斷、停滯、過大、畸形、非預期 fetch 錯誤）只回 `unavailable`，不外洩細節、不回退解碼 JWT。固定受信任來源、`redirect: "error"`、`no-store`、當次 DB 授權不變；正式模式缺任一設定仍拒絕，未新增預設值；未擴張 M3／M2／登入／refresh。新增 unit 8 項（body 錯誤、停滯、fetch 停滯、過大／非 UTF-8／空／非物件／缺欄位、非預期例外、redirect／錯誤 content-type、resolver 層、正式缺設定）；真 Auth 整合以真實 HTTP server 驗證 headers 後 socket 中斷與 body 停滯均回 503 且不含內部字樣。
+
+### C. 角色／資源覆蓋
+
+**既有覆蓋**：account gate 能力表（學生／教師／管理員／各學校狀態）、教師綁定 ended 與學生側停用／標記／清除中／學校 unconfirmed、同一 context 提交後立即拒絕、偽造 claim 無效、projects owner-only（教師／管理員無捷徑）、單一 statement snapshot（projects）、HTTP 層跨帳號／降權／停用重送。
+**缺口與補齊**（Authorization 29→42、HTTP foundation 46→47、真 Auth 整合 6→7，另 unit +8）：教師自身停用／標記／清除中、pending／rejected 時關係拒絕；管理員只有 `login`（所有學生能力與 `ai_call` 拒絕，管理員身上的綁定列不產生教師關係，管理員停用／標記／清除中拒絕）；學生被改為 teacher／admin 後既非學生能力亦非可查看學生；RLS 資料隱藏（教師只見被允許綁定、他人 profile 不可見、學生標記後隱藏）；教師關係 predicate 的單一 statement 內重新授權；真 Auth 產品路由：跨帳號 404、未綁定／已綁定教師與管理員讀寫學生草稿 403 且不洩漏內容、owner 的 withdrawn／expired 可讀、停用／標記刪除／清除中／學校 unconfirmed 即時 403，草稿列全程不變。
+
+**仍待決／阻擋（只阻擋該案例）**：教師凍結（Q-SCHOOL／D-14）、教師對學生資料的實際讀取資源政策與範圍（目前僅關係 predicate，無教師讀取路由）、withdrawn／expired 的教師檢視政策（維持 fail-closed）、完整非學生角色矩陣、管理員補發與 PP 數值，皆未實作、不自創。
+
+### 驗證結果（本機隔離資源）
+
+- `npm run typecheck` 通過。
+- `npm run test:foundations`：7/7 layers 通過——workspace 相容、typecheck、production build、unit 34、contract 701、隔離 PostgreSQL／HTTP／Worker／Edge（pgTAP 78／53／15；Authorization 42、Projects 203、Usage Worker 31、HTTP foundation 47）、原生 Auth／產品 Route Handler／browser（整合 7/7、Playwright 1/1）。
+- 證據區分：Route Handler 直接呼叫＝真 Auth 整合（含新增產品路由案例）；實際 HTTP＝harness 的 `/api/v1/agent-runs/{id}/stop` 路由與本機 HTTP fake Auth server；browser＝既有 Playwright 草稿頁（本批未修改頁面）。未做本批專屬 browser 案例。
+- 失敗與限制：實作期間無測試失敗需修；`ai_not_open` 沿用既有登錄碼，措辭「此功能目前尚未開放」仍屬草案。Run→Job 正向、錯配、重試與已完成案例因關聯不存在而無法測試。
+
+**目標任務狀態（皆維持未勾選）**：T008（尚缺教師凍結／Q-SCHOOL、完整角色矩陣、T006／T007）；T011（G-3 待 Run 關聯，其他端點／kind 結果、A-9、T006／T008／T009）；T014（本批未改，A-1／Q-AUTH、完整角色導覽、T011）；T015（完整角色／provider／kind／政策矩陣及 T008、T010～T014 原依賴）。Gate／Checkpoint／正式簽核及產品啟用狀態不變。
+
+**資源與交付**：測試 runner 自行建立並清理本專案隔離 Docker 資源；不觸碰 `go-anywhere` 或其他專案。精簡 ZIP、manifest 與 SHA-256 sidecar 置於專案外 session 目錄，內容與雜湊見其 manifest。不 commit／push／merge／部署。
+
+## §82 — 2026-10-27 專案產品接線有界本機批次
+
+教育者本 session 明確批准：可信 session → 建立專案 → 本人清單／詳情 → 既有階段草稿；僅本機程式、合成資料與隔離服務驗證。沿用 `work/auth-cancel-authorization`／`b53fcde489d2ff9f1d4e659873e0f03ac1eb6cfe`，保留 §81 及任務歸屬同步的未提交內容；修改前來源（含相關未追蹤來源）、SHA-256、dirty patch／status 已保存至專案外 session `files/project-routing-batch/baseline*`。不倒填歷史，不改 checklist、任務正文／依賴／勾選、Gate 或簽核狀態。
+
+契約邊界：PROJ §1 P-1 明定 POST `/api/v1/projects`、P-2 明定 GET `/api/v1/projects/{id}`；現行契約未定義列表 HTTP 路徑／DTO／分頁，因此不新增列表 API。工作台以可信 server 直接沿用既有列表核心；列表 HTTP 待補契約，不阻擋 P-1／P-2 與 server-rendered 清單。P-2 本批僅本人學生，不實作已綁定教師唯讀／稽核分支、PATCH。分類維持未分類，不自行確認。互動式登入、Agent／Run→Job、M2／M3、A-9、provider／公開部署不在範圍；G-3 保持安全關閉，正式成功契約仍為 200。
+
+### 本批程式與驗收界線
+
+- P-1／P-2 沿用可信 `/user` principal、受限 DB session、當下 gate／owner／RLS、既有原子建立與 24 小時 receipt。P-1 首次及重送均回原建立 DTO／201，異意圖 422；tier 非 A／B 回契約 `tier_not_supported`／422，caller owner／角色／學校／principal 等未知欄位拒絕。提交／回應未確認不冒充成功；無新 migration、grant、DB 函式或核心重寫。
+- `/student` 不再用合成卡片；可信 server 完整三態列表（沿用原投影／parser，不靜默丟棄 confirmed）→ `/student/projects/{id}` → 既有九階段草稿頁。未分類與歷史未驗證不升格為確認。草稿頁改用現行完整分類讀取，避免舊表示介面把合法 confirmed 擋成不存在。
+- 表單以原 UUID／原本文重試；未知結果鎖定本文，tab sessionStorage 以可信 Auth 當次主體的單向雜湊 namespace 隔離，reload／同帳號換 session 保留原意圖。此值不含 token、不是 principal 或權限，不送往 API 作 claim。無法安全讀寫操作紀錄時明確停止建立。清單／詳情於 mount、focus／visibility／pageshow、15 秒重查期間隱藏；失權結果移除資料子樹，任何新 HTTP 仍由 DB 逐次授權。不是正式撤銷 SLA，也不宣稱能收回瀏覽器已取得的內容。
+- 原產品工作台視覺殼、Tailwind／Radix 草稿 editor 沿用；空清單、載入、拒絕、依賴失敗與待確認分開。導覽只由 server 結果產生；不提供互動式登入或分類確認新 UI。
+
+| Checklist | Total | Checked | Unchecked | Status |
+| --- | ---: | ---: | ---: | --- |
+| mvp-plan.md | 24 | 24 | 0 | PASS |
+| plan-finalization.md | 31 | 0 | 31 | FAIL（本批明確授權續行，原狀保留） |
+| requirements.md | 38 | 22 | 16 | FAIL（本批明確授權續行，原狀保留） |
+
+未找到適用 AGENTS.md 或 `.specify/extensions.yml`（含上層路徑核對）；無 before／after implement hook。功能目錄依 `.specify/feature.json`／prerequisites，未依分支推斷。
+
+### 本批結果、真實失敗與停止點
+
+- **最終已驗證**：`npm run test:foundations` exit 0，7/7 layers（workspace、typecheck、production build、unit 34、contract 701、隔離 PostgreSQL／HTTP／Worker／Edge、真 Auth／Next／browser）。DB assertions 分別 78／53／15；Authorization 42、Projects 203、Usage Worker 31、HTTP foundation 47；真 Auth Route Handler 整合 10/10、實際 Next HTTPS Edge browser 3/3。不將聚焦重跑或總層與子項重複加總。無 DB 變更；既有新庫與 0009→0010→0011→0012 歷史資料升級驗證仍通過。
+- **HTTP／browser 證據界線**：整合 suite 直接呼叫正式 Route Handler，但使用真 Auth 與隔離 PostgreSQL；browser 則經真實 Next HTTPS、cookie、正式 POST／GET／PUT 與 DB，非成功回應 mock。response-loss 先 `route.fetch()` 真實提交，再中斷回應，原鍵重送僅一列；另驗 reload／同帳號新 session 原鍵不變。Auth 不可用案例只暫停 runner 明確指定的本批容器，finally 恢復；DB 故障只在隔離庫撤銷既有函式 EXECUTE 並於 finally 原樣恢復。
+- **保留的失敗**：先寫測試遇缺少 P-1 Route 模組（預期 red，exit 1）；初次 typecheck 的泛型推論與新路由 `@/` alias 直接匯入各 exit 1，改明確泛型及沿用現有相對路徑後聚焦通過。第一次 foundations 因 Next 產生的 Route 型別不接受直接匯出帶內部第二參數的 handler 而 exit 1，改 `POST(request)` 包裝；第二次到 browser 因 `next` CLI 缺失 exit 1。`npm rebuild --ignore-scripts` 後另一次聚焦仍因 `vitest` 套件／CLI 實際缺失 exit 1，故恢復既有依賴。一般恢復曾使 patch 版本漂移，已僅撤回本批 lockfile 變動，並以 no-save／不改 lockfile 的精確原版本恢復；獨立核對 installed version mismatch=0、manifest／lockfile 與基線相同後才取得上述最終完整通過。所有失敗與中間成功均另存原執行紀錄，不計為最終成功次數。
+- **清理與保護**：runner 清理及獨立 Docker 精確 ID／本產品前綴查核均為 container／volume／network 零殘留，暫授權撤銷 verified；本批 Next 產生的兩個具名憑證檔已刪除，未讀出私鑰。未碰 `go-anywhere`。HEAD／分支維持起點；§81 未改動的程式／測試逐檔 hash 與來源基線一致，Auth 與真 Auth 測試僅加入本批內容。136 項任務正文／依賴／未勾選與 checklist 保持。
+- **交付／限制**：專案外 `files/project-routing-batch/` 保留修改前來源；精簡 ZIP 收錄本批修改來源、必要驗證／清理紀錄、原 dirty patch／來源雜湊及 manifest，另有 ZIP SHA-256 與 ZIP 外逐檔獨立驗證。未提供列表 HTTP（缺正式路徑／DTO／分頁）、P-2 教師唯讀／稽核／PATCH、P-4、互動式登入、Agent／Run→Job／provider／M2／M3／A-9 或產品啟用；這些未因本批測試通過而獲批准。T011／T014／T015／T050／T051 精確本批成果與剩餘見各任務 §82 註記。自簽 HTTPS 警告屬本機測試，不是公開憑證或部署。無 commit／push／merge／部署／聯絡供應商，交付後停止。
+
+## §83 — 2026-11-01 建立專案待確認操作期限有界修正
+
+教育者本 session 明確批准：避免專案已提交但回應遺失、receipt 到期後使用者重試而在 UI 流程中產生第二個專案。沿用 `work/auth-cancel-authorization`／`b53fcde489d2ff9f1d4e659873e0f03ac1eb6cfe`，保留 §81／§82 與任務歸屬同步之未提交內容；`.github/skills/speckit-analyze/SKILL.md` 既有修改不屬本批（修改前 SHA-256 `0B55C72263C8CB4D8661AEE7AD8EC4C367CB0AF2036FF3C1494D25E0337CC1FA`，未編輯）。既有 checklist 未完成狀態已獲准保留續行；不宣告 Gate 通過、不改正式簽核。本批授權已啟動本機 Docker Desktop。誠實揭露：授權登錄與修改前基線未在動工前寫入；受影響之 tracked 檔案可由 HEAD 對照，未追蹤的 `create-project-form.tsx`／`project-handlers.ts` 修改前內容未另存。
+
+**重現（DB 層，未改主機時鐘／未等 24 小時）**：隔離 DB 以 control 連線把同一筆 `project_create_idempotency` 的 `created_at`／`expires_at` 同步前移（保持 `expires_at = created_at + 24h` CHECK）。前移 23 小時：同鍵重送回原專案、列數 1；再前移到超過 24 小時：同鍵重送回 201 且為**新專案**、列數 2。確認既有「至少 24 小時」receipt 不是永久去重，這是 P-1／DB 既有語意，本批未改。
+
+**修正（只在產品恢復／重送流程）**：
+- 新增最小伺服端輔助 `GET /api/v1/projects/create-clock`（可信 principal、`edit_saved_content` gate、no-store），只回 DB `statement_timestamp()` 毫秒；必要性：瀏覽器時鐘可被回撥／前跳／休眠影響，不能當可信期限，而 receipt 到期用的正是 DB 時鐘。不新增 migration、不改 P-1。
+- 待確認操作改為 strict v2：`{ v, key, payload, started_server_ms }`。首次送出前先取伺服器時間並寫入 sessionStorage，之後重試／reload／同帳號換 session 不更新起點。每次送出前（含重試，不只 mount）重新取伺服器時間：`起點 ≤ 現在 < 起點 + 23 小時` 才送原鍵／原本文；23 小時留 1 小時給 App／DB 時差與在途請求。恰好到期、到期後、伺服器時間早於起點、無法取得伺服器時間、舊版紀錄、缺欄位、錯誤型別、不合理時間、損壞資料，一律不送 POST、不換鍵、不刪除，保留原紀錄並顯示操作代號前 8 碼與人工核對清單的下一步；不以名稱或清單猜測成功／失敗。
+- 瀏覽器時鐘不參與判斷（browser 案例把 `Date.now` 撥回 40 天仍停止）。正常建立成功／明確 400／413／415／失權才清除紀錄，不妨礙之後開始新專案；不同帳號沿用帳號隔離 scope，看不到對方的待確認操作。UI 說明改為「期限內（約 23 小時）可原操作重試」，不再無條件承諾不會重複。
+
+**驗證（隔離資源，已清理）**：聚焦 unit 3／3（期限邊界、v2 strict、舊版／損壞）；`npm run typecheck` 通過；真 Auth 整合 11／11（新增 receipt 期限前／後語意與 clock 端點）；Playwright 4／4（新增到期恢復案例：無 POST、DB 專案仍 1 列、紀錄不變、不合理時間、舊版／缺欄位／錯型別／損壞、不同帳號；既有 response-loss 案例加入 clock 失敗後不送出、storage 起點／本文 reload 不變、成功後清除）。`npm run test:foundations` 7／7 layers 通過（unit 37、contract 701、pgTAP Usage 等隔離 DB 層、真 Auth 整合 11、Playwright 4；不重複加總）。第一次 foundations 曾因 Playwright 案例 1 在詳情頁 5 秒內仍載入而失敗，同案例其後重跑通過，與本批程式無關；未修改該案例。
+
+**保證範圍與限制**：僅保證「本產品表單／恢復流程」在 DB 時鐘判定的 23 小時安全窗內以原鍵／原本文重送，且過期或無法確認時不自行送出。非原子：時間檢查與 POST 是兩次請求，靠 1 小時餘裕而非交易保證；紀錄可被使用者自行竄改 sessionStorage；紀錄在 tab 關閉時消失（其後無法識別原操作，不保證不重複）；已過期的未知結果只能人工核對，系統不判斷、不刪除。直接呼叫 P-1 API 於 receipt 到期後的語意不變，**不是永久 exactly-once**。未實作登入／Agent／M2／M3／A-9／provider／列表 HTTP API／部署；T011／T014／T015／T050／T051 僅更新子項，不勾選、依賴不變。
+
+## §84 — 2026-11-01 DB replay-only 與未知建立操作恢復（本次明確有界授權）
+
+教育者本 session 明確批准：最小增量 migration／DB replay-only 與必要 HTTP／DTO／錯誤契約、失權後帳號隔離保留未知操作、移除產品恢復對 create-clock／23 小時的依賴、隔離 DB／真實 Next HTTPS／Auth browser 驗收及相關任務子項與交付證據。允許先補失敗案例；不得改寫歷史 migration、延長 receipt 保存或新增通用永久 journal；不得擴至登入碼、A-9、M2／M3、Agent/provider、部署、列表 API、Gate 或產品啟用。原始 P-1 create 語意與所有未勾選任務依賴必須保留。
+
+起點已核對：root `C:\Users\geste\spec-kit\app-planet`、branch `work/auth-cancel-authorization`、HEAD `b53fcde489d2ff9f1d4e659873e0f03ac1eb6cfe`、feature `specs/001-app-planet-platform`。本批動工前基線（相關 tracked／untracked 來源與 SHA-256 manifest）存於 session `files/app-planet-batch-baseline-20261101/`；`.github/skills/speckit-analyze/SKILL.md` 修改前 SHA-256 為 `0B55C72263C8CB4D8661AEE7AD8EC4C367CB0AF2036FF3C1494D25E0337CC1FA`，不屬本批。§83 所述其前一輪未先登錄基線的程序偏差照實保留；本節不倒填或改寫該紀錄。此一次性授權不代表 Gate／正式簽核通過或常設許可。
+
+### §84.1 實作與驗收結果
+
+- 新增 `0022_project_create_replay_only.sql`，未改歷史 migration。`app_project_replayer` 為 NOLOGIN／NOINHERIT／NOBYPASSRLS；固定 `search_path=pg_catalog` 的 replay 函式只有讀取必要欄位的權限，無 project／receipt INSERT、UPDATE、DELETE。P-1 與 recovery 使用同一 owner＋`project_create_v1`＋UUID advisory transaction lock；recovery 在鎖後重驗當下帳號資格及精確本文／意圖，讀取完整 receipt／專案結果後用 `clock_timestamp()` 判定期限。此為 DB 的有效性判定時點，不是交易開始時間；HTTP 回應抵達前 receipt 仍可能到期，但之後再查只會不可恢復，不會建立。
+- `POST /api/v1/projects/recovery` 只有完整、有效 receipt 回 `200 { outcome: "replayed", project }`；缺失／過期／不完整／無法確認回固定 `409 operation_outcome_unrecoverable`。共用鎖使 in-flight P-1 recovery 等待同鍵原交易；提交後讀取並回放，回滾／不存在則不可恢復，不推定原請求未執行。replay 函式在任何分支都沒有建立或清除 receipt 的路徑。P-1 原 API 仍保留 receipt 到期後同鍵可新建語意；`operation_outcome_unknown`／`dependency_unavailable` 的固定錯誤指引不再承諾一定能回原結果或資料仍可見。
+- 移除 create-clock 路由及產品呼叫／23 小時安全窗。僅首次全新意圖呼叫 P-1；待確認操作以 principal 派生雜湊做帳號隔離，原 key／本文存 localStorage，reload／換 session／暫時失權／401／403 不清除未知操作。失權立即隱藏受保護子樹；同帳號重新驗證只走 recovery，不同帳號 scope 不同；舊版／損壞／storage 失敗停止自動送出。這不是新的永久保存政策：瀏覽器資料遭使用者清除或 storage 不可用時，本機 key／本文仍可能失去，系統不能據此判斷原操作結果。
+- 實作前新增 DB 案例曾以 3 個「replay function 不存在」失敗，重現缺口。第一輪 migration 驗收另實際發現 PostgreSQL 沒有 `jsonb_object_length(jsonb)`，以及內部鎖 helper 不應能由一般 actor 直接呼叫；改以 `jsonb_object_keys` 計數，並讓競態測試持有相同 advisory key、未放寬 helper 權限。後續發現測試把唯一 control pool connection 留在鎖持有交易中造成 pool timeout；改以可用測試連線觀察等待並在 holder connection 上驗列數。最終 `test:projects:db`：`Status=passed`、`Revocation=verified`、`Cleanup=complete`；Projects 210 tests、migration compatibility 19 assertions，含新庫／升級／最小權限。
+- 首輪 contract 有兩項舊預期把缺失 actor context 當 `invalid_result`；依實際 adapter 結果改為 `invalid_context`，保留 malformed DB DTO 的 `invalid_result`。首次 typecheck 也抓到 DB 測試 row 型別不安全及 `.next/dev/types/validator.ts` 指向已移除的 create-clock；已補窄型別 guard，重新產生 Next route types，並只移除一個已確認過期的生成 validator。最後 `npm run typecheck` 通過。
+- 真實 Route Handler／原生 Auth／隔離 PostgreSQL 11/11 與真 Next HTTPS browser 4/4 通過。Browser 實證含 response-loss→403→同帳號重新驗證 recovery、過期 recovery 列數仍為 1、Auth 暫停後無 receipt 時也只 recovery 並停在不可恢復、異帳號隔離、舊版／損壞紀錄及 storage 失敗不誤送。首次 browser run 的 3 個失敗是未同步 §83 clock／狀態字詞期待；修正後第二次 3 個失敗則為「Auth 503 時尚未隱藏表單」、「舊版停止按鈕標籤」及成功訊息字詞期待與現行 UI 不符；均依 DOM／實際回應修正驗收，完整重跑 11/11＋4/4 通過。故障注入的 response-loss browser run 中 Next 曾輸出 `The destination stream errored while writing data`（digest `1516078037`）；同批 4/4 仍通過，保留此觀察，不據此宣稱無 server log error。
+- `npm run test:foundations` 最終 7/7 layers 通過：workspace 相容、typecheck、production build、unit 37、contract 703、pgTAP 78／53／19、Authorization 42、Projects 210、Usage Worker 31、HTTP foundation 47、真實 Auth Route Handler 11/11、HTTPS browser 4/4。此統計為各層原始輸出，非產品故事／Gate 通過，也不重複加總 aggregate。
+- 本輪更新 T011／T014／T015／T050／T051 的具體子項記錄；136 項任務仍全未勾選、無任務結案，原依賴不變。Gate／正式審議／簽核／產品啟用狀態不變。下一個有明確資料契約的實際產品候選為 T051／P-4（`PATCH /api/v1/projects/{id}/tasks/{tid}`，strict `{ done }`＋`If-Match`，須真的保存並驗 200／版本衝突）；T051 原依賴 T050、T039 尚未滿足，T050 尚需其 T015 前置，T039 仍有 Q-TL／來源阻擋。先完成這些實際依賴並取得該階段明確授權；T001／T002 不額外推論為所有分支共同凍結。
+
+## §85 — 2026-11-01 P-1 recovery 儲存相容與 P-4 任務 done 保存有界批次
+
+教育者本 session 明確批准本機程式、最小增量 migration、契約／整合／browser 測試、隔離 Auth／Next／PostgreSQL 驗證及精簡證據交付。先完成 P-1 recovery 儲存相容修正；其驗收通過後，直接完成 T050／T051 的 P-4 本人任務 `done` 保存子集，接通真實 DB、產品 PATCH 與現有專案詳情 UI，不需再次請批。T039／Q-TL 不阻擋本次明確限定的手動 done 子集；不實作 Skills、任務生成、Agent 執行、階段完成／批准、登入碼、A-9、M2／M3、provider、列表 HTTP API、公開部署或正式產品啟用。不要改寫任何歷史 migration、倒填歷史、重做 §84 證據；保留原依賴、checklist、Gate 及任務未勾選狀態。
+
+起點核對：root `C:\Users\geste\spec-kit\app-planet`、branch `work/auth-cancel-authorization`、HEAD `b53fcde489d2ff9f1d4e659873e0f03ac1eb6cfe`、feature `specs/001-app-planet-platform`。本批相關 34 個 tracked／untracked 來源的 before 副本與 SHA-256、工作樹狀態及 tracked dirty patch 保存於 session `files/app-planet-task-save-baseline-20261101/`。`.github/skills/speckit-analyze/SKILL.md` 當時 SHA-256 為 `0B55C72263C8CB4D8661AEE7AD8EC4C367CB0AF2036FF3C1494D25E0337CC1FA`；該檔不屬本批，不修改、不還原、不納入交付。
+
+契約核對：PROJ P-4 定義 `PATCH /api/v1/projects/{id}/tasks/{tid}`、擁有者、strict `{ done }`、200 真正寫入及 `If-Match`；COMMON 要求單一 strong quoted canonical row version、缺漏／格式錯誤為 400、舊版本為 409，成功版本改變且不重用。data-model 的 `tasks` 欄位列未明示 task 主鍵及 `row_version`，但 P-4 的 `{tid}` 與 COMMON row ETag 已要求可識別、可版本化的 task row；本批僅以最小 migration 補 task row ID／row_version，並同步明確化 DTO／欄位，不擴充任務來源或完成語意。初始任務來源目前未接通；只可由隔離測試 setup 建立合法任務，產品頁不得放假任務。
+
+本批只更新 T050／T051 對應子項成果與尚缺來源；不改任務 ID／正文／依賴、不勾選、不宣稱原依賴滿足。Checkpoint／完整 MVP Readiness Gate 與正式教育者審議／簽核狀態不變；此為單批一次性授權，不是常設許可。
+
+**A 實作結果**：新操作只寫本分頁 `sessionStorage`；啟動時同時讀取 session／local 兩處本帳號舊意圖，讀取完成前不啟用首次建立。有效舊 v2／v3 保留原 key／本文轉為 recovery；新舊意圖不同、損壞、讀取／寫入失敗或無法確認時封鎖建立、不任選、不覆寫。舊 `localStorage` 僅供唯讀相容；清理只在內容仍等於確認時讀到的紀錄時執行。401／403、missing／expired recovery 不清除未知操作、不 fallback create、不換鍵。沒有新增跨裝置／永久保存政策。
+
+**B 實作結果**：新增 `0023_project_task_done.sql` 的 `app.tasks`（task UUID、非負 `row_version`）及專用 `app_project_task_writer`。該 role `NOLOGIN`／`NOINHERIT`／`NOBYPASSRLS`，只可讀 ownership／DTO 必要欄位並更新 `done`／`row_version`；RLS 強制本人專案／任務，authenticated 無直接 DML。Security-definer writer 固定 `pg_catalog` search path，鎖定 task row，於 DB 寫入同時重驗 `auth.uid()`、帳號 gate、owner／task/project 關聯及 expected version；版本衝突回有限 `{ done }` 投影，不覆寫。產品 PATCH 僅接受 strict `{ done: boolean }`＋單一 strong `If-Match`，回新 DTO／ETag；無冪等鍵。專案詳情 server-render 只讀 DB 任務；UI 只在回應 DTO／ETag 驗證後顯示成功，保存中停用重複送出，409 保留意圖並要求手動 reload／比對，DB failure／response-loss 不假成功，401／403 隱藏受保護頁面。勾選不改 project stage／版本、批准／snapshot／Agent／test-run。
+
+**驗證（本批實際命令）**：
+
+| 命令／層 | 結果 |
+| --- | --- |
+| `npm run test:unit -- tests/unit/create-project-intent.test.ts` | 7／7 通過 |
+| `npm run test:contract -- tests/contract/project-tasks.test.ts` | 4／4 通過 |
+| `npm run test:projects:db` | 通過；新庫完整 migration chain／舊 project rows 升級，RLS／writer 欄位最小權限／受控 CAS 共 29 pgTAP assertions 通過；Revocation verified、Cleanup complete |
+| 真 Auth P-4 focused Route Handler／PostgreSQL | 1／1 通過；true→false、ETag、非法輸入、隱匿、跨帳號／跨專案／teacher／admin 拒絕、precheck 後失權及同版本競態各一成功其餘 409 |
+| 真 Next HTTPS／Auth／DB P-4 browser | 1／1 通過；產品 PATCH 寫 DB、reload、409 保留意圖／手動 reload、撤銷 writer EXECUTE 時 503 不假成功、response-loss 真提交後不假成功／reload 讀回、失權後隱藏；task 改變未推進 stage／批准 |
+| `npm run typecheck` | workspace 與 tests 全通過 |
+| `npm run test:foundations` | exit 0，7／7 layers；production build 通過、unit 41、contract 707、isolated PostgreSQL＋HTTP＋Edge、Auth integration 12／12、HTTPS browser 6／6 通過。此為 foundation aggregate，不與上述聚焦測試重複計數 |
+
+**失敗／修正紀錄**：第一輪 P-4 contract 把 COMMON D-28 明確允許的 signed canonical parser（`"-1"`）誤當非法；修正測試邊界，保持 shared parser 相容，並由 HTTP `readRowIfMatch` 拒絕負 row version。第一輪 Projects DB 測試仍期待 `app.tasks` 不存在；更新為新 migration 後應存在。P-4 第一次 Route Handler save 回 503；隔離 writer probe 定位為 SQL 外層結果漏選 `subject`，補回後真 Auth route 通過。第一次完整 browser run 發現 P-4 test 被錯誤巢狀註冊在 recovery test；拆為獨立 top-level spec，A recovery 與 B task browser 後續均執行。P-4 browser 的 alert locator 初次因 Next route announcer 造成 strict-mode 歧義，改用精確訊息 locator。最小權限 pgTAP 初次以 `pg_has_role` 判斷超級管理員 membership，遇其隱含 membership 語意；改檢查 catalog 明示 membership。可定位的 browser／DB 失敗原始輸出及最終聚焦／完整驗證輸出收錄於本批交付；P-4 首次 Route Handler 503 的單次原始輸出未能獨立定位，因此僅保留症狀、根因與修復紀錄，不以最終通過輸出替代。修正後聚焦及完整 foundations 通過。完整 browser 的 response-loss fault injection 仍觀察到 Next `The destination stream errored while writing data` digest `1516078037`；測試通過不代表無 server stream error，明確保留此觀察。
+
+**剩餘能力與狀態**：正式任務初始載入／生成來源尚未接通；本批僅隔離測試 setup 以 control connection 建立真實持久化合成任務，產品空清單明示未接來源，未放示例任務。階段人工確認／批准、完整 P-1～P-4、T050／T051 全文、完整 T015／T039 前置與其他原測試仍未完成；T039／Q-TL 不阻擋本次已批准的 manual done 子集。T050／T051 136 項任務中的兩項仍未勾選、原依賴與正文不變；Checkpoint／MVP Gate／checklist／正式審議簽核不變。下一個有明確資料契約且可獨立評估的剩餘產品子集是 T051 的任務載入來源契約／資料準備；先核定來源及其資料責任、授權邊界與前置，再另取明確階段批准，不能把本次 done 保存授權延伸為任務生成許可。本批未 commit／push／merge／部署，已查隔離資源清理為零殘留，未碰 `go-anywhere`。
+
+
+## §86 — 2026-11-01 建立專案清理快照修正與手動任務清單首次匯入有界批次
+
+教育者本 session 明確批准兩項有界實作，A 通過後直接執行 B：**A** 修正 `CreateProjectForm` 清理讀到舊 React state；**B** 接通「本人學生手動輸入／確認任務清單 → 服務端持久化 → 既有 P-4 勾選 → reload」。本批授權本機程式、必要最小契約補充（P-4I）、增量 migration `0024`、隔離 Auth／DB／Next／browser 驗證；上位依賴尚未結案時可完成此子集，原依賴、任務勾選與 Gate 保留，不代表正式啟用。單批一次性授權，不是常設許可；不 commit／push／merge／部署，不實作登入碼、A-9、M2／M3、Skills／AI 生成、Agent／provider、任務取代／刪除／重排。
+
+起點：root `C:\Users\geste\spec-kit\app-planet`、branch `work/auth-cancel-authorization`、HEAD `b53fcde489d2ff9f1d4e659873e0f03ac1eb6cfe`、feature `specs/001-app-planet-platform`；§81～§85 未提交修改全數保留。`.github/skills/speckit-analyze/SKILL.md` SHA-256 起訖皆為 `0B55C72263C8CB4D8661AEE7AD8EC4C367CB0AF2036FF3C1494D25E0337CC1FA`（本批前已有未提交修改，不修改、不還原、不納入交付）。before 基線：tracked patch／diffstat 及未追蹤來源副本存於 session `files/evidence/`；`create-project-intent.ts` 與其單元測試在存 before 副本前已加入 `clearIntentSnapshot`／新測試，其 before＝移除這些新增。
+
+**A 成果**：`submit()` 把本次實際保存的 storage key、原始內容與來源快照（recovery 用讀到的 `storedSources`、首次建立用 `{session: 本次序列化, local: null}`）顯式傳入 `send`／`finishConfirmed`，不再讀剛呼叫 setter 的 state；新增純函式 `clearIntentSnapshot` 回 `cleared｜changed｜failed`（核對未變才刪，讀／刪例外為 `failed`）。首次成功且可清除才結束意圖；首次明確拒絕僅在 `provesCreateWasNotExecuted` 且清除成功時結束，否則 `stopped` 並提示；清理失敗／被替換時保留紀錄、停止新建，UI 與行為一致；同帳號失權後未知操作保留、只走 recovery。雙位置相容、分頁保存、DB replay-only 不變。修正前測試先行：`A-pre-fix-browser.txt`（exit=1，4 failed／8 passed：正常首次成功、明確拒絕、被替換、storage 失敗四項失敗），修正後同組通過。
+
+**B 契約補充（P-4I，最小）**：既有 PROJ P-4 明言「本契約不定義任務生成來源」、data-model 明言來源未接通，故依本批授權補 `POST /api/v1/projects/{id}/tasks`（strict `{confirmed:true,tasks:[{title}]}`、`Idempotency-Key`、201／200 replay、409 `task_list_already_exists`、422 `idempotency_key_reuse`），並於 data-model 新增 `project_task_imports`；條文見 [projects-agent-sandbox.md](./contracts/projects-agent-sandbox.md) 與 [data-model.md](./data-model.md)。1～50 項／每項 200 code points 為**工程防護值，待教育者核定**，非產品配額；未猜測其他政策數值。這是手動清單，不假裝由 Skills／AI／Agent 生成，也不解析任意草稿。
+
+**B 實作**：`0024_project_task_manual_import.sql` 新增 `app.project_task_imports`（project PK、owner、idempotency_key、sha256 request_hash、task_ids、source=`student_manual`；FORCE RLS；authenticated 無直接權限）、`app_project_task_importer`（NOLOGIN／NOINHERIT／NOBYPASSRLS，僅必要欄位 grant；tasks 只可 INSERT `project_id`／`order`／`title`）及 security-definer `app.import_owned_project_tasks`：固定 `pg_catalog` search path、以 per-project advisory xact lock 序列化、鎖前後重驗 `auth.uid()`／帳號 gate／owner，單一交易寫任務與確認紀錄；task ID、版本由 DB 產生，`done=false`、`row_version=0`、不寫 `done_snapshot_id`／批准／Agent。Handler（`importTasks`）重新查核 principal／gate／owner、strict body（64KB）、冪等鍵，DB 寫入時再檢。UI `ProjectTaskImport`：輸入→預覽（明示「尚未保存」）→確認；意圖（key＋內容）先持久化於帳號隔離 sessionStorage 並讀回驗證才送出；401／403 隱藏受保護頁；未知結果只能以原 key／內容重送（「以原操作確認結果」），不換鍵、不改內容；成功後 `router.refresh()` 交由既有任務讀取核心／P-4 呈現。審閱時發現並修正一個 UI 缺陷：完成後 `finish()` 誤以 textarea 內容當狀態訊息（應為說明文字）；此為讀碼發現，無對應失敗輸出。
+
+**驗證（實際命令，原始輸出存於 session `files/evidence/`）**：
+
+| 命令／層 | 結果 |
+| --- | --- |
+| `npm run test:unit` | exit 0，6 files／43 tests（含 `clearIntentSnapshot`） |
+| `npm run test:contract` | exit 0，22 files／710 tests（含 P-4I body／result／`parseManualTaskLines`） |
+| `npm run test:auth:local`（完整） | exit 0；真 Auth→Route Handler→隔離 PostgreSQL integration 2 files／21 tests，其中 `real-auth-task-import.test.ts` 9 項：未確認／strict body／非法輸入無副作用、服務端控制欄位與初始值、同次確認重送／response-loss 重放不新增、異內容同鍵 422／換鍵再匯 409 且 done／版本不變、跨帳號／跨專案／teacher／admin 拒絕、handler 檢查後失權 DB 仍拒絕、6 並行不同鍵僅 1 成功與 4 並行同鍵僅 1 次建立、任務／確認紀錄寫入中故障整筆 rollback 後可重試、權限與 catalog；HTTPS browser 12／12，含 A 六案例（正常首次成功確實清除且無清理失敗提示）與改寫後 P-4 browser：**任務由 UI 輸入→預覽（DB 0 列）→確認→response-loss（DB 已 2 列、UI 不顯示已保存）→原操作重送 200、仍 2 列／1 筆確認→P-4 勾選→reload→409→response-loss→DB 故障 503→失權隱藏**；`CleanupVerified=… containers=0 volumes=0 networks=0` |
+| `npm run test:projects:db` | 修正後 exit 0（`Status=passed`、Revocation verified、Cleanup complete）；新庫完整 migration chain＋歷史 rows 升級，0024 importer／function／table 權限與 RLS assertions 通過 |
+| `npm run typecheck` | exit 0 |
+| `npm run test:foundations` | exit 0，7／7 layers |
+
+**失敗／修正紀錄**：(1) A 修正前 browser 4 項失敗（`A-pre-fix-browser.txt`）。(2) 修正後第一輪 browser 一項失敗：A「明確拒絕」測試的合成 problem+json 缺少 `request_id`／`user_message_zh`，未通過 `problemJsonSchema`，屬測試資料錯誤，補齊後通過（原始輸出 `auth-int-run1.txt`；該輪為 `-BrowserOnly`）。(3) 第一輪 `test:projects:db` 失敗：我新增的 pgTAP 斷言以 table-level INSERT 檢查 `app.tasks`，而 0024 刻意只授欄位級 INSERT；改為欄位級斷言並加入 `done`／`done_snapshot_id`／`row_version` 不可 INSERT（`pgtap-projects-fail1.txt`）。本機 Next dev server 仍觀察到 `The destination stream errored while writing data`（digest `1516078037`，response-loss 注入所致），測試通過不代表無此 server stream 錯誤。
+
+**未驗證／限制**：未啟動真實 Worker／AI／provider；真實登入 UI、跨裝置保存、取代／刪除／重排任務、任務配額政策均未實作；`Docker` 隔離 stack 以外的環境未測。確認紀錄不過期，且「已有任務」守衛使到期後重新 create 不可能；未新增通用 journal。匯入／勾選未推進 stage、批准、Worker 或發布（測試核對 project stage／version／分類／stage_records 不變）。
+
+**任務狀態**：136 項任務正文、依賴與勾選不變。T050（P-4I 契約／整合測試）與 T051（任務來源子項）僅本批列明部分完成；T015、T006、T008、T004 僅本批涉及子集；T052→T051 原依賴保留；T039／Q-TL 未結案不被解讀為禁止本子集，但也未因此宣稱滿足。Checkpoint／完整 MVP Readiness Gate 與正式審議／簽核狀態不變。**仍阻擋**：Skills／AI／Agent 任務生成來源（需 T039／Q-TL 與 Skills 內容決策）、階段保存的人工確認／批准、完整 P-1～P-4／T051 原範圍、配額政策核定。本批未 commit／push／merge／部署，隔離資源已查零殘留，未碰 `go-anywhere`。
+
+
+## §87 學生階段草稿確認（2026-11-01，本 session 一次性授權）
+
+**授權**：教育者本 session 明確批准的有界本機子集——本人學生只能明確確認自己專案某階段「伺服器已保存的確切草稿版本」；`0025_stage_draft_confirmation.sql`、確認專用路由、既有草稿頁確認面板，以及隔離 Auth／DB／Next／browser 驗證。不是常設許可；Checkpoint／完整 Gate、正式審議／簽核、原依賴、checklist 狀態不變。
+
+**實作**：
+- DB：新增不可改寫證據表 `app.stage_draft_confirmations`（project／stage／`record_row_version`／`content_hash`／`confirmed_by`／DB `clock_timestamp()`／`source='student_explicit_confirmation'`／`idempotency_key`；FORCE RLS，`authenticated` 僅 SELECT，無 UPDATE／DELETE）與受控 `app.confirm_stage_draft`（SECURITY DEFINER、固定 `search_path`、專用 NOLOGIN／NOBYPASSRLS 角色 `app_stage_confirmer`）。與 `save_stage_draft` 使用同一 advisory lock，於同交易重驗帳號 gate、擁有者與版本；內容 hash 由 DB 讀取已保存內容計算，不接受 caller 自報。未修改 `save_stage_draft`、`stage_records`、`projects`。
+- 有效性為「推導」：僅當確認列的 `record_row_version`／`content_hash` 等於目前草稿時為 `confirmed_current`。每次保存提升 `row_version`，故修改（含改回相同文字）於保存交易提交時即原子失效，不需背景工作，舊證據保留。
+- HTTP：`GET`／`POST /api/v1/projects/{id}/stages/{stage}/confirmation`；POST body strict `{expected_row_version}`＋必要 `Idempotency-Key`、來源檢查、no-store。新增問題碼 `stage_draft_not_saved`、`stage_confirmation_version_mismatch`（409）；同鍵異意圖沿用 422 `idempotency_key_reuse`；結果未知為 503 `operation_outcome_unknown`。草稿 PUT 仍 strict，拒絕 state／confirmed／approved 欄位。
+- UI：既有草稿頁分開呈現未保存編輯／已保存版本／已確認有效／內容已變更確認失效／人工批准尚未取得；未保存時禁用確認；409 保留本地編輯；response-loss／畸形回應不顯示成功且只允許同鍵重試；reload 由伺服器重新判定；失權隱藏。
+
+**邊界**：學生確認**不是**教師／管理員批准，也不是需求／A-B 分類證據，不改 `project.stage`、不開放 AI／預覽／發布、不寫任務 done。**人工批准正向操作本批未實作**：教師凍結、學校政策、管理員可批准的專案範圍、Checkpoint 證據要求等規則未定，操作保持關閉（狀態固定回 `manual_approval_unavailable`）；本批僅有「學生／AI／teacher／admin 冒充批准被拒」的負向測試，不代表批准功能完成。
+
+**驗證（原始輸出於交付 ZIP 的 evidence）**：
+| 項目 | 結果 |
+|---|---|
+| `tests/integration/real-auth-stage-confirmation.test.ts`（真 Auth／DB／Route Handler） | 第一輪 10／11（失敗為測試 helper 預設參數吞掉 `undefined`，已修）；第二輪 11／11 |
+| `real-auth-stage-confirmation.spec.ts`（真 Auth／HTTPS Next／PostgreSQL browser） | 1／1：建專案→保存→未保存禁用→response-loss 後同鍵重送不重複→reload 仍有效→修改後失效→改回相同文字不復活→409 保留本地→失權隱藏 |
+| `npm run test:db`／`npm run test:projects:db` | 皆 `Status=passed`、Revocation verified、Cleanup complete（新庫完整 migration chain；0025 僅新增物件，pgtap 無 Projects 升級情境，不宣稱升級測試） |
+| `npm run typecheck` | exit 0 |
+| `npm run test:foundations` | exit 0，7／7 layers（auth 整合 3 檔 32 測、browser 13 項） |
+
+**任務狀態**：136 項正文、依賴與勾選不變。T050（確認契約／整合／browser 測試）與 T051（階段內容學生確認子項）僅本批部分；T015、T006 僅涉及子集。**補齊缺口**：階段內容的學生確認、確認失效 DB 保證、確認 UI。**仍未完成**：教師／管理員人工批准、Checkpoint、階段推進、完整 P-1～P-4 與 T051 原範圍。T052 可讀取 `confirmed_current` 作為「學生確認」證據（完成規則仍未定，保持 unsupported）。未 commit／push／merge／部署，未碰 `go-anywhere`。
+
+## §88 0025 既有資料升級、九階段總覽與未保存離開防護（2026-11-01，本 session 一次性授權）
+
+**授權**：教育者本 session 明確批准的有界本機子集 A／B／C——(A) 0024 既有資料升級至 0025 驗收；(B) 專案頁九階段總覽接真實保存／確認狀態並導覽既有階段頁；(C) 切階段／專案前的未保存離開防護（沿用既有 save-controller）。不是常設許可；原依賴、checklist、Checkpoint／完整 Gate、正式審議／簽核狀態不變。起點：branch `work/auth-cancel-authorization`、HEAD `b53fcde489d2ff9f1d4e659873e0f03ac1eb6cfe`、前一批 §87；Analyze skill SHA256 `0B55C72263C8CB4D8661AEE7AD8EC4C367CB0AF2036FF3C1494D25E0337CC1FA`（本批前後相同，未修改）。
+
+**A 升級驗收**：`prepare-real-auth-db.mjs` 新增 `APP_PLANET_TEST_MIGRATE_THROUGH`（僅套用至指定編號）；`scripts\test-auth-local.ps1 -Upgrade0025` → `npm run test:auth:upgrade`（`vitest.upgrade.config.ts`、`tests/integration/migration-0025-upgrade.test.ts`，5 測）。流程：migrate 至 0024 → 合成專案／多版本草稿／手動任務與匯入紀錄 → 保存資料與權限基線 → 只套用 0025 → 驗證舊資料／ID／版本未改、舊草稿無確認、可確認且再保存失效、歷史確認不復活、RLS／函式 owner／grant／直接寫入拒絕、既有建立／草稿／任務功能無回歸。未改寫歷史 migration。
+
+**B 九階段總覽**：`readOwnedProjectStageOverviewSubset`（`creation-flow-assessment.ts`）把既有 `creationFlowReadSql` 與 `stage_draft_confirmations` 於**同一 statement snapshot** 讀取；確認有效性在 SQL 以版本＋內容 hash 推導，且僅採本人（`confirmed_by = subject`）證據。九階段維持 `projectStageSchema` 正式順序（與原七頁籤不同、未改名／改序）。狀態：`no_draft`／`unconfirmed`／`confirmed_current`／`confirmation_stale`；人工批准固定 `manual_approval_unavailable`。完成判斷仍 unsupported（規則未決），**只阻擋該判斷**，總覽與保存照常。專案頁以 `stage-overview.tsx` 呈現，階段頁加九階段導覽；Auth／DB 失敗顯示服務問題而非空專案。順帶修正既有潛伏問題：Next 動態路由 `[stage]` 參數為百分比編碼（`點子`、`A%2FB`），頁面與草稿／確認 Route Handler 以 `decodeStageParam` 解碼，否則非 ASCII／含斜線階段無法開啟。
+
+**C 離開防護**：`save-controller.ts` 新增 `requestLeave`（與 `requestSwitch` 共用 `requestExit`，語意不變）；`unsaved-changes-guard.tsx` 攔截應用內連結、瀏覽器返回／前進（歷史哨兵）與 `beforeunload`，對話框提供保存後離開／留在目前頁面／明確放棄後離開，未知結果提供「原操作鍵重試」。dirty／saving／unknown／conflict 分別處理；只在可信成功回應後離開；409 保留本地；放棄不撤回可能已提交的寫入；IME 組字期間不保存、不切頁；Radix Dialog 可鍵盤操作，取消後焦點回觸發連結。**如實限制**：無持久化本地草稿，reload／關閉分頁後不可恢復，`beforeunload` 僅為瀏覽器提示，無法攔截所有關閉情境；返回哨兵會截斷 forward 歷史，一次跳多步時退為完整載入。
+
+**驗證（原始輸出於交付 ZIP 的 evidence）**：失敗與修復均保留——升級 run1（`stage` 欄位不存在，改 `to_jsonb(t)::text` 排序）、run2（0025 合法授權 `app_stage_confirmer`，基線排除）；e2e 失敗依序為 `[stage]` 編碼參數、焦點未回復（改記錄觸發元素）、IME 後保存鈕停用造成逾時（測試誤用）、保存鈕在未知結果後停用（測試假設錯誤）；foundations 失敗依序為測試型別、`useRouter` 於非 Next 宿主、Vite 無法解析 `next/navigation`、冷 Vite 快取首次載入逾 5 秒（harness 預熱並預打包）、spec 在 hydration 前輸入（加 `networkidle`）。皆為本批變更直接造成或暴露，非歸因於無關。最終：`real-auth-stage-overview` 整合 3／3；`real-auth-stage-overview.spec.ts` 1／1（兩專案、真 Auth→HTTPS Next→路由→隔離 PostgreSQL，含保存後離開／留下／放棄、保存中再編輯、畸形 200、返回、Escape 焦點、CDP IME、失權隱藏、未改 stage／分類／批准）；控制器 contract 21／21；`-Upgrade0025` 5／5；`npm run typecheck` exit 0；`npm run test:foundations` exit 0、7／7 layers（browser 14 項）；各次 Docker 清理 `CleanupVerified … containers=0 volumes=0 networks=0`。
+
+**任務狀態**：136 項正文、依賴與勾選不變（均未勾選）。T052／T053／T054／T055 僅本批部分：見 tasks.md 備註。**仍未完成**：完成／批准規則、七頁籤（藍圖／設計／計畫／建立／測試／版本／發布）完整串接與 layout、持久化本地草稿、登出登入完整 e2e（`tests/e2e/project-stages.spec.ts`）、IDE／測試／發布頁。未 commit／push／merge／部署，未碰 `go-anywhere`。
+
+## §89 — 2026-11-02 T053～T055 七頁籤工作區、離開防護與重新驗證恢復（本 session 一次性有界授權）
+
+**授權與保護**：教育者明確批准本 session 僅執行 T053／T054／T055 所列有界本機程式接線、必要最小調整、隔離 Auth／PostgreSQL／Next HTTPS／browser 驗收及直接相關文件同步。T053 以現有專案根路徑呈現「我的藍圖」，其餘六區使用同專案子路徑；九階段仍是創作步驟，不與七區域的完成狀態合併。T054 沿用既有保存 controller，接通作用中階段草稿與任務／匯入待確認狀態；歷史防護不得以新增偽項目截斷 forward 歷史。T055 只稱「產品 logout＋測試 setup 重新驗證後恢復」，不稱產品登入／登入碼 E2E。禁止新增登入入口／角色切換器、登入碼、A-9、M2／M3、Agent／AI provider、人工批准、任務取代／刪除／重排或任何發布／部署能力。
+
+修改前來源基線已保存於 session files `app-planet-batch-89-source-baseline.json`（包含修改前 Git／feature、當時 tracked／untracked 檔案狀態與 SHA-256；憑證／秘密檔只記排除、不讀取內容）。起點 branch `work/auth-cancel-authorization`、HEAD `b53fcde489d2ff9f1d4e659873e0f03ac1eb6cfe`、feature `specs/001-app-planet-platform`。Analyze skill 修改前 SHA256 `0B55C72263C8CB4D8661AEE7AD8EC4C367CB0AF2036FF3C1494D25E0337CC1FA`；僅記錄與末尾核對，不修改／還原／封裝該 skill。原任務依賴、checklist、Gate、正式啟用及所有非本批工作樹修改均保留；不因 checklist 重複要求批准。
+
+**驗收與結案界線**：需逐項核對 T053／T054／T055 原正文及依賴；只有完整滿足才勾選，否則保留未勾並記錄精確剩餘。使用至少兩個隔離合成專案及真實 Auth、產品 logout 路由、隔離 PostgreSQL、實際 Next HTTPS 與 browser。不得改動 project.stage、分類／確認／批准或 Agent／部署狀態；Auth／DB 不可確認時關閉受保護資料。無必要不新增 migration／公開 API。未持久化的 editor 內容若只留在頁面記憶體，必須明示 reload／關閉頁面的限制；原依賴及 136 個任務 ID 不重排、不新增。
+
+### §89.1 實作與驗收結果
+
+**T053 子集**：新增共用專案 `layout.tsx` 與七頁籤，藍圖沿專案根路徑，其餘六區各有專案子路徑；九階段與工作區區域分開呈現。藍圖／設計／計畫讀取現有專案、九階段草稿／確認、UX/UI／Technical Plan、手動任務匯入及 P-4；建立／測試／版本／發布明示未就緒。直接網址、reload、active tab、專案 ID／名稱／stage／classification／row version 由各受保護 server route/page 當下重新授權；無 migration／公開 API／自動推進。
+
+**T054 子集**：階段草稿、P-4 與任務匯入沿用既有 controller／guard，註冊識別含 account scope、project、resource；多個資源同時待處理時，完成目前選擇後仍留在本頁並提示逐項處理，避免越過另一個 saving／unknown。真實 browser 以伺服器提交後丟棄回應驗證 `outcome_unknown`、原 `Idempotency-Key` replay 且 row version 只增加一次；兩分頁 stale update 取得實際 HTTP 409，衝突對話框同時保留 server／submitted 內容，頁籤離開仍受 guard 阻擋。保存中續編、保存／留在／明確放棄、畸形成功回應、IME、Escape 後焦點回復均有驗收。
+
+Navigation API 實測 `back`、`forward`、`multiStep` 均可攔截；取消後 URL、Navigation entry index、`history.state` 與原內容不變。未攔截的跨文件返回與 reload 由 Playwright 原生 `beforeunload` prompt 測試；系統及 Quickstart 明示關閉分頁及瀏覽器拒絕 Navigation API 的情境無法保證攔截。未保存編輯仍只在頁面記憶體，不新增持久草稿政策。
+
+**T055 子集**：browser 測試名稱為「產品 logout＋測試 setup 重新驗證後恢復」。測試點擊產品登出路由並確認成功，將原 session 重新送回時讀取關閉、寫入遭 401／403 且 DB 未變；不同帳號看不到前帳號專案／任務／匯入待確認狀態；測試 setup 為同帳號建立新真實 Auth session 後，原專案、草稿、學生確認、匯入 pending、P-4 `done` 均從 DB／原操作恢復。這不是產品登入 UI／登入碼 E2E。DB 斷言 project stage 仍為 `點子`、classification 仍為 `unconfirmed`、row version 不變，無人工批准／Agent／部署狀態。
+
+**最終 foundations**：`npm run test:foundations` exit 0，workspace compatibility、全 workspace／tests typecheck、production build、unit 6 檔／43 測試、contract 22 檔／711 測試、Usage pgTAP 163 assertions、HTTP／DB integrations 330 測試及真 Auth／Next HTTPS browser 15／15 全通過。單獨的 `real-auth-stage-overview`、`real-auth-workspace` 與 `real-auth-project-task-done` 亦各自通過；完整原始輸出及 exit code 位於本批 evidence。多次 runner 均回報 `CleanupVerified … containers=0 volumes=0 networks=0`；Usage `Revocation=verified`、`Cleanup=complete`。無 DB schema 變更。
+
+### §89.2 失敗、修復與未結事項
+
+原始失敗均保留於 evidence，按根因記錄、不重複計數：鍵盤案例進入時沒有 dirty 輸入，修正為先建立本頁記憶體修改；IME 後清理步驟錯誤期待 dirty 內容令保存按鈕停用，修正為回到已保存基準；foundation Vite host 將 `useRouter()` 在 render 時直接丟錯，更新為僅保存測試可掛載、若觸發未支援 router push 則明確失敗；舊 browser selectors 對七頁籤與九階段重複連結不夠精確、分類／unavailable 文案已更新，改為 scoped／明確 alert 斷言；多資源測試兩次舊資料預期已同步至實際保存後狀態。最終 foundations 及真實 browser 均通過。
+
+Next 測試 server 在中止 response／navigation 的 browser 案例期間仍輸出 `The destination stream errored while writing data` digest；Playwright 最終測試通過，保留原始 log，不將該 server 訊息略稱為零錯誤。
+
+**任務狀態**：136 項正文、依賴、勾選／checklist、Gate 及正式啟用狀態不變；T053／T054／T055 仍未勾。T053 的工作區接線已完成，但依賴 T052 尚未結案；T054 的保存／競態子集已接通，但原 T053 及 Q-DATA 前置未結；T055 的本批 browser 子集已驗，仍依賴 T054。下一個原任務為 T052 的九階段旅程／級別需求；未決完成／批准規則仍須保持 unsupported，Q-DATA 未核定前不得擴大資料保存／清除政策。
+
+Analyze skill 的 SHA-256 末尾複核仍為 `0B55C72263C8CB4D8661AEE7AD8EC4C367CB0AF2036FF3C1494D25E0337CC1FA`，未修改／還原／封裝。隔離 runner 清理通過；本機既有 HTTPS certificate/key 檔案末尾 hash 與來源基線不同，無法確認成因；未讀取內容、未納入 ZIP，也未以不完整基線覆寫。

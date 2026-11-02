@@ -436,6 +436,7 @@ export type DoneUsage = z.infer<typeof doneUsageSchema>;
 // 這些建構器逐欄讀取可信輸入並輸出嚴格形狀（D-30）；通過不證明內容安全，字串另經 R-12 遮蔽層拒絕已知敏感形狀。
 
 export const idempotencyKeyReuseErrorCodeSchema = z.literal("idempotency_key_reuse");
+export const operationOutcomeUnrecoverableErrorCodeSchema = z.literal("operation_outcome_unrecoverable");
 
 const httpErrorCodeIdentifierSchema = z.string().regex(/^[a-z][a-z0-9_]*$/);
 const hanCharacterPattern = /\p{Script=Han}/u;

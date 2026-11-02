@@ -20,8 +20,12 @@ try {
   `);
   migrationPrincipal = principalResult.rows[0];
   const migrationDirectory = new URL("../supabase/migrations/", import.meta.url);
+  // 僅升級驗收使用：先套用到指定編號（含），其餘 migration 由測試自行套用。
+  const through = process.env.APP_PLANET_TEST_MIGRATE_THROUGH;
+  if (through !== undefined && !/^\d{4}$/.test(through)) throw new Error("APP_PLANET_TEST_MIGRATE_THROUGH 必須是四位數字。");
   const migrations = (await readdir(migrationDirectory))
     .filter((name) => /^\d+.*\.sql$/.test(name))
+    .filter((name) => through === undefined || name.slice(0, 4) <= through)
     .sort();
   if (migrations.length === 0) throw new Error("Isolated database migrations are missing.");
   for (const migration of migrations) {

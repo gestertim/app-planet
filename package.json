@@ -24,6 +24,7 @@
     "test:e2e": "playwright test",
     "test:e2e:edge": "node scripts/edge-smoke.mjs",
     "test:auth:local": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-auth-local.ps1",
+    "test:auth:upgrade": "vitest run --config vitest.upgrade.config.ts",
     "test:auth:integration": "vitest run --config vitest.auth.config.ts",
     "test:e2e:auth": "playwright test --config playwright.auth.config.ts",
     "test:foundations": "node scripts/test-foundations.mjs",

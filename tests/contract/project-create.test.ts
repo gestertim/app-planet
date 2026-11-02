@@ -3,6 +3,7 @@ import type { ProjectCreationContext } from "../../apps/web/src/server/projects.
 import {
   createOwnedProjectSubset,
   hasTrustedProjectClassification,
+  replayOwnedProjectSubset,
 } from "../../apps/web/src/server/projects.ts";
 
 const subject = "71000000-0000-4000-8000-000000000001";
@@ -10,7 +11,7 @@ const key = "73000000-0000-4000-8000-000000000001";
 const failed = (reason: string) => ({ outcome: "failed", reason });
 
 function context(
-  rows: unknown[],
+  rows: readonly unknown[],
   inspected?: (sql: string, values: unknown[] | undefined) => void,
 ): ProjectCreationContext {
   return {
@@ -18,7 +19,7 @@ function context(
       return operation({
         async query(sql, values) {
           inspected?.(sql, values);
-          return { rows };
+          return { rows: [...rows] };
         },
       });
     },
@@ -27,6 +28,10 @@ function context(
 
 async function create(ctx: ProjectCreationContext, input: unknown, operationKey: unknown = key) {
   return createOwnedProjectSubset(ctx, input, operationKey);
+}
+
+async function replay(ctx: ProjectCreationContext, input: unknown, operationKey: unknown = key) {
+  return replayOwnedProjectSubset(ctx, input, operationKey);
 }
 
 describe("T051 方案 B 建立契約", () => {
@@ -81,16 +86,16 @@ describe("T051 方案 B 建立契約", () => {
   });
 
   it.each([
-    [],
-    [{ actor_valid: false, result: { outcome: "created" } }],
-    [{ actor_valid: true, result: { outcome: "created", project: {} } }],
-    [{ actor_valid: true, result: { outcome: "created", project: {
+    [[], "invalid_context"],
+    [[{ actor_valid: false, result: { outcome: "created" } }], "invalid_context"],
+    [[{ actor_valid: true, result: { outcome: "created", project: {} } }], "invalid_result"],
+    [[{ actor_valid: true, result: { outcome: "created", project: {
       id: subject, title: "synthetic", requested_tier: "A", classification_state: "unconfirmed",
       tier: "A", needs_visitor_identity: false, stage: "點子",
       created_at: "2026-10-24T00:00:00.000000Z", row_version: 0,
-    } } }],
-  ].map((rows) => [rows]))("無效／不一致 DB 結果不成功：%j", async (rows) => {
-    expect(await create(context(rows), { title: "synthetic", tier: "A" })).toEqual(failed("invalid_result"));
+    } } }], "invalid_result"],
+  ] as const)("無效／不一致 DB 結果不成功：%j", async (rows, reason) => {
+    expect(await create(context(rows), { title: "synthetic", tier: "A" })).toEqual(failed(reason));
   });
 
   it("交易或 driver 故障只回安全失敗", async () => {
@@ -98,6 +103,37 @@ describe("T051 方案 B 建立契約", () => {
       async runTransaction() { throw new Error("SQLSTATE 23505 SELECT secret stack"); },
     };
     expect(await create(broken, { title: "synthetic" })).toEqual(failed("dependency_failure"));
+  });
+
+  it("replay-only 使用固定 RPC、可信 actor context 與原 key／本文，不呼叫 create RPC", async () => {
+    const inspected: Array<{ sql: string; values: unknown[] | undefined }> = [];
+    const ctx = context([{ actor_valid: true, result: { outcome: "unrecoverable" } }], (sql, values) => {
+      inspected.push({ sql, values });
+    });
+    expect(await replay(ctx, { title: "synthetic", tier: "B" }, key))
+      .toEqual({ outcome: "unrecoverable" });
+    expect(inspected).toHaveLength(1);
+    expect(inspected[0].sql).toContain("app.replay_unclassified_project");
+    expect(inspected[0].sql).not.toContain("app.create_unclassified_project");
+    expect(inspected[0].sql).toContain("current_user = 'authenticated'");
+    expect(inspected[0].values).toEqual(["synthetic", "B", true, key]);
+  });
+
+  it("replay-only 僅接受 strict 輸入，並驗證回放成功 DTO", async () => {
+    const project = {
+      id: subject, title: "synthetic", stage: "點子",
+      created_at: "2026-10-24T00:00:00.000000Z", row_version: 0,
+      classification_state: "unconfirmed", requested_tier: null,
+      tier: null, needs_visitor_identity: null,
+    };
+    expect(await replay(context([
+      { actor_valid: true, result: { outcome: "replayed", project } },
+    ]), { title: "synthetic" })).toEqual({ outcome: "replayed", project });
+    const unused: ProjectCreationContext = {
+      runTransaction() { throw new Error("非法輸入不得呼叫 DB"); },
+    };
+    expect(await replay(unused, { title: "synthetic", owner_id: subject }))
+      .toEqual(failed("invalid_input"));
   });
 
   it("未分類、歷史 boolean false 與缺少確認證據均沒有分類資格", () => {

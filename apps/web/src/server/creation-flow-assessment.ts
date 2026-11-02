@@ -306,3 +306,130 @@ export async function readOwnedProjectCreationFlowAssessmentSubset(
     return { outcome: "failed", reason: "dependency_failure" };
   }
 }
+
+export type StageOverviewState = "no_draft" | "unconfirmed" | "confirmed_current" | "confirmation_stale";
+export interface StageOverviewItem {
+  readonly stage: CreationFlowInput["requested_stage"];
+  readonly order: number;
+  readonly state: StageOverviewState;
+  readonly draft_row_version: number | null;
+  readonly confirmed_row_version: number | null;
+  readonly approval: "manual_approval_unavailable";
+}
+export type OwnedProjectStageOverviewResult =
+  | {
+    outcome: "found";
+    snapshot: "single_statement";
+    project: { id: string; title: string; stage: CreationFlowInput["requested_stage"]; row_version: number };
+    classification: { state: "unconfirmed" | "confirmed" | "legacy_unverified"; tier: "A" | "B" | null };
+    items: readonly StageOverviewItem[];
+    completion_judgment: "unsupported_rules_undecided" | "missing_classification_evidence";
+  }
+  | { outcome: "not_found" }
+  | { outcome: "denied"; reason: "policy_denied" }
+  | { outcome: "failed"; reason: "invalid_input" | "invalid_context" | "dependency_failure" | "invalid_result" };
+
+// 草稿、分類證據與學生確認證據在同一個 statement snapshot 取得；有效性在 SQL 以 hash／版本比對推導。
+const stageOverviewSql = `
+  WITH flow AS MATERIALIZED (${creationFlowReadSql})
+  SELECT flow.*, (
+    SELECT COALESCE(jsonb_agg(jsonb_build_object(
+      'stage', c.stage, 'record_row_version', c.record_row_version, 'confirmed_by', c.confirmed_by::text,
+      'current', (d.row_version = c.record_row_version
+        AND c.content_hash = encode(pg_catalog.sha256(pg_catalog.convert_to(d.content->>'text', 'UTF8')), 'hex'))
+    )), '[]'::jsonb)
+    FROM app.stage_draft_confirmations c
+    JOIN app.stage_records d ON d.project_id = c.project_id AND d.stage = c.stage
+    WHERE c.project_id = $1::uuid AND flow.project IS NOT NULL AND flow.actor_valid AND flow.allowed
+      AND c.confirmed_by::text = flow.subject
+      AND (c.record_row_version = d.row_version OR c.record_row_version = (
+        SELECT max(c2.record_row_version) FROM app.stage_draft_confirmations c2
+        WHERE c2.project_id = c.project_id AND c2.stage = c.stage AND c2.confirmed_by = c.confirmed_by))
+  ) AS confirmations
+  FROM flow
+`;
+
+export async function readOwnedProjectStageOverviewSubset(
+  context: AuthorizationContext,
+  projectIdValue: unknown,
+): Promise<OwnedProjectStageOverviewResult> {
+  const parsedId = z.string().uuid().safeParse(projectIdValue);
+  if (!parsedId.success) return { outcome: "failed", reason: "invalid_input" };
+  const projectId = parsedId.data.toLowerCase();
+  try {
+    return await context.runReadOnly(async (query): Promise<OwnedProjectStageOverviewResult> => {
+      const { rows } = await query.query(stageOverviewSql, [projectId]);
+      if (rows.length !== 1 || !isRecord(rows[0]) || !exactKeys(rows[0], [
+        "subject", "actor_valid", "allowed", "project", "confirmation_evidence", "drafts", "confirmations",
+      ])) return { outcome: "failed", reason: "invalid_result" };
+      const row = rows[0];
+      if (typeof row.subject !== "string" || !uuid.test(row.subject) || row.actor_valid !== true) {
+        return { outcome: "failed", reason: "invalid_context" };
+      }
+      if (typeof row.allowed !== "boolean" || !Array.isArray(row.drafts) || !Array.isArray(row.confirmations)) {
+        return { outcome: "failed", reason: "invalid_result" };
+      }
+      if (!row.allowed) {
+        return row.project === null && row.drafts.length === 0 && row.confirmations.length === 0
+          ? { outcome: "denied", reason: "policy_denied" }
+          : { outcome: "failed", reason: "invalid_result" };
+      }
+      if (row.project === null) {
+        return row.drafts.length === 0 && row.confirmations.length === 0
+          ? { outcome: "not_found" }
+          : { outcome: "failed", reason: "invalid_result" };
+      }
+      const project = parseProject(row.project, projectId);
+      if (!project) return { outcome: "failed", reason: "invalid_result" };
+      const projectStage = projectStageSchema.safeParse(project.stage);
+      if (!projectStage.success) return { outcome: "failed", reason: "invalid_result" };
+      const flowInput = buildCreationFlowInput(project, projectStage.data, row.confirmation_evidence, row.drafts);
+      if (!flowInput) return { outcome: "failed", reason: "invalid_result" };
+      const assessment = evaluateCreationFlow(flowInput);
+      if (assessment.outcome !== "evaluated") return { outcome: "failed", reason: "invalid_result" };
+
+      const draftVersions = new Map<string, number>(flowInput.stage_drafts.map((draft) => [draft.stage, draft.row_version]));
+      const current = new Map<string, number>();
+      const latest = new Map<string, number>();
+      const seenCurrent = new Set<string>();
+      for (const value of row.confirmations) {
+        if (!isRecord(value) || !exactKeys(value, ["stage", "record_row_version", "confirmed_by", "current"]) ||
+            !projectStageSchema.safeParse(value.stage).success || typeof value.stage !== "string" ||
+            !Number.isInteger(value.record_row_version) || typeof value.record_row_version !== "number" ||
+            value.record_row_version < 0 || value.confirmed_by !== row.subject ||
+            typeof value.current !== "boolean" || !draftVersions.has(value.stage)) {
+          return { outcome: "failed", reason: "invalid_result" };
+        }
+        if (value.current) {
+          if (draftVersions.get(value.stage) !== value.record_row_version ||
+              seenCurrent.has(value.stage)) return { outcome: "failed", reason: "invalid_result" };
+          seenCurrent.add(value.stage);
+          current.set(value.stage, value.record_row_version);
+        }
+        latest.set(value.stage, Math.max(latest.get(value.stage) ?? -1, value.record_row_version));
+      }
+      const items = projectStageSchema.options.map((stage, index): StageOverviewItem => {
+        const draft = draftVersions.get(stage) ?? null;
+        const state: StageOverviewState = draft === null ? "no_draft"
+          : current.has(stage) ? "confirmed_current"
+          : latest.has(stage) ? "confirmation_stale" : "unconfirmed";
+        return Object.freeze({
+          stage, order: index + 1, state, draft_row_version: draft,
+          confirmed_row_version: current.get(stage) ?? latest.get(stage) ?? null,
+          approval: "manual_approval_unavailable" as const,
+        });
+      });
+      return {
+        outcome: "found",
+        snapshot: "single_statement",
+        project: { id: project.id, title: project.title, stage: projectStage.data, row_version: project.row_version },
+        classification: { state: project.classification_state, tier: project.tier ?? null },
+        items,
+        completion_judgment: assessment.stage_assessment.outcome === "unsupported"
+          ? "unsupported_rules_undecided" : "missing_classification_evidence",
+      };
+    });
+  } catch {
+    return { outcome: "failed", reason: "dependency_failure" };
+  }
+}

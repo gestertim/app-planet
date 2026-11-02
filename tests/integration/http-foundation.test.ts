@@ -469,7 +469,9 @@ describe("§79 首次 HTTP 保存契約與原子性", () => {
     try {
       const failed = await put(projectId, 1, "atomic", createHeaders(key));
       expect(failed.status).toBe(503);
-      expect((await problem(failed)).code).toBe("operation_outcome_unknown");
+      const failure = await problem(failed);
+      expect(failure.code).toBe("operation_outcome_unknown");
+      expect(failure.user_message_zh).toContain("原操作恢復流程");
       expect(await sideEffects(projectId)).toEqual(before);
     } finally {
       await control.query("DROP TRIGGER test_first_save_fault ON app.stage_draft_idempotency");
@@ -820,6 +822,40 @@ describe("T011 Job 接受／查詢（費用預留與入列原子一致）", () =
     expect(await control.query(`SELECT r.state FROM app.usage_reservations r
       JOIN app.jobs j ON j.reservation_id=r.id WHERE j.id=$1`, [id]))
       .toMatchObject({ rows: [{ state: "released" }] });
+  });
+  it("G-3 路由不接受 Job ID 冒充 Agent Run：無可信 Run→Job 關聯，一律 fail-closed 且無取消副作用", async () => {
+    const created = await postJob(1, randomUUID());
+    const { id: jobId } = await created.json() as { id: string };
+    const stop = (n: number | null, id: string) => fetch(`${harness.url}/api/v1/agent-runs/${id}/stop`, {
+      method: "POST", headers: n === null ? { "content-type": "application/json" } : headers(n),
+    });
+    const snapshot = async () => (await control.query(
+      `SELECT j.state,j.cancel_requested,r.state AS reservation_state
+       FROM app.jobs j JOIN app.usage_reservations r ON r.id=j.reservation_id WHERE j.id=$1`, [jobId],
+    )).rows;
+    const before = await snapshot();
+    const countsBefore = await jobCounts();
+    expect(before).toEqual([{ state: "queued", cancel_requested: false, reservation_state: "reserved" }]);
+
+    const owner = await stop(1, jobId);
+    expect(owner.status).toBe(403);
+    expect((await problem(owner)).code).toBe("ai_not_open");
+    expect((await stop(2, jobId)).status).toBe(403);
+    expect((await stop(1, randomUUID())).status).toBe(403);
+    expect((await stop(2, randomUUID())).status).toBe(403);
+    expect((await stop(1, "not-a-uuid")).status).toBe(404);
+    expect((await stop(null, jobId)).status).toBe(401);
+    await control.query("UPDATE app.profiles SET status='disabled' WHERE id=$1", [actor(1)]);
+    expect((await stop(1, jobId)).status).toBe(403);
+    await control.query("UPDATE app.profiles SET status='approved' WHERE id=$1", [actor(1)]);
+    expect((await fetch(`${harness.url}/api/v1/agent-runs/${jobId}/stop`, { headers: headers(1) })).status).toBe(405);
+
+    expect(await snapshot()).toEqual(before);
+    expect(await jobCounts()).toEqual(countsBefore);
+    const worker = createCheckpoints(workerContext(), { async authorize() { return true; } }, randomUUID(), 5000);
+    expect((await worker.claim())?.id).toBe(jobId);
+    const status = await fetch(`${harness.url}/test/jobs/${jobId}`, { headers: headers(1) });
+    expect(await status.json()).toMatchObject({ state: "running", result: null });
   });
 });
 

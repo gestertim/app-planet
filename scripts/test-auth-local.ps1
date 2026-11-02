@@ -1,5 +1,9 @@
 param(
-    [switch]$BrowserOnly
+    [switch]$BrowserOnly,
+    [switch]$IntegrationOnly,
+    [switch]$Upgrade0025,
+    [string[]]$IntegrationFilter = @(),
+    [string[]]$E2EFilter = @()
 )
 
 $ErrorActionPreference = "Stop"
@@ -22,6 +26,7 @@ $exitCode = 0
 $nextCandidatePort = 55000
 $supabaseExecutable = (Get-Command supabase -CommandType Application | Select-Object -First 1).Source
 $script:commandInvocationId = 0
+Write-Output "IsolatedProject=$projectId"
 
 function Get-FreeTcpPort {
     while ($script:nextCandidatePort -le 56289) {
@@ -89,6 +94,7 @@ function Remove-OwnedDockerResources {
     if ($remainingContainers.Count -or $remainingVolumes.Count -or $remainingNetworks.Count) {
         throw "隔離 Supabase 容器／volume／network 清理後仍有殘留。"
     }
+    Write-Output "CleanupVerified=$projectId containers=0 volumes=0 networks=0"
 }
 
 try {
@@ -193,8 +199,10 @@ enabled = false
     $env:APP_PLANET_TEST_DB_ADMIN_URL = $adminDbUrl
     $env:APP_PLANET_E2E_PORT = "$webPort"
     $env:APP_PLANET_E2E_CHANNEL = "msedge"
+    $env:APP_PLANET_TEST_AUTH_CONTAINER = "supabase_auth_$projectId"
     $env:NODE_ENV = "test"
 
+    if ($Upgrade0025) { $env:APP_PLANET_TEST_MIGRATE_THROUGH = "0024" }
     $roleUrlsJson = & node (Join-Path $repoRoot "scripts\prepare-real-auth-db.mjs")
     if ($LASTEXITCODE -ne 0) {
         $exitCode = $LASTEXITCODE
@@ -207,17 +215,25 @@ enabled = false
 
     Push-Location $repoRoot
     try {
-        if (-not $BrowserOnly) {
-            & npm run test:auth:integration
+        if ($Upgrade0025) {
+            & npm run test:auth:upgrade
+            if ($LASTEXITCODE -ne 0) {
+                $exitCode = $LASTEXITCODE
+                throw "0024→0025 既有資料升級驗收失敗。"
+            }
+        } elseif (-not $BrowserOnly) {
+            & npm run test:auth:integration -- @IntegrationFilter
             if ($LASTEXITCODE -ne 0) {
                 $exitCode = $LASTEXITCODE
                 throw "真實 Auth／產品 Route Handler 整合驗證失敗。"
             }
         }
-        & npm run test:e2e:auth
-        if ($LASTEXITCODE -ne 0) {
-            $exitCode = $LASTEXITCODE
-            throw "真實頁面瀏覽器驗證失敗。"
+        if (-not $IntegrationOnly -and -not $Upgrade0025) {
+            & npm run test:e2e:auth -- @E2EFilter
+            if ($LASTEXITCODE -ne 0) {
+                $exitCode = $LASTEXITCODE
+                throw "真實頁面瀏覽器驗證失敗。"
+            }
         }
     } finally {
         Pop-Location

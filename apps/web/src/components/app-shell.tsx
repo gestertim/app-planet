@@ -13,12 +13,14 @@ export function AppShell({
   subtitle,
   capabilities = [],
   authenticated = false,
+  preview = true,
 }: Readonly<{
   children: React.ReactNode;
   heading: string;
   subtitle: string;
   capabilities?: readonly NavCapability[];
   authenticated?: boolean;
+  preview?: boolean;
 }>) {
   return (
     <div className="page-shell">
@@ -26,7 +28,7 @@ export function AppShell({
         <Link className="brand" href="/">
           App <span>Planet</span>
         </Link>
-        <span className="preview-tag">{authenticated ? "已驗證工作階段" : "本機合成介面預覽"}</span>
+        <span className="preview-tag">{authenticated ? "已驗證工作階段" : preview ? "本機合成介面預覽" : "未驗證工作階段"}</span>
       </header>
       <main className="main">
         <nav aria-label="功能導覽" className="navigation">
@@ -45,7 +47,7 @@ export function AppShell({
         <p className="muted">{subtitle}</p>
         <OperationNotice authenticated={authenticated} />
         {children}
-        {!authenticated && (
+        {!authenticated && preview && (
           <p className="footer-note">
             示範資料均為合成內容，不含真實學生資料。此原型不保存輸入，也不提供正式帳號、權限或服務。
           </p>

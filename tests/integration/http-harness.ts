@@ -2,6 +2,7 @@ import http from "node:http";
 import type { AddressInfo } from "node:net";
 import { Readable } from "node:stream";
 import { randomUUID } from "node:crypto";
+import { resolve } from "node:path";
 import { createServer as createViteServer, type ViteDevServer } from "vite";
 import type { UsageContext } from "@app-planet/core";
 import type { AuthorizationContext } from "../../apps/web/src/server/authorization.ts";
@@ -51,9 +52,16 @@ export async function startHarness(
         appType: "custom",
         logLevel: "error",
         esbuild: { jsxInject: "import React from 'react'" },
+        resolve: { alias: { "next/navigation": resolve(process.cwd(), "tests/support/next-navigation-stub.ts") } },
+        optimizeDeps: { entries: ["tests/e2e/foundation-save-host.tsx"], include: ["@radix-ui/react-dialog"] },
         server: { middlewareMode: true, hmr: false },
       })
     : null;
+  if (vite) {
+    // 冷快取時先預熱宿主與依賴預打包，避免首個瀏覽器案例的 5 秒斷言被 Vite 首次最佳化吃掉。
+    await vite.transformRequest("/tests/e2e/foundation-save-host.tsx");
+    await vite.waitForRequestsIdle();
+  }
   const log: LogSink = (record) => { logs.push(record); };
   const testResolver: TrustedPrincipalResolver = {
     async resolve(request) {
@@ -100,6 +108,8 @@ export async function startHarness(
     if (path === "/test/jobs" || path === "/api/v1/jobs") return handlers.createJob(request);
     const cancel = /^\/test\/jobs\/([^/]+)\/cancel$/.exec(path);
     if (cancel) return handlers.cancelJob(request, decodeURIComponent(cancel[1]));
+    const stopRun = /^\/api\/v1\/agent-runs\/([^/]+)\/stop$/.exec(path);
+    if (stopRun) return handlers.stopAgentRun(request, decodeURIComponent(stopRun[1]));
     const job = /^\/(?:test|api\/v1)\/jobs\/([^/]+)$/.exec(path);
     if (job) return handlers.getJob(request, decodeURIComponent(job[1]));
     return Promise.resolve(new Response("not found", { status: 404 }));

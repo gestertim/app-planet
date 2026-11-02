@@ -740,3 +740,34 @@ describe("T054 傳輸無關階段草稿保存控制器", () => {
     expect(stageDraftIdempotencyKeySchema.safeParse(save.mock.calls[0][0].idempotency_key).success).toBe(true);
   });
 });
+
+describe("§88 requestLeave：離開專案／頁面的未保存防護", () => {
+  it("dirty：保存成功才算離開；202／畸形回應不算已保存；409 保留本地；放棄不呼叫 save", async () => {
+    const mk = (impl: (r: StageDraftSaveRequest) => Promise<StageDraftSaveResponse>) => new StageDraftSaveController({
+      initialTarget: targetA, initialDraft: draft(projectA, "Specification", 1, "base"),
+      createOperationKey: () => firstKey, adapter: { save: impl },
+    });
+    const ok = mk(async (r) => saved(r));
+    ok.edit("changed");
+    await expect(ok.requestLeave("save_then_switch")).resolves.toEqual({ outcome: "switched" });
+
+    const conflict = mk(async () => response(targetA, { outcome: "conflict", reason: "draft_already_exists" }));
+    conflict.edit("local");
+    expect((await conflict.requestLeave("save_then_switch")).outcome).toBe("blocked");
+    expect(conflict.getState().editorText).toBe("local");
+
+    const lost = mk(async () => { throw new Error("connection reset"); });
+    lost.edit("local");
+    expect((await lost.requestLeave("save_then_switch")).outcome).toBe("blocked");
+    expect(lost.getState().editorText).toBe("local");
+
+    const save = vi.fn(async (r: StageDraftSaveRequest) => saved(r));
+    const discard = new StageDraftSaveController({
+      initialTarget: targetA, initialDraft: draft(projectA, "Specification", 1, "base"), adapter: { save },
+    });
+    discard.edit("gone");
+    await expect(discard.requestLeave("keep_and_stay")).resolves.toEqual({ outcome: "kept" });
+    await expect(discard.requestLeave("discard_and_switch")).resolves.toEqual({ outcome: "switched" });
+    expect(save).not.toHaveBeenCalled();
+  });
+});

@@ -20,7 +20,9 @@
 
 `unconfirmed` 的正式分類值與當前確認指標皆 NULL；`confirmed` 的確認證據綁定專案、當前 revision、精確需求快照、分類、擁有者學生與 DB 可信時間；`legacy_unverified` 保留舊值但不具確認證據。需求改變時，在同一交易內新增需求 revision、使舊確認退出 current、清空 tier／visitor／confirmation 指標、回到 unconfirmed 並更新 project row_version；舊證據不可改寫。確認與更新以 row lock／版本比較序列化。只有提交後才回成功。
 
-重放依 COMMON 的 UUID、主體＋操作 scope 隔離與至少 24 小時規則；每次先重新授權再處理 key。同鍵異內容拒絕；同鍵同內容回原操作 receipt 並另解析當前分類，不重做確認，也不恢復過期／失效證據。資料庫直接 DML 對一般 actor 拒絕；寫入／證據／冪等均受最小權限及 FORCE RLS／窄用途受控函式保護。固定安全錯誤不得含 SQL、SQLSTATE、driver error、stack 或原始需求內容。此介面為本機 server／資料庫整合，不代表 HTTP／UI、真實 Auth 或後續操作獲准。
+重放依 COMMON 的 UUID、主體＋操作 scope 隔離與至少 24 小時保存規則；每次先重新授權再處理 key。同鍵異內容拒絕；同鍵同內容回原操作 receipt 並另解析當前分類，不重做確認，也不恢復過期／失效證據。資料庫直接 DML 對一般 actor 拒絕；寫入／證據／冪等均受最小權限及 FORCE RLS／窄用途受控函式保護。固定安全錯誤不得含 SQL、SQLSTATE、driver error、stack 或原始需求內容。此介面為本機 server／資料庫整合，不代表 HTTP／UI、真實 Auth 或後續操作獲准。
+
+**P-1 待確認結果恢復**：只有全新意圖的第一次嘗試使用 `POST /api/v1/projects`。任何結果未知、reload、重新驗證或重試一律使用 `POST /api/v1/projects/recovery`；此路徑只可回傳有效且完整的原 receipt，永不建立專案、刪除過期 receipt 或 fallback 至 P-1。兩路徑以相同 owner／`project_create_v1`／UUID 交易 advisory lock 序列化；恢復在鎖取得後重新檢查當下資格、精確本文／意圖及 receipt 到期，並在同一 DB 交易讀取結果。鎖等待期間原建立提交後才可回放；若原交易回滾／receipt 不存在、過期、不完整或結果不符，固定回 `409 operation_outcome_unrecoverable`，不宣稱原操作未執行。P-1 原 API 的到期後同鍵可新建語意維持不變，不能用來恢復未知操作。
 
 **§44 審閱修復的介面界線**：`readCurrentOwnedProjectClassificationSubset` 回三態的一般 DB DTO，不是 `TrustedProjectClassification`。只有 `resolveTrustedProjectClassification` 重新查詢並完整驗證當前確認後建構的六欄分類原物件，才通過 `hasTrustedProjectClassification`；receipt、一般 confirmed DTO、自組、spread／JSON 副本均不通過。WeakSet 只證明 resolver 產生來源，不表示 DB 狀態永遠有效，也不是即時撤銷／永久授權機制；每次需要當前資格時須重新 resolver。
 
@@ -31,12 +33,18 @@
 | # | 方法與路徑 | 能力／授權 | 輸入 | 回應 | 錯誤 | 冪等／並行 |
 | --- | --- | --- | --- | --- | --- | --- |
 | P-1 | `POST /api/v1/projects` | `edit_saved_content` | `{ title, tier?: "A"｜"B" }`（首版僅 A／B；~~`"C"`~~【已被取代・首版不適用（2026-10-21 範圍決定）；原文保留作歷史】；`tier` 為其他值→`422 tier_not_supported`，文字「首版不支援需要作品執行時呼叫 AI 的 C 級作品」〔草案，待教育者／專業審閱〕；等級依需求，A／B 沿用 v5 定義，不因平台為 C 級而強迫升級，**使用平台 AI 製作不使作品升級為 C**） | `201` | `403` | `Idempotency-Key` |
+| P-1R | `POST /api/v1/projects/recovery` | `edit_saved_content`，再由 DB 驗證 owner／資源 | 與 P-1 完全相同的原本文及 UUID key；禁止新 key／改本文恢復 | `200 { outcome: "replayed", project }`，只回原建立結果 | `409 operation_outcome_unrecoverable`（缺少／過期／不完整／無法確認）；`422 idempotency_key_reuse`；`401／403`；`503` | DB 強制 replay-only；與 P-1 共用 owner＋scope＋key 交易鎖；任何分支皆不可 INSERT／刪除 receipt／fallback create |
 | P-2 | `GET／PATCH /api/v1/projects/{id}` | 擁有者；已綁定教師唯讀（留稽核） | `PATCH`：欄位＋`If-Match` | `200` | `409` 並回雙方內容；`404` | `row_version` |
 | P-3 | `PUT /api/v1/projects/{id}/stages/{stage}` | 擁有者學生；當下 edit／read gate＋owner | 未確認草稿子集 strict `{ content: { text: string } }`，不接受 state／owner；確認／批准仍走各自人工 RPC，非本子集 | 首建 `201`＋DTO／Location／ETag 0；更新 `200`＋DTO；重放 `200`＋原 operation／current_draft | `400 precondition_required／invalid_precondition`；`412 draft_already_exists`；`409 version_conflict`；`422 idempotency_key_reuse`；`401／403／404` 依既定隱匿 | UUID Idempotency-Key；首建單一 `If-None-Match: *`，更新單一 strong `If-Match`；詳 COMMON D-33 |
 | P-4 | `PATCH /api/v1/projects/{id}/tasks/{tid}` | 擁有者 | `{ done }` | `200`（**真的寫入**，非僅提示） | `409` | `If-Match` |
+| P-4I | `POST /api/v1/projects/{id}/tasks` | 擁有者（本人學生） | strict `{ confirmed: true, tasks: [{ title }] }` | `201` 首次建立／`200` 同次確認重放 | `409 task_list_already_exists`、`422 idempotency_key_reuse` | `Idempotency-Key`（UUID） |
 | S-1 | `POST /api/v1/projects/{id}/snapshots` | 擁有者 | `{ kind: "manual", message? }`：以伺服器目前「已保存」檔案集建立；**不包含未保存的編輯器內容**（客戶端須先保存，見 §2） | `201`＋`{ version_no, content_hash }` | `409`；`507 storage_limit`（單專案容量上限，工程值） | `Idempotency-Key` |
 | S-2 | `POST /api/v1/projects/{id}/restore` | 擁有者；`edit_saved_content` | `{ snapshot_id }` | **先**建立 `pre_restore` 快照並確認成功，**才**套用恢復；`200`＋`{ pre_restore_snapshot_id }`（可再找回） | `409 save_failed`：保存目前版本失敗→**不覆蓋現有工作**並說明原因與下一步 | `Idempotency-Key`；稽核 |
 | S-3 | `GET /api/v1/projects/{id}/snapshots` | 擁有者／已綁定教師 | — | 版本名稱／識別碼、時間、變更摘要、`kind`、是否 `immutable` | — | — |
+
+**P-4 task row（本批契約具體化）**：`{tid}` 是該專案持久化 `tasks.id`；讀取 DTO 僅含 `{ id, project_id, order, title, done, row_version }`。學生專案詳情由 server 讀取本人任務，不新增任務列表 HTTP API。PATCH body strict `{ done: boolean }`，不接受 caller 提供 owner／project／task 版本／批准狀態或其他欄位；更新帶 COMMON 的單一 strong quoted `If-Match: "<canonical row_version>"`。成功回 `200`＋更新後 task DTO 與新 ETag，`row_version` 原子遞增；合法舊版回 `409 version_conflict`，衝突只投影 `done` 欄位。不存在或 task 不屬於 URL 專案／本人時以 `404 not_found` 隱匿。這個勾選只表示使用者的任務勾選，不表示階段完成、教師批准、Agent 執行、測試通過、發布資格或 Gate 通過；本契約不定義 Skills／AI／Agent 的任務生成來源。
+
+**P-4I 手動任務清單首次匯入（readiness §86 最小補充，一次性授權；非 Skills／AI 生成）**：本人學生在產品頁手動輸入任務清單（每行一項）、預覽並明確確認後，`POST /api/v1/projects/{id}/tasks` 經服務端授權（principal、帳號 gate、project owner；DB 寫入時再重驗）建立該專案的持久化任務，供 P-4 勾選。body strict `{ confirmed: true, tasks: [{ title }] }`（`confirmed` 必為 `true`；不接受 `id`／`owner_id`／`project_id`／`order`／`done`／`row_version`／批准欄位）；`title` 去頭尾空白後非空、至多 200 code points、不含控制字元，清單 1～50 項（**50／200 為工程防護值，待教育者核定，非產品配額**）。順序＝陣列位置（1..n）；task ID、owner、project 關聯、初始 `done=false`、`row_version=0` 由服務端控制，不寫 `done_snapshot_id`、批准或 Agent 狀態。必帶 `Idempotency-Key`（UUID）；同一事務寫入任務與一筆確認紀錄 `project_task_imports`（每專案至多一筆）。同 key＋同內容重送（含 COMMIT 後 response-loss）回 `200 {outcome:"replayed",tasks}`（目前任務，`done`／版本可能已變）、不新增；同 key 不同內容／不同專案回 `422 idempotency_key_reuse`；專案已有任務（含不同 key 的並行首次匯入）回 `409 task_list_already_exists`，不覆蓋、不改 `done`／版本。確認紀錄不過期，且「已有任務」守衛使到期後重新 create 不可能；未知結果只能以原 key／原內容重送。成功回 `201 {outcome:"created",tasks}`＋`Location`。不存在／非本人 `404`（隱匿），失權或非學生角色 `403`。本批僅首次匯入；批次取代、刪除、重排、重新生成不在範圍。匯入與勾選均不表示階段完成、教師批准、Final Pack、Agent 執行批准或部署授權。
 
 ### 1.2 獨立階段草稿（§45；2026-10-24 本機有界子集）
 
@@ -145,3 +153,6 @@ server 先以既有 current-classification parser 驗證三態與 SQL 內完整�
 | `checkpoint(job_id, step)` | **每個重要步驟前**：呼叫 `account_gate` 與比對 `school_epoch`；不通過→`stopped(reason)`，釋放預留，保留已完成部分 |
 | `complete／fail／cancel` | 冪等；失敗碼為固定集合；取消後清理沙箱與暫存 |
 | Worker 重啟 | 租約逾期後其他 Worker 接手；**步驟必須冪等**（以 `agent_steps(run_id, seq)` 唯一鍵） |
+
+
+**§87 P-3C 學生階段確認（本機子集）**：`GET／POST /api/v1/projects/{id}/stages/{stage}/confirmation`；POST body strict `{expected_row_version}`＋必要 `Idempotency-Key`。201 confirmed；200 replayed／already_confirmed；409 `stage_draft_not_saved`／`stage_confirmation_version_mismatch`；422 `idempotency_key_reuse`；503 `operation_outcome_unknown`。確認不是教師／管理員批准或分類證據；批准規則未定，狀態固定 `manual_approval_unavailable`。DTO 見 `packages/core/contracts/stage-draft-confirmation.ts`。

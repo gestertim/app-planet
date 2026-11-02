@@ -4,5 +4,5 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 export async function POST(request: Request, { params }: RouteContext): Promise<Response> {
   const { id } = await params;
-  return productFoundationHandlers.cancelJob(request, id);
+  return productFoundationHandlers.stopAgentRun(request, id);
 }

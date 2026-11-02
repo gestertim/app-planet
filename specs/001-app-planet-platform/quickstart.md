@@ -1,5 +1,49 @@
 # 快速驗證指南（Quickstart）：AI APP 超級創客｜App Planet 平台首版
 
+### §89 正式七頁籤、跨資源離開防護與重新驗證恢復（2026-11-02；一次性本機子集）
+
+正式專案工作區由共用 `apps/web/src/app/student/projects/[id]/layout.tsx` 提供脈絡與七頁籤：藍圖（專案根路徑）、設計（`/design`）、計畫（`/plan`）、建立（`/build`）、測試（`/test`）、版本（`/versions`）、發布（`/publish`）。九階段仍是創作步驟，不與七區域合併完成狀態。計畫頁接手動任務匯入與既有 P-4；尚未接通的能力明示未就緒。
+
+```powershell
+npm run test:auth:local -- -BrowserOnly
+npm run test:foundations
+```
+
+切換頁籤、階段或專案沿用既有保存 controller。多項編輯資源同時待處理時，先完成目前選擇後仍留在本頁，提示逐項處理剩餘資源。可攔截的返回／前進使用瀏覽器 Navigation API，不插入偽歷史項目；reload、關閉分頁、跨文件導航或瀏覽器不允許攔截的 traversal 只依賴原生 `beforeunload` 提示，不能保證攔截所有離開情境。未保存編輯僅保留於當頁記憶體；不新增草稿持久化政策。
+
+真 Auth／Next HTTPS／隔離 PostgreSQL browser 證據使用名稱「產品 logout＋測試 setup 重新驗證後恢復」，涵蓋舊 session 拒絕、異帳號隔離與同帳號新 session 還原專案草稿、學生確認、P-4 done 及匯入待確認操作。這不是產品互動式登入或登入碼 E2E；不新增登入入口／角色切換器。實際結果、失敗修復及資源清理見 [readiness §89](./readiness-review.md)。T053／T054／T055 任務勾選、依賴、checklist 與 Gate 狀態不因此改變。
+
+### §84 DB replay-only 與失權後未知建立操作恢復（2026-11-01；本批有界本機）
+
+```powershell
+npm run test:projects:db
+npm run test:auth:local
+npm run test:foundations
+```
+
+使用隔離 PostgreSQL／真實 Supabase Auth／Next HTTPS browser；不等待 24 小時、不改主機時鐘。產品只有全新意圖的第一次嘗試呼叫 `POST /api/v1/projects`。response-loss、reload、重驗或任何未知結果只呼叫 `POST /api/v1/projects/recovery`，沿用同一 UUID key 與精確本文。
+
+DB recovery 與 P-1 共用 owner＋`project_create_v1`＋UUID advisory transaction lock；鎖後重驗當下帳號資格與原意圖，讀取完整 receipt／專案結果後，以 `clock_timestamp()` 判定期限。該 DB 判定時點在鎖已取得且結果讀取後、函式回傳前；它不把交易開始時間當作鎖等待後的當下時間，也不保證 HTTP response 抵達時 receipt 仍在 24 小時內。有效 receipt 只回原結果；原 create 尚在途時 recovery 等待同鍵鎖，提交後回放，回滾／不存在／過期／不完整則固定回 `409 operation_outcome_unrecoverable`。任何 recovery 分支皆沒有 INSERT、刪除 receipt 或 fallback create。原 P-1 API 仍保留 receipt 到期後同鍵可新建語意，產品不得用它恢復未知操作。
+
+待確認 key／本文存於由已驗證 principal 派生、帳號隔離的 localStorage scope；scope 不作授權。401／403、暫時失權、reload、換 session 或 Auth／DB 依賴失敗都不代表前次未提交，未知紀錄會保留；受保護本文立即隱藏，同帳號重新驗證後只用 recovery。不同帳號不讀取對方 scope；舊版／損壞資料或 storage 失敗停止自動送出。只有明確成功才清除；不可恢復時保留原紀錄供人工核對。
+
+這不是永久保存政策或伺服器端 journal：瀏覽器資料可能被使用者清除或瀏覽器儲存失效，屆時系統無法恢復本機 key／本文，也不能保證避免重複；目前沒有新增保存期限。真實隔離測試不證明正式登入、正式服務啟用或 Readiness Gate 通過。實際結果、已修復失敗及清理證據見 [readiness §84](./readiness-review.md)；T011／T014／T015／T050／T051 僅更新子項、任務仍未勾選、原依賴不變。
+
+### §82 專案產品路由與工作台驗收（2026-10-27；有界本機）
+
+> 歷史快照：建立待確認操作的 sessionStorage 描述已由 §84 的帳號隔離 localStorage／DB replay-only 流程取代。
+
+```powershell
+npm run test:auth:local
+npm run test:foundations
+```
+
+使用既有 runner 的唯一隔離 stack、真 Auth setup session 與 Next HTTPS。從 `/student` 建立未分類專案 → 本人清單 → `/student/projects/{id}` → `/student/projects/{id}/stages/{stage}`，完成草稿首建及更新。建立為正式 P-1 `POST /api/v1/projects`（201，重送原 receipt 仍 201），本人詳情為 P-2 `GET /api/v1/projects/{id}`（200）；沒有另造列表 API，清單由 server 直接使用既有 RLS／分類讀取核心。
+
+待確認建立保留原 UUID／本文至帳號隔離的 tab sessionStorage，reload／同帳號 session 更換後仍原意圖重送；該 scope 僅為本機操作紀錄隔離，不授權。清單／詳情重新檢查期間隱藏，失權後不保留受保護子樹；15 秒重查不是正式撤銷 SLA。測試包括真實提交後丟回應、原鍵重送不重建、DB gate／交易函式權限故障、暫停**本批指定** Auth 容器及失權隱藏；runner 印出 `IsolatedProject`／`CleanupVerified` 供獨立清理查核。session setup 不代表 A-1 產品登入已完成。
+
+精確範圍、結果、保留的真實失敗及剩餘任務見 [readiness §82](./readiness-review.md)。列表 HTTP 路徑／DTO／分頁未有正式契約；P-2 教師唯讀／PATCH、P-4、Agent／Run→Job、M2／M3、A-9、provider／正式啟用不在本批。G-3 沿 §81 安全關閉，正式成功契約為 200；下方 §80 的 202／200 比較為歷史。
+
 ### §80 真實本機 Auth、產品路由與頁面驗收（一次性本機子集）
 
 Node 24、Docker／Supabase CLI 及 Microsoft Edge 可用時，由專案根目錄執行：
@@ -9,9 +53,19 @@ npm run test:auth:local
 npm run test:foundations
 ```
 
-第一個命令建立唯一隔離 Supabase Auth／PostgreSQL stack、合成帳號與 session，套用原 migrations，執行真實 Next Route Handler 整合及 HTTPS Edge 頁面流程，最後清理 stack。只重跑瀏覽器層可用 `npm run test:auth:local -- -BrowserOnly`；它仍會建立／清理同一隔離 stack。原生 Auth email password provider 僅在此測試 stack 開啟，top-level signup 仍關閉；匿名 signup 實測 HTTP 422。瀏覽器測試由 setup 透過原生 Auth 建立 session，並非 A-1 產品登入碼 UI；不代表正式 issuer／TTL／scope 決策或產品啟用。Auth `/user` 只證明當次 access-token 驗證結果，不證明所有 session 條件、最大撤銷窗口或在途操作均已終結。
+第一個命令建立唯一隔離 Supabase Auth／PostgreSQL stack、合成帳號與 session，套用原 migrations，執行真實 Next Route Handler 整合及 HTTPS Edge 頁面流程，最後清理 stack。只重跑瀏覽器層可用 `npm run test:auth:local -- -BrowserOnly`；0024→0025 既有資料升級驗收用 `npm run test:auth:local -- -Upgrade0025`（先 migrate 至 0024、建合成資料、再只套用 0025；不跑瀏覽器）。它仍會建立／清理同一隔離 stack。原生 Auth email password provider 僅在此測試 stack 開啟，top-level signup 仍關閉；匿名 signup 實測 HTTP 422。瀏覽器測試由 setup 透過原生 Auth 建立 session，並非 A-1 產品登入碼 UI；不代表正式 issuer／TTL／scope 決策或產品啟用。Auth `/user` 只證明當次 access-token 驗證結果，不證明所有 session 條件、最大撤銷窗口或在途操作均已終結。
 
 草稿與 Job 路由及差異、真實驗收結果與任務缺口見 [readiness §80](./readiness-review.md)。工作狀態取消實作回 202，但 G-3 契約目前寫 200；此規格差異未由測試替政策決定。
+
+### §86 手動任務清單匯入與建立專案清理（一次性本機子集）
+
+```powershell
+npm run test:auth:local        # 真 Auth 整合（含 tests/integration/real-auth-task-import.test.ts）＋HTTPS browser
+npm run test:projects:db       # 新庫／歷史升級／0024 權限與 RLS pgTAP
+npm run test:foundations
+```
+
+產品流程：`/student` 建立專案 → 專案詳情「手動建立任務清單」輸入（每行一項）→ 預覽（尚未保存）→「確認並建立任務清單」→ 任務由 `POST /api/v1/projects/{id}/tasks` 寫入 → 既有 P-4 勾選 → reload。測試不以 SQL 預先建立任務。細節、證據與限制見 [readiness §86](./readiness-review.md)。
 
 ### §79 階段草稿首建 HTTP 驗收（D-33；本機限定）
 

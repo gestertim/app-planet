@@ -310,7 +310,7 @@ describe("T051 應用程式 → 真實 PostgreSQL projects／RLS", () => {
     expect(await read(1, 2)).toEqual({ outcome: "found", project: expected(2) });
   });
 
-  it("catalog：RLS／FORCE、僅 SELECT policy、無版本／階段預設；草稿表已建但任務表未建", async () => {
+  it("catalog：RLS／FORCE、僅 SELECT policy、無版本／階段預設；草稿與任務表已建", async () => {
     const relation = await control.query(`
       SELECT relrowsecurity,relforcerowsecurity FROM pg_class WHERE oid='app.projects'::regclass
     `);
@@ -342,8 +342,8 @@ describe("T051 應用程式 → 真實 PostgreSQL projects／RLS", () => {
       { column_name: "tier", is_nullable: "YES" },
     ]);
     expect((await control.query("SELECT to_regclass('app.stage_records')::text AS stages,to_regclass('app.tasks')::text AS tasks")).rows)
-      .toEqual([{ stages: "app.stage_records", tasks: null }]);
-    process.stdout.write("projects catalog: RLS=on; FORCE=on; SELECT policy only; row_version/stage defaults=none; stage_records=isolated drafts; tasks=absent\n");
+      .toEqual([{ stages: "app.stage_records", tasks: "app.tasks" }]);
+    process.stdout.write("projects catalog: RLS=on; FORCE=on; SELECT policy only; row_version/stage defaults=none; stage_records=isolated drafts; tasks=present\n");
   });
 
   it.each(["點子", "A/B", "Specification", "Checkpoint", "Constitution", "UX/UI",

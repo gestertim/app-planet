@@ -531,8 +531,23 @@ export class StageDraftSaveController {
   ): Promise<StageDraftSwitchResult> {
     const nextTarget = parseTarget(target);
     if (!nextTarget) return { outcome: "blocked", reason: "save_failed" };
+    if (targetKey(nextTarget) === targetKey(this.activeTarget)) {
+      this.switchIntentSequence++;
+      return { outcome: "switched" };
+    }
+    return this.requestExit(choice, () => this.activate(nextTarget));
+  }
+
+  // 離開目前頁面（應用內連結、返回／前進）時沿用同一套保存／保留／放棄規則；不切換 activeTarget。
+  requestLeave(choice: StageDraftSwitchChoice): Promise<StageDraftSwitchResult> {
+    return this.requestExit(choice, () => undefined);
+  }
+
+  private async requestExit(
+    choice: StageDraftSwitchChoice,
+    commit: () => void,
+  ): Promise<StageDraftSwitchResult> {
     const intentSequence = ++this.switchIntentSequence;
-    if (targetKey(nextTarget) === targetKey(this.activeTarget)) return { outcome: "switched" };
     const resource = this.getResource(this.activeTarget);
     const state = this.getState(resource.target);
     const hasConflict = resource.operation.status === "conflict";
@@ -542,12 +557,12 @@ export class StageDraftSaveController {
       if (choice === "save_then_switch") return { outcome: "blocked", reason: "conflict" };
       resource.editorText = resource.confirmedDraft?.content.text ?? "";
       resource.operation = idleOperation;
-      this.activate(nextTarget);
+      commit();
       return { outcome: "switched" };
     }
 
     if (!state.dirty) {
-      this.activate(nextTarget);
+      commit();
       return { outcome: "switched" };
     }
     if (choice === "keep_and_stay") return { outcome: "kept" };
@@ -557,7 +572,7 @@ export class StageDraftSaveController {
       if (!(resource.operation.status === "failed" && resource.operation.retryable)) {
         resource.operation = idleOperation;
       }
-      this.activate(nextTarget);
+      commit();
       return { outcome: "switched" };
     }
 
@@ -584,7 +599,7 @@ export class StageDraftSaveController {
       return { outcome: "blocked", reason: "still_dirty" };
     }
     if (this.getState(resource.target).dirty) return { outcome: "blocked", reason: "still_dirty" };
-    this.activate(nextTarget);
+    commit();
     return { outcome: "switched" };
   }
 

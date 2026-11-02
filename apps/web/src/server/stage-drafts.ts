@@ -35,10 +35,10 @@ export type StageDraftSaveResult =
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 class InvalidDraftResult extends Error {}
-function record(value: unknown): value is Record<string, unknown> {
+export function record(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
-function actorSql(readOnly: boolean): string {
+export function actorSql(readOnly: boolean): string {
   return `auth.uid()::text AS subject,
     (current_user = 'authenticated'
       AND current_setting('transaction_read_only') = '${readOnly ? "on" : "off"}'
@@ -52,7 +52,7 @@ function actorSql(readOnly: boolean): string {
       )
     ) AS actor_valid`;
 }
-function validActor(row: Record<string, unknown>): boolean {
+export function validActor(row: Record<string, unknown>): boolean {
   return typeof row.subject === "string" && uuid.test(row.subject) && row.actor_valid === true;
 }
 function dto(value: unknown, projectId: string, stage: string): StageDraftDto | null {

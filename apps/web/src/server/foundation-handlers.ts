@@ -47,6 +47,7 @@ export interface FoundationHandlers {
   createJob(request: Request): Promise<Response>;
   getJob(request: Request, jobId: string): Promise<Response>;
   cancelJob(request: Request, jobId: string): Promise<Response>;
+  stopAgentRun(request: Request, runId: string): Promise<Response>;
 }
 
 export const stageDraftConflictPolicy = {
@@ -243,6 +244,16 @@ export function createFoundationHandlers(options: FoundationHandlerOptions = {})
     },
   );
 
+  // G-3 以正式 Agent Run ID 為識別，目前沒有 agent_runs 或 Run→Job 持久化關聯。
+  // 不把 Run ID 當 Job ID、不查詢也不取消任何 Job；通過來源／身分檢查後一律關閉。
+  const stopAgentRun = createRouteHandler(
+    { route: "agent_run_stop", methods: ["POST"], resolver, log: options.log, requireSameOrigin },
+    async ({ routeParams, ...context }) => {
+      if (!z.uuid().safeParse(routeParams.runId).success) return problemResponse("not_found", context);
+      return problemResponse("ai_not_open", context);
+    },
+  );
+
   return {
     getStageDraft: (request, projectId, stage) =>
       getDraft(request, { projectId, stage }),
@@ -251,5 +262,6 @@ export function createFoundationHandlers(options: FoundationHandlerOptions = {})
     createJob,
     getJob: (request, jobId) => getJob(request, { jobId }),
     cancelJob: (request, jobId) => cancelJob(request, { jobId }),
+    stopAgentRun: (request, runId) => stopAgentRun(request, { runId }),
   };
 }

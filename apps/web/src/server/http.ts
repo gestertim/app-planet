@@ -24,6 +24,7 @@ const registry = {
   not_found: { status: 404, title: "找不到資料", next: "請回到清單重新選擇，或確認連結是否正確。" },
   method_not_allowed: { status: 405, title: "不支援的操作方式", next: "請重新整理頁面後再試一次。" },
   invalid_request: { status: 400, title: "送出的內容格式不正確", next: "請檢查內容後重新送出。" },
+  tier_not_supported: { status: 422, title: "首版不支援這個作品等級", next: "首版不支援需要作品執行時呼叫 AI 的 C 級作品。" },
   payload_too_large: { status: 413, title: "送出的內容太大", next: "請縮短內容後重新送出。" },
   unsupported_media_type: { status: 415, title: "不支援的內容格式", next: "請重新整理頁面後再試一次。" },
   idempotency_key_required: { status: 400, title: "缺少操作識別", next: "請重新整理頁面後再操作一次。" },
@@ -34,13 +35,25 @@ const registry = {
   precondition_required: { status: 400, title: "缺少草稿保存條件", next: "首次保存須確認尚無草稿；更新須提供目前版本，請重新載入並比對。" },
   invalid_precondition: { status: 400, title: "草稿保存條件不正確", next: "首次保存只可提供 If-None-Match: *；更新只可提供單一強版本 If-Match，請重新載入並比對。" },
   draft_already_exists: { status: 412, title: "草稿已存在", next: "本地內容仍保留；請明確選擇重新載入並比對，不會自動覆寫。" },
+  task_list_already_exists: { status: 409, title: "這個專案已有任務清單", next: "不會覆蓋既有任務；請重新載入專案查看目前任務。" },
+  stage_draft_not_saved: { status: 409, title: "這個階段尚無已保存草稿", next: "請先保存草稿並核對伺服器回應，再明確確認已保存版本。" },
+  stage_confirmation_version_mismatch: { status: 409, title: "已保存版本已變更", next: "你的本地編輯仍保留；請重新讀取目前已保存版本、比對後，再明確確認。不會自動確認最新版本。" },
   version_conflict: { status: 409, title: "內容已被更新", next: "你的草稿仍保留；請比對最新內容後再決定如何儲存。" },
   rate_limited: { status: 429, title: "操作太頻繁", next: "請稍等一下再試一次。" },
   concurrency_limited: { status: 429, title: "同時進行的操作太多", next: "請等目前的操作結束後再試。" },
   quota_daily_exhausted: { status: 429, title: "今天的額度已用完", next: "請明天再試，或詢問老師。" },
   pool_creator_exhausted: { status: 429, title: "共用額度暫時用完", next: "請稍後再試，或詢問老師。" },
-  operation_outcome_unknown: { status: 503, title: "結果尚待確認", next: "請不要重新建立操作；用同一個操作重試，系統會回報原本的結果。" },
-  dependency_unavailable: { status: 503, title: "服務暫時無法使用", next: "你的內容仍保留在畫面上；請稍後再試。" },
+  operation_outcome_unknown: {
+    status: 503,
+    title: "結果尚待確認",
+    next: "請勿更換操作識別或另建同一操作；使用該功能的原操作恢復流程。若仍無法確認，請依畫面指引處理。",
+  },
+  operation_outcome_unrecoverable: { status: 409, title: "原操作目前無法確認", next: "系統不會重新建立；請先在專案清單人工核對，再請老師協助。" },
+  dependency_unavailable: {
+    status: 503,
+    title: "服務暫時無法使用",
+    next: "目前無法確認服務狀態；請稍後再試。尚未確認的操作請保留原識別並依畫面指引恢復。",
+  },
   job_result_unavailable: { status: 503, title: "工作結果尚無法顯示", next: "請稍後再查看，或詢問老師。" },
   internal_error: { status: 500, title: "發生未預期的問題", next: "你的內容仍保留；請稍後再試，若持續發生請告知老師。" },
 } as const;
@@ -172,7 +185,7 @@ export interface TrustedSession {
   readonly usage: UsageContext;
 }
 export type PrincipalResolution =
-  | { readonly ok: true; readonly session: TrustedSession }
+  | { readonly ok: true; readonly session: TrustedSession; readonly operationStorageScope?: string }
   | { readonly ok: false; readonly reason: "unauthenticated" | "account_disabled" | "dependency_unavailable" };
 export interface TrustedPrincipalResolver {
   resolve(request: Request): Promise<PrincipalResolution>;

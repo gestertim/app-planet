@@ -6,6 +6,7 @@ import {
   createProblemProducerPolicy,
   containsSensitiveText,
   idempotencyKeyReuseErrorCodeSchema,
+  operationOutcomeUnrecoverableErrorCodeSchema,
 } from "@app-planet/core";
 
 const policy = { codes: ["school_not_confirmed", "idempotency_key_reuse", "version_conflict"] };
@@ -78,6 +79,8 @@ describe("T006 冪等重用與 If-Match 衝突", () => {
   it("idempotency_key_reuse 是作用域固定碼", () => {
     expect(idempotencyKeyReuseErrorCodeSchema.safeParse("idempotency_key_reuse").success).toBe(true);
     expect(idempotencyKeyReuseErrorCodeSchema.safeParse("idempotency_conflict").success).toBe(false);
+    expect(operationOutcomeUnrecoverableErrorCodeSchema.safeParse("operation_outcome_unrecoverable").success).toBe(true);
+    expect(operationOutcomeUnrecoverableErrorCodeSchema.safeParse("operation_outcome_unknown").success).toBe(false);
   });
 
   const conflictInput = () => ({

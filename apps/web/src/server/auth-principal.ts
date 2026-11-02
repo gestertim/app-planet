@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { createHash } from "node:crypto";
 import {
   type TrustedPrincipalResolver,
   type PrincipalResolution,
@@ -78,9 +79,68 @@ export async function verifyAccessToken(
   if (!tokenPattern.test(accessToken) || !Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 30_000) {
     return { outcome: "unauthenticated" };
   }
-  let response: Response;
+  // 逾時涵蓋 fetch 與 response body 讀取；任何例外都只回受控的 unavailable，不回退到解碼 JWT。
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    response = await fetchImpl(`${config.authOrigin}/auth/v1/user`, {
+    return await requestAuthUser(accessToken, config, fetchImpl, controller.signal);
+  } catch {
+    return { outcome: "unavailable" };
+  } finally {
+    clearTimeout(timer);
+    controller.abort();
+  }
+}
+
+const maxAuthBodyBytes = 64 * 1024;
+
+function abortable<T>(work: Promise<T>, signal: AbortSignal): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = () => reject(new DOMException("aborted", "AbortError"));
+    const cleanup = () => signal.removeEventListener("abort", onAbort);
+    signal.addEventListener("abort", onAbort, { once: true });
+    work.then(
+      (value) => { cleanup(); resolve(value); },
+      (error: unknown) => { cleanup(); reject(error); },
+    );
+    if (signal.aborted) onAbort();
+  });
+}
+
+async function readBoundedJson(response: Response, signal: AbortSignal): Promise<unknown> {
+  if (response.body === null) throw new TypeError("empty body");
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    for (;;) {
+      const { done, value } = await abortable(reader.read(), signal);
+      if (done) break;
+      total += value.byteLength;
+      if (total > maxAuthBodyBytes) throw new RangeError("body too large");
+      chunks.push(value);
+    }
+  } catch (error) {
+    reader.cancel().catch(() => undefined);
+    throw error;
+  }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+}
+
+async function requestAuthUser(
+  accessToken: string,
+  config: AuthConfiguration,
+  fetchImpl: typeof fetch,
+  signal: AbortSignal,
+): Promise<AuthUserResult> {
+  const response = await abortable(
+    fetchImpl(`${config.authOrigin}/auth/v1/user`, {
       method: "GET",
       cache: "no-store",
       redirect: "error",
@@ -89,28 +149,17 @@ export async function verifyAccessToken(
         authorization: `Bearer ${accessToken}`,
         accept: "application/json",
       },
-      signal: AbortSignal.timeout(timeoutMs),
-    });
-  } catch (error) {
-    if (error instanceof TypeError ||
-        (error instanceof DOMException && error.name === "TimeoutError")) {
-      return { outcome: "unavailable" };
-    }
-    throw error;
-  }
+      signal,
+    }),
+    signal,
+  );
   if (response.status === 401 || response.status === 403) {
     return { outcome: "unauthenticated" };
   }
   if (!response.ok || !response.headers.get("content-type")?.toLowerCase().includes("application/json")) {
     return { outcome: "unavailable" };
   }
-  let body: unknown;
-  try {
-    body = await response.json();
-  } catch (error) {
-    if (error instanceof SyntaxError) return { outcome: "unavailable" };
-    throw error;
-  }
+  const body = await readBoundedJson(response, signal);
   const user = authUserSchema.safeParse(body);
   return user.success
     ? { outcome: "authenticated", userId: user.data.id.toLowerCase() }
@@ -137,6 +186,9 @@ export function createAuthPrincipalResolver(
       return {
         ok: true,
         session: createDatabaseSession(verified.userId, env),
+        // 只隔離瀏覽器待確認操作；不接受此值作為 principal 或權限。
+        operationStorageScope: createHash("sha256")
+          .update(`project-create-storage-v1:${verified.userId}`).digest("hex"),
       };
     },
   };

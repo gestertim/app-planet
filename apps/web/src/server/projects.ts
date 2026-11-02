@@ -12,6 +12,7 @@ import type { AuthorizationContext } from "./authorization.ts";
 import {
   parseCurrentProjectClassificationDto,
   projectClassificationReadSql,
+  type CurrentProjectClassificationDto,
 } from "./project-classification.ts";
 
 export type ProjectStage =
@@ -256,6 +257,15 @@ export async function listOwnedProjectsWithClassificationSubset(
   return querySubset(context, maximumRows, classificationProject);
 }
 
+export async function listCurrentOwnedProjectsSubset(
+  context: AuthorizationContext,
+): Promise<OwnedProjectsListResult<CurrentProjectClassificationDto>> {
+  return querySubset<CurrentProjectClassificationDto>(context, 2147483647, (value) => {
+    const project = parseCurrentProjectClassificationDto(value);
+    return project ? { kind: "supported", project } : { kind: "invalid" };
+  });
+}
+
 export async function readOwnedProjectSubset(
   context: AuthorizationContext,
   projectId: unknown,
@@ -289,7 +299,39 @@ export type OwnedProjectCreationSubsetResult =
   | { outcome: "conflict"; reason: "idempotency_mismatch" }
   | { outcome: "failed"; reason: "invalid_input" | "invalid_context" | "dependency_failure" | "invalid_result" };
 
-const createProjectSql = `
+export type OwnedProjectRecoverySubsetResult =
+  | { outcome: "replayed"; project: Extract<OwnedProjectClassificationReadSubset, { classification_state: "unconfirmed" }> }
+  | { outcome: "unrecoverable" }
+  | { outcome: "denied"; reason: "policy_denied" }
+  | { outcome: "conflict"; reason: "idempotency_mismatch" }
+  | { outcome: "failed"; reason: "invalid_input" | "invalid_context" | "dependency_failure" | "invalid_result" };
+
+type ParsedProjectCreationInput = {
+  title: string;
+  requestedTier: "A" | "B" | null;
+  tierWasProvided: boolean;
+  idempotencyKey: string;
+};
+
+function parseProjectCreationInput(input: unknown, idempotencyKey: unknown): ParsedProjectCreationInput | null {
+  if (!isRecord(input) || !Object.hasOwn(input, "title") || typeof input.title !== "string" ||
+      Reflect.ownKeys(input).some((key) => key !== "title" && key !== "tier") ||
+      (Object.hasOwn(input, "tier") && input.tier !== "A" && input.tier !== "B") ||
+      typeof idempotencyKey !== "string" || !uuid.test(idempotencyKey)) {
+    return null;
+  }
+  const tierWasProvided = Object.hasOwn(input, "tier");
+  const requestedTier = input.tier === "A" || input.tier === "B" ? input.tier : null;
+  return {
+    title: input.title,
+    requestedTier,
+    tierWasProvided,
+    idempotencyKey,
+  };
+}
+
+function projectOperationSql(functionName: "create_unclassified_project" | "replay_unclassified_project"): string {
+  return `
   WITH actor AS MATERIALIZED (
     SELECT (
       current_user = 'authenticated'
@@ -308,13 +350,15 @@ const createProjectSql = `
   )
   SELECT actor.actor_valid,
     CASE WHEN actor.actor_valid
-      THEN app.create_unclassified_project($1::text, $2::text, $3::boolean, $4::uuid)
+      THEN app.${functionName}($1::text, $2::text, $3::boolean, $4::uuid)
       ELSE jsonb_build_object('outcome', 'invalid_context')
     END AS result
   FROM actor
 `;
+}
 
-class InvalidProjectCreationResult extends Error {}
+const createProjectSql = projectOperationSql("create_unclassified_project");
+const replayProjectSql = projectOperationSql("replay_unclassified_project");
 
 function creationResult(value: unknown): OwnedProjectCreationSubsetResult | null {
   if (!isRecord(value) || typeof value.outcome !== "string") return null;
@@ -336,39 +380,76 @@ function creationResult(value: unknown): OwnedProjectCreationSubsetResult | null
   return { outcome: "created", project };
 }
 
+function recoveryResult(value: unknown): OwnedProjectRecoverySubsetResult | null {
+  if (!isRecord(value) || typeof value.outcome !== "string") return null;
+  if (value.outcome === "denied") return { outcome: "denied", reason: "policy_denied" };
+  if (value.outcome === "idempotency_conflict") {
+    return { outcome: "conflict", reason: "idempotency_mismatch" };
+  }
+  if (value.outcome === "unrecoverable") return { outcome: "unrecoverable" };
+  if (value.outcome === "invalid_input") return { outcome: "failed", reason: "invalid_input" };
+  if (value.outcome === "invalid_context") return { outcome: "failed", reason: "invalid_context" };
+  if (value.outcome !== "replayed") return null;
+
+  const project = classifiedProjectDto(value.project);
+  if (!project ||
+      project.classification_state !== "unconfirmed" ||
+      project.stage !== "點子" ||
+      project.row_version !== 0) {
+    return null;
+  }
+  return { outcome: "replayed", project };
+}
+
+async function runProjectOperation(
+  context: ProjectCreationContext,
+  sql: string,
+  input: ParsedProjectCreationInput,
+): Promise<{ ok: true; value: unknown } | { ok: false; reason: "invalid_context" | "dependency_failure" }> {
+  try {
+    const value = await context.runTransaction(async (query) => {
+      const { rows } = await query.query(sql, [
+        input.title, input.requestedTier, input.tierWasProvided, input.idempotencyKey,
+      ]);
+      if (rows.length !== 1 || !isRecord(rows[0]) ||
+          rows[0].actor_valid !== true || !("result" in rows[0])) {
+        return { invalidContext: true as const };
+      }
+      return { result: rows[0].result };
+    });
+    if ("invalidContext" in value) return { ok: false, reason: "invalid_context" };
+    return { ok: true, value: value.result };
+  } catch {
+    return { ok: false, reason: "dependency_failure" };
+  }
+}
+
 export async function createOwnedProjectSubset(
   context: ProjectCreationContext,
   input: unknown,
   idempotencyKey: unknown,
 ): Promise<OwnedProjectCreationSubsetResult> {
-  if (!isRecord(input) || !Object.hasOwn(input, "title") || typeof input.title !== "string" ||
-      Reflect.ownKeys(input).some((key) => key !== "title" && key !== "tier") ||
-      (Object.hasOwn(input, "tier") && input.tier !== "A" && input.tier !== "B") ||
-      typeof idempotencyKey !== "string" || !uuid.test(idempotencyKey)) {
+  const parsedInput = parseProjectCreationInput(input, idempotencyKey);
+  if (!parsedInput) {
     return { outcome: "failed", reason: "invalid_input" };
   }
 
-  const tierWasProvided = Object.hasOwn(input, "tier");
-  const requestedTier = tierWasProvided ? input.tier : null;
-  try {
-    return await context.runTransaction(async (query) => {
-      const { rows } = await query.query(createProjectSql, [
-        input.title, requestedTier, tierWasProvided, idempotencyKey,
-      ]);
-      if (rows.length !== 1 || !isRecord(rows[0]) ||
-          rows[0].actor_valid !== true || !("result" in rows[0])) {
-        throw new InvalidProjectCreationResult();
-      }
-      const result = creationResult(rows[0].result);
-      if (!result) throw new InvalidProjectCreationResult();
-      return result;
-    });
-  } catch (error) {
-    return {
-      outcome: "failed",
-      reason: error instanceof InvalidProjectCreationResult ? "invalid_result" : "dependency_failure",
-    };
-  }
+  const execution = await runProjectOperation(context, createProjectSql, parsedInput);
+  if (!execution.ok) return { outcome: "failed", reason: execution.reason };
+  return creationResult(execution.value) ?? { outcome: "failed", reason: "invalid_result" };
+}
+
+export async function replayOwnedProjectSubset(
+  context: ProjectCreationContext,
+  input: unknown,
+  idempotencyKey: unknown,
+): Promise<OwnedProjectRecoverySubsetResult> {
+  const parsedInput = parseProjectCreationInput(input, idempotencyKey);
+  if (!parsedInput) return { outcome: "failed", reason: "invalid_input" };
+
+  const execution = await runProjectOperation(context, replayProjectSql, parsedInput);
+  if (!execution.ok) return { outcome: "failed", reason: execution.reason };
+  return recoveryResult(execution.value) ?? { outcome: "failed", reason: "invalid_result" };
 }
 
 export {

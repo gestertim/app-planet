@@ -18,7 +18,11 @@ $script:MigrationFiles = @(
   (Join-Path $script:RepoRoot 'supabase\migrations\0011_project_requirements_classification.sql'),
   (Join-Path $script:RepoRoot 'supabase\migrations\0012_stage_drafts.sql'),
   (Join-Path $script:RepoRoot 'supabase\migrations\0020_job_status_snapshot.sql'),
-  (Join-Path $script:RepoRoot 'supabase\migrations\0021_usage_account_row_lock_privileges.sql')
+  (Join-Path $script:RepoRoot 'supabase\migrations\0021_usage_account_row_lock_privileges.sql'),
+  (Join-Path $script:RepoRoot 'supabase\migrations\0022_project_create_replay_only.sql'),
+  (Join-Path $script:RepoRoot 'supabase\migrations\0023_project_task_done.sql'),
+  (Join-Path $script:RepoRoot 'supabase\migrations\0024_project_task_manual_import.sql'),
+  (Join-Path $script:RepoRoot 'supabase\migrations\0025_stage_draft_confirmation.sql')
 )
 if ($UsageUpgrade) {
   if ($Scenario -ne 'Usage') { throw 'UsageUpgrade 只適用 Usage scenario。' }
@@ -993,7 +997,12 @@ SELECT coalesce(jsonb_agg(to_jsonb(p) ORDER BY id),'[]'::jsonb)::text FROM app.p
       (Join-Path $script:RepoRoot 'supabase\migrations\0003_usage_jobs.sql'),
       $script:ProjectLegacyMigrationFile,
       (Join-Path $script:RepoRoot 'supabase\migrations\0011_project_requirements_classification.sql'),
-      (Join-Path $script:RepoRoot 'supabase\migrations\0012_stage_drafts.sql')
+      (Join-Path $script:RepoRoot 'supabase\migrations\0012_stage_drafts.sql'),
+      (Join-Path $script:RepoRoot 'supabase\migrations\0022_project_create_replay_only.sql'),
+      (Join-Path $script:RepoRoot 'supabase\migrations\0023_project_task_done.sql'),
+      (Join-Path $script:RepoRoot 'supabase\migrations\0024_project_task_manual_import.sql'),
+      (Join-Path $script:RepoRoot 'supabase\migrations\0025_stage_draft_confirmation.sql'),
+  (Join-Path $script:RepoRoot 'supabase\migrations\0024_project_task_manual_import.sql')
     )) { 'supabase_admin' } else { 'postgres' }
     $result = Invoke-DbFile -Name "migration-$name" -Role $migrationRole -Path $migration -PsqlOptions @('-q')
     Assert-CommandSuccess -Result $result

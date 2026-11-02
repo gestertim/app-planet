@@ -1,5 +1,7 @@
 export * from "./contracts/common.ts";
 export * from "./contracts/project-classification.ts";
+export * from "./contracts/project-tasks.ts";
+export * from "./contracts/stage-draft-confirmation.ts";
 export * from "./contracts/stage-drafts.ts";
 export * from "./contracts/works.ts";
 export * from "./policy/account-gate.ts";
