@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
+import { TeacherRelationshipNotice } from "@/components/auth/teacher-relationship-notice";
 import { ClosedAction } from "@/components/operation-state";
 import { CreateProjectForm } from "@/components/project/create-project-form";
 import { ProtectedProjectView } from "@/components/project/protected-project-view";
@@ -25,6 +26,7 @@ export default async function StudentPage() {
   return <ProtectedProjectView revision={crypto.randomUUID()}>
     <AppShell authenticated preview={false} heading="學生工作台" subtitle="只顯示伺服器確認屬於目前帳號的專案。"
       capabilities={[{ href: "/student", label: "工作台" }]}>
+      <TeacherRelationshipNotice />
       <CreateProjectForm key={principal.operationStorageScope} storageScope={principal.operationStorageScope} />
       <section className="card" data-testid="owned-project-list">
         <h2>我的專案</h2>

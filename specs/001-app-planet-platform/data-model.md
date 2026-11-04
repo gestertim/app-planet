@@ -60,6 +60,7 @@
 | `display_label` | text | 畫面顯示名稱（學生＝暱稱；不複製進稽核） |
 | `initiated_by` | uuid NULL | 發起核發的教師／管理員 |
 | `status_changed_at` | timestamptz | |
+| `row_version` | integer，初值 0、每次 UPDATE +1 | §91／0027 的強版本條件；由 DB trigger 遞增，不以 timestamp 代替，耗盡拒絕 |
 
 **學生電郵／電話**：`auth.users` 內為不可投遞的合成電郵（§1.5），`profiles` 不存任何電郵或電話。教師／管理員的電郵只存在 `auth.users`，不複製。
 
@@ -79,6 +80,10 @@
 | `audit_events` | `id`、`at`、`actor_aid`、`subject_aid NULL`、`action`（固定碼）、`object_type`、`object_ref uuid NULL`、`school_id NULL`、`result`（`ok`｜`denied`｜`failed`）、`meta jsonb`（**白名單鍵**：版本號、狀態轉移、數量；禁止文字內容） | 追加式；無 UPDATE／DELETE 權限（僅保存期限排程可刪）；**不存**暱稱、登入碼、對話全文、檔案內容、完整 IP |
 
 **再識別風險登錄（FR-052(e)「檢查其他資源代號」；〔技術決定〕）**：
+
+**§91 有界實作補充**：`0027` 沿用上述稽核表／身分對照，追加固定 `first_admin_bootstrap`／`teacher_approved`／`teacher_rejected`（object_type=`account`、object_ref／school_id=null），meta 僅 `from_status,to_status,row_version,operation_id`，拒絕額外鍵與 JSON null。持久 `first_admin_bootstrap` singleton 無公開讀寫或刪除權；`staff_review_receipts` 僅 writer 私有、actor＋UUID key 隔離，與狀態／版本／audit 同交易。`staff_approval_local_config` 預設空即關閉，隔離 runner 設 TTL 86400 秒，不核定正式 PP、保存期限或排程。教師審核不更改角色／歸屬／憑證，其他生命週期不在範圍。
+
+**§92 有界實作補充（`0028_teacher_signup.sql`）**：`teacher_signup_intents`（id 選擇子、operation_key UNIQUE、email_sha256、display_label ≤40、school_note ≤200、created/expires/consumed_at、account_id UNIQUE；隔離 TTL 3600 秒）、`teacher_applications`（account_id PK→profiles、intent_id UNIQUE、school_note、submitted_at）、`teacher_signup_local_config`（空即關閉）。三表 FORCE RLS，一般角色無權；`app_signup_writer`（NOLOGIN／NOBYPASSRLS）為唯一寫入者，只可插入 teacher／pending／無學校／無 handle 的 profile；`app_signup_intake` 只有意圖函式 EXECUTE。`auth.users` AFTER INSERT 觸發器同交易建立 profile＋申請，BEFORE UPDATE 守衛拒絕未經發信 token 的直接確認；`app_staff_reviewer` 只讀 `auth.users(id,email_confirmed_at,deleted_at)`、writer 只讀 `email`，均不寫 Auth。意圖保留 email 雜湊但不保存密碼、明文 email 或驗證值；不核定正式保存期限。
 
 > **首版稽核同步（2026-10-21）**：首版稽核涵蓋學生平台 AI、學校核准、帳號生命週期、審查與部署（含 §5.5 審查檢核 `review_ai_runtime_check`〔規劃〕）等；~~公開作品 AI 的停用／恢復／限額調整與訪客事件相關稽核動作~~【已被取代・首版不適用（2026-10-21 範圍決定）；首版不建立；原文保留作歷史】。稽核 `meta` 白名單與「不存內容」規則不變。
 
@@ -114,6 +119,8 @@
 | 表 | 欄位 | 說明 |
 | --- | --- | --- |
 | `teacher_student_bindings` | `id`、`teacher_id`、`student_id`、`state`（`active`｜`ended`）、`created_by_aid`、`created_at`、`ended_at NULL`、`ended_by_aid NULL`、`end_reason`（`admin_unbind`｜`student_deleted`｜`teacher_disabled`…固定碼） | 多對多（PD-08 建議，未批准，為預設；不設名額）。`UNIQUE (teacher_id, student_id) WHERE state='active'` |
+
+**§96 T-1／T-2 有界實作補充**：沿用既有上述多對多與 partial unique index，不新增名額或平行關係模型。此輪明確批准的管理員解除 `end_reason` 是必填原文理由（沿 0031 Unicode／2000 字元工程防護），取代此管理員手動分支的早期固定碼草案；未實作的自動生命週期分支不據此決定理由政策。active→ended 保留原 ID／建立操作者與時間，追加解除操作者 aid／DB 時間／原文；重綁新 ID，沿既有 specification_review_epoch 失效，不修改舊 decision。新增 `binding_operation_receipts(actor_id,operation_key,intent,result)` 的私有 FORCE RLS 表，以當下管理員＋UUID key 保存原意圖與成功 receipt，和關係／去識別 audit 同交易；不提供一般 actor 直接讀寫、清除或新 TTL 政策。audit meta 僅 from_state／to_state／teacher_aid，理由不進 meta。T-1／T-2 交易與最小投影詳見 [契約補充](./contracts/access-and-lifecycle.md#t-1t-2-有界產品實作補充96)。
 | `account_disable_events` | `id`、`subject_id`（被停用帳號）、`disabled_at`、`disabled_by_aid`、`restored_at NULL`、`restored_by_aid NULL`、`marked_deleted_at NULL` | 每次停用一列；恢復時填 `restored_at`（事件關閉） |
 | `disable_binding_snapshots` | `disable_event_id`、`teacher_id`、`binding_id`、`PRIMARY KEY (disable_event_id, teacher_id)` | **停用當時**已綁定教師的凍結快照，與停用寫入同一交易（`app.disable_account()`）。**只用於核對複查資格，不授予任何查看權限**（FR-052(a-2)）。保存期限〔待決 D-09，PP-14〕 |
 
@@ -155,6 +162,8 @@ teacher_can_view_student(teacher, student) =
 - `school_policy_allows_teacher_view`：學校 `approved`／`withdrawn`／`expired` 時允許（規格未限制撤回／失效期間教師對已保存內容的查看；〔工程假設，低風險；待教育者確認〕）；`unconfirmed` 時**拒絕**（D-06 (a)，教育者 2026-10-23 批准：帳號準備不開放該校學生的學習資料；亦因該校學生本身無法登入）。
 - 每次「開啟學生資料」寫 `audit_events(action='teacher_view')`，粒度為「開啟一位學生的一類資源」（專案／對話／檔案／紀錄），同一教師、同一學生、同一資源類型 N 分鐘內合併為一筆〔參數 PP-12〕；稽核不含內容。管理員可於管理中心核對（FR-014）。
 - 回饋、審查理由屬學生學習紀錄；解除綁定後教師端不可見，學生可見（PD-05 建議，未批准，不構成規則）。
+
+> **2026-11-04 §98 有界實作註記**：目前教師資源 reader 不改上方 helper 或全平台學校政策，只允許 approved 且期限未到的學生學校、active 教師 membership 及 active binding；其他學校狀態拒絕。實際接通範圍只有已保存需求、階段草稿／確認狀態與任務；每次資源讀取同交易寫 `teacher_view`，不猜 PP-12 窗口。凍結快照、對話、檔案、活動、回饋與管理員稽核查詢仍是剩餘工作，詳見 [readiness §98](./readiness-review.md#98-2026-11-04-t071t075-教師唯讀資源有界子集)。
 
 ### 2.3 受限複查資格（不授予任何學生資料權限）
 
@@ -470,3 +479,13 @@ pending ─approve─▶ approved ─disable─▶ disabled ─restore(明確確
 
 
 **§87 `stage_draft_confirmations`**：不可改寫證據（project／stage／record_row_version／content_hash／confirmed_by／DB 時間／idempotency_key，唯一 (project,stage,row_version) 與 (confirmed_by,key)）。有效性由目前 `stage_records.row_version` 與內容 hash 推導，修改即失效；不改 `stage_records.state`／`projects.stage`，亦非教師／管理員批准。
+## 2026-11-04 Specification 審查有界資料增量（D-34／§95）
+
+新增後續 migration `0030_specification_review.sql`，不改寫歷史 migration：
+
+- `specification_submissions`：不可變 ID／排序 sequence、本人 project／student／school、學生與學校資格世代、Specification 保存版本與確切 `{text}`、正式需求 revision 與分類確認複合外鍵、DB 提交時間、本人 UUID 操作鍵。非 T068 產物快照。
+- `specification_decisions`：submission 唯一決策、教師與其世代、批准所依據 binding／membership ID＋世代、approved／returned、學生可讀理由、DB 時間、教師 UUID 操作鍵；不覆寫提交或舊決策。
+- 四種既有資格／關聯表增加 trigger 維護的 `specification_review_epoch`。草稿／需求／分類沿既有版本與 ID；世代不相符即失效，即使目前布林資格已恢復也不復活。
+- FORCE RLS／窄用途 writer／不可變更新拒絕／受限 EXECUTE；必要去敏稽核同交易。沒有學生或教師自行建立綁定路徑、沒有 project.stage 推進。
+
+詳見 [專案審查契約](./contracts/projects-agent-sandbox.md#specification-單階段提交與教師審查d-3495)；歷史模型正文保留，較早未實作描述不否定本次有界增量。

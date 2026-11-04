@@ -1,4 +1,5 @@
 "use client";
+import { productFetch as fetch } from "../auth/product-fetch.ts";
 
 import { useEffect, useRef, useState } from "react";
 import {
@@ -160,7 +161,10 @@ export function StageConfirmationPanel({
         </p>
       )}
       <p className="text-sm text-amber-900" data-testid="manual-approval-status">
-        教師／管理員人工批准：尚未取得，目前平台尚未開放批准操作。學生確認不等於階段完成或批准，也不會開放 AI、預覽或發布。
+        {target.stage === "Specification"
+          ? "Specification 教師審查請使用下方獨立送審入口；此學生確認不是送審前置，也不代表教師批准。"
+          : "教師／管理員人工批准：尚未取得，此階段目前尚未開放批准操作。"}
+        學生確認不等於階段完成或批准，也不會開放 AI、預覽或發布。
       </p>
       {notice.kind === "unknown" && (
         <p role="alert" data-testid="confirmation-unknown">

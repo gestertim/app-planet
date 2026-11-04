@@ -95,7 +95,8 @@ export async function readOwnedStageConfirmationStatus(
         : latest ? "confirmation_stale" : "unconfirmed";
       const status = stageConfirmationStatusSchema.safeParse({
         project_id: projectId, stage, state, draft_row_version: draftVersion,
-        latest_confirmation: current ?? latest, approval: "manual_approval_unavailable",
+        latest_confirmation: current ?? latest,
+        approval: stage === "Specification" ? "separate_specification_review" : "manual_approval_unavailable",
       });
       return status.success
         ? { outcome: "found", status: status.data } as const

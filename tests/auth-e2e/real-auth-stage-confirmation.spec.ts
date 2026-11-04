@@ -48,7 +48,7 @@ test("真 Auth／Next HTTPS／DB：保存→明確確認→reload→修改後失
     // 無已保存草稿：不能確認。
     await expect(headline).toHaveAttribute("data-state", "no_draft");
     await expect(confirmButton).toBeDisabled();
-    await expect(page.getByTestId("manual-approval-status")).toContainText("尚未取得");
+    await expect(page.getByTestId("manual-approval-status")).toContainText("此學生確認不是送審前置，也不代表教師批准");
 
     // 未保存編輯：不能確認。
     await editor.fill(text.first);

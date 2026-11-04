@@ -2,6 +2,10 @@ param(
     [switch]$BrowserOnly,
     [switch]$IntegrationOnly,
     [switch]$Upgrade0025,
+    [switch]$Upgrade0028,
+    [switch]$Upgrade0031,
+    [switch]$Upgrade0032,
+    [switch]$TeacherSignup,
     [string[]]$IntegrationFilter = @(),
     [string[]]$E2EFilter = @()
 )
@@ -21,6 +25,7 @@ $apiPort = 0
 $dbPort = 0
 $shadowPort = 0
 $webPort = 0
+$mailPort = 0
 $started = $false
 $exitCode = 0
 $nextCandidatePort = 55000
@@ -111,6 +116,33 @@ try {
     if (-not ($apiPort -and $dbPort -and $shadowPort -and $webPort)) {
         throw "無法取得隔離本機測試連接埠。"
     }
+    if ($TeacherSignup) {
+        do { $mailPort = Get-FreeTcpPort } while (@($apiPort, $dbPort, $shadowPort, $webPort) -contains $mailPort)
+    }
+
+    # readiness §92：只有 -TeacherSignup 隔離 runner 開啟 Auth signup、電郵確認與本機郵件接收器；
+    # 其他 runner 維持 signup 關閉。以下 OTP 期限、寄信頻率為隔離測試值，不是正式 PP 核定。
+    $authSignupEnabled = if ($TeacherSignup) { "true" } else { "false" }
+    $emailConfirmations = if ($TeacherSignup) { "true" } else { "false" }
+    $teacherSignupConfig = ""
+    if ($TeacherSignup) {
+        $templateRoot = Join-Path $supabaseRoot "templates"
+        New-Item -ItemType Directory -Path $templateRoot -Force | Out-Null
+        Copy-Item -LiteralPath (Join-Path $repoRoot "scripts\auth-templates\teacher-signup-confirmation.html") `
+            -Destination (Join-Path $templateRoot "teacher-signup-confirmation.html")
+        $teacherSignupConfig = @"
+otp_expiry = 120
+max_frequency = "1s"
+
+[auth.email.template.confirmation]
+subject = "App Planet 教師申請電郵驗證（隔離測試）"
+content_path = "./supabase/templates/teacher-signup-confirmation.html"
+
+[inbucket]
+enabled = true
+port = $mailPort
+"@
+    }
 
     New-Item -ItemType Directory -Path (Join-Path $supabaseRoot "migrations") -Force | Out-Null
     Get-ChildItem -LiteralPath (Join-Path $repoRoot "supabase\migrations") -Filter "*.sql" |
@@ -155,12 +187,18 @@ enabled = true
 site_url = "https://localhost:$webPort"
 additional_redirect_urls = ["https://localhost:$webPort/**"]
 jwt_expiry = 60
-enable_signup = false
+enable_signup = $authSignupEnabled
+
+# readiness §90 隔離測試值：放寬上游 IP 登入限速，避免干擾產品端節流驗收；非正式 PP 核定。
+[auth.rate_limit]
+sign_in_sign_ups = 300
+$(if ($TeacherSignup) { "email_sent = 1000" })
 
 [auth.email]
 enable_signup = true
 double_confirm_changes = false
-enable_confirmations = false
+enable_confirmations = $emailConfirmations
+$teacherSignupConfig
 
 [edge_runtime]
 enabled = false
@@ -170,9 +208,11 @@ enabled = false
 "@
     Set-Content -LiteralPath (Join-Path $supabaseRoot "config.toml") -Value $config -Encoding utf8
 
+    $excluded = "studio,edge-runtime,analytics,vector,storage-api,imgproxy,realtime,mailpit,postgres-meta,postgrest,supavisor"
+    if ($TeacherSignup) { $excluded = $excluded.Replace("mailpit,", "") }
     Invoke-QuietSupabase @(
         "--yes", "start", "--workdir", $projectRoot,
-        "--exclude", "studio,edge-runtime,analytics,vector,storage-api,imgproxy,realtime,mailpit,postgres-meta,postgrest,supavisor"
+        "--exclude", $excluded
     ) "隔離 Supabase 原生 Auth 啟動失敗。"
     $started = $true
     Write-Output "隔離 Supabase Auth／PostgreSQL 已啟動。"
@@ -200,9 +240,57 @@ enabled = false
     $env:APP_PLANET_E2E_PORT = "$webPort"
     $env:APP_PLANET_E2E_CHANNEL = "msedge"
     $env:APP_PLANET_TEST_AUTH_CONTAINER = "supabase_auth_$projectId"
+    & docker inspect --format 'AuthImage={{.Config.Image}}' "supabase_auth_$projectId"
     $env:NODE_ENV = "test"
+    $env:APP_PLANET_ENV = "isolated-local-test"
+    $env:APP_PLANET_BOOTSTRAP_MODE = "isolated-local-test"
+    $env:APP_PLANET_BOOTSTRAP_ISOLATION_ID = ([Guid]::Parse($runId)).ToString()
+    $env:APP_PLANET_STAFF_REVIEW_MODE = "isolated-local-test"
 
+    # readiness §90：既有教職員登入僅在本隔離 runner 啟用；以下為隔離測試值，不是 PP-03／PP-04 正式核定。
+    $env:APP_PLANET_STAFF_LOGIN_MODE = "isolated-local-test"
+    $env:APP_PLANET_STAFF_LOGIN_THROTTLE_BACKEND = "memory-single-process"
+    $hmacBytes = New-Object byte[] 32
+    $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+    try { $rng.GetBytes($hmacBytes) } finally { $rng.Dispose() }
+    $env:APP_PLANET_STAFF_LOGIN_HMAC_SECRET = -join ($hmacBytes | ForEach-Object { $_.ToString("x2") })
+    [Array]::Clear($hmacBytes, 0, $hmacBytes.Length)
+    $env:APP_PLANET_STAFF_SESSION_MAX_AGE_SECONDS = "900"
+
+    if ($TeacherSignup) {
+        $mailApiUrl = if ($status.MAILPIT_URL) { [string]$status.MAILPIT_URL } else { [string]$status.INBUCKET_URL }
+        $mailUri = [System.Uri]::new($mailApiUrl)
+        if (-not ($mailUri.IsLoopback -and $mailUri.Port -eq $mailPort)) {
+            throw "隔離郵件接收器不是本輪指定的 loopback 埠。"
+        }
+        $mailContainer = "supabase_inbucket_$projectId"
+        if (-not (& docker ps -q --filter "name=^/$mailContainer$")) { throw "找不到本輪隔離郵件接收器容器。" }
+        $env:APP_PLANET_TEACHER_SIGNUP_MODE = "isolated-local-test"
+        # 郵件接收器只供測試工具讀取；APP_PLANET_TEST_* 不傳入 Next 子程序。
+        $env:APP_PLANET_TEST_MAIL_API_URL = $mailApiUrl.TrimEnd("/")
+        $env:APP_PLANET_TEST_MAIL_CONTAINER = $mailContainer
+        $env:APP_PLANET_TEST_AUTH_OTP_EXPIRY_SECONDS = "120"
+        if ($IntegrationFilter.Count -eq 0) { $IntegrationFilter = @("tests/integration/real-auth-teacher-signup.test.ts") }
+        if ($E2EFilter.Count -eq 0) { $E2EFilter = @("tests/auth-e2e/real-auth-teacher-signup.spec.ts") }
+        Write-Output "隔離郵件接收器已啟動（僅 loopback；不寄外部信件）。"
+    }
     if ($Upgrade0025) { $env:APP_PLANET_TEST_MIGRATE_THROUGH = "0024" }
+    if ($Upgrade0031) {
+        if ($Upgrade0025 -or $Upgrade0028 -or $BrowserOnly) { throw "0031 升級驗收不可混用其他升級或 BrowserOnly。" }
+        $env:APP_PLANET_TEST_MIGRATE_THROUGH = "0030"
+        $IntegrationFilter = @("tests/integration/real-auth-specification-review.test.ts")
+    }
+    if ($Upgrade0028) {
+        if (-not $TeacherSignup) { throw "0028 升級驗收必須使用 -TeacherSignup。" }
+        $env:APP_PLANET_TEST_MIGRATE_THROUGH = "0028"
+    }
+    if ($Upgrade0032) {
+        if ($Upgrade0025 -or $Upgrade0028 -or $Upgrade0031 -or $BrowserOnly -or -not $IntegrationOnly) {
+            throw "0032 升級驗收須單獨使用 -Upgrade0032 -IntegrationOnly。"
+        }
+        $env:APP_PLANET_TEST_MIGRATE_THROUGH = "0031"
+        $IntegrationFilter = @("tests/integration/real-auth-bindings-upgrade.test.ts")
+    }
     $roleUrlsJson = & node (Join-Path $repoRoot "scripts\prepare-real-auth-db.mjs")
     if ($LASTEXITCODE -ne 0) {
         $exitCode = $LASTEXITCODE
@@ -211,6 +299,7 @@ enabled = false
     $roleUrls = $roleUrlsJson | ConvertFrom-Json
     $env:APP_PLANET_DATABASE_URL = $roleUrls.applicationDatabaseUrl
     $env:APP_PLANET_TEST_WORKER_DATABASE_URL = $roleUrls.workerDatabaseUrl
+    if ($roleUrls.bootstrapDatabaseUrl) { $env:APP_PLANET_BOOTSTRAP_DATABASE_URL = $roleUrls.bootstrapDatabaseUrl }
     Write-Output "隔離 migration 與 runtime database roles 已準備。"
 
     Push-Location $repoRoot
@@ -244,6 +333,11 @@ enabled = false
         $exitCode = if ($script:failedCommandExitCode) { $script:failedCommandExitCode } else { 1 }
     }
 } finally {
+    foreach ($secretName in @("APP_PLANET_BOOTSTRAP_DATABASE_URL", "APP_PLANET_STAFF_LOGIN_HMAC_SECRET", "APP_PLANET_SOURCE_PROXY_PROOF", "APP_PLANET_TEST_AUTH_ADMIN_KEY", "APP_PLANET_TEST_DB_ADMIN_URL", "APP_PLANET_DATABASE_URL", "APP_PLANET_TEST_WORKER_DATABASE_URL", "APP_PLANET_AUTH_API_KEY",
+        "APP_PLANET_TEACHER_SIGNUP_MODE", "APP_PLANET_TEST_MAIL_API_URL", "APP_PLANET_TEST_MAIL_CONTAINER",
+        "APP_PLANET_TEST_AUTH_OTP_EXPIRY_SECONDS", "APP_PLANET_TEST_MIGRATE_THROUGH")) {
+        Remove-Item -LiteralPath "Env:$secretName" -ErrorAction SilentlyContinue
+    }
     if ($started) {
         try {
             Invoke-QuietSupabase @("stop", "--workdir", $projectRoot, "--no-backup") `

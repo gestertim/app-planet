@@ -18,7 +18,7 @@ export const stageConfirmationStatusSchema = z.strictObject({
   state: z.enum(["no_draft", "unconfirmed", "confirmed_current", "confirmation_stale"]),
   draft_row_version: z.number().int().min(0).max(2147483647).nullable(),
   latest_confirmation: stageConfirmationReceiptSchema.nullable(),
-  approval: z.literal("manual_approval_unavailable"),
+  approval: z.enum(["manual_approval_unavailable", "separate_specification_review"]),
 });
 export const stageConfirmationResultSchema = z.strictObject({
   outcome: z.enum(["confirmed", "replayed", "already_confirmed"]),

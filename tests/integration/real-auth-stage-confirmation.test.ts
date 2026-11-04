@@ -123,7 +123,7 @@ describe("階段草稿學生確認（真 Auth → Route Handler → 隔離 Postg
     expect(Math.abs(Date.now() - new Date(rows[0].confirmed_at).getTime())).toBeLessThan(60_000);
     const current = await status(project);
     expect(current.body).toMatchObject({
-      state: "confirmed_current", draft_row_version: 0, approval: "manual_approval_unavailable",
+      state: "confirmed_current", draft_row_version: 0, approval: "separate_specification_review",
     });
     expect(JSON.stringify(current.body)).not.toMatch(/confirmed_by|owner/);
     await untouched(project);

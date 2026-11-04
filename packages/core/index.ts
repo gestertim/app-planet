@@ -1,4 +1,5 @@
 export * from "./contracts/common.ts";
+export * from "./contracts/staff-approval.ts";
 export * from "./contracts/project-classification.ts";
 export * from "./contracts/project-tasks.ts";
 export * from "./contracts/stage-draft-confirmation.ts";
@@ -13,3 +14,6 @@ export * from "./policy/teacher-account-prep.ts";
 export * from "./policy/work-eligibility.ts";
 export * from "./policy/works-csp.ts";
 export * from "./usage/ledger.ts";
+export * from "./contracts/specification-review.ts";
+export * from "./contracts/admin-bindings.ts";
+export * from "./contracts/teacher-resources.ts";

@@ -10,6 +10,7 @@ if (!adminUrl) {
 
 const appPassword = randomBytes(32).toString("hex");
 const workerPassword = randomBytes(32).toString("hex");
+const bootstrapPassword = randomBytes(32).toString("hex");
 const pool = new Pool({ connectionString: adminUrl, max: 1, connectionTimeoutMillis: 5_000 });
 let migrationPrincipal;
 
@@ -67,15 +68,37 @@ try {
     GRANT app_job_executor TO app_planet_worker_test
       WITH ADMIN FALSE, INHERIT FALSE, SET TRUE
   `);
+  if (through === undefined || through >= "0027") {
+    const isolationId = process.env.APP_PLANET_BOOTSTRAP_ISOLATION_ID;
+    if (process.env.APP_PLANET_ENV !== "isolated-local-test" ||
+        !/^[0-9a-f-]{36}$/.test(isolationId ?? "")) throw new Error("缺少教師審核隔離設定。");
+    await pool.query("INSERT INTO app.staff_approval_local_config VALUES (true,$1::uuid,86400)", [isolationId]);
+    await pool.query(`
+      CREATE ROLE app_bootstrap_test LOGIN PASSWORD '${bootstrapPassword}'
+        NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS
+    `);
+    await pool.query("GRANT app_bootstrap_executor TO app_bootstrap_test WITH ADMIN FALSE, INHERIT FALSE, SET TRUE");
+  }
+  if (through === undefined || through >= "0028") {
+    // readiness §92：教師申請意圖只經受限 intake 角色；入口設定只在 -TeacherSignup 隔離 runner 建立。
+    await pool.query("GRANT app_signup_intake TO app_usage_test WITH ADMIN FALSE, INHERIT FALSE, SET TRUE");
+    if (process.env.APP_PLANET_TEACHER_SIGNUP_MODE === "isolated-local-test") {
+      await pool.query("INSERT INTO app.teacher_signup_local_config VALUES (true,3600)");
+    }
+  }
   const appUrl = new URL(adminUrl);
   appUrl.username = "app_usage_test";
   appUrl.password = appPassword;
   const workerUrl = new URL(adminUrl);
   workerUrl.username = "app_planet_worker_test";
   workerUrl.password = workerPassword;
+  const bootstrapUrl = new URL(adminUrl);
+  bootstrapUrl.username = "app_bootstrap_test";
+  bootstrapUrl.password = bootstrapPassword;
   process.stdout.write(JSON.stringify({
     applicationDatabaseUrl: appUrl.toString(),
     workerDatabaseUrl: workerUrl.toString(),
+    ...(through === undefined || through >= "0027" ? { bootstrapDatabaseUrl: bootstrapUrl.toString() } : {}),
   }));
 } catch (error) {
   console.error("隔離 PostgreSQL migration／runtime role setup 失敗。");

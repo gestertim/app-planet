@@ -7,6 +7,9 @@ import { resolvePagePrincipal } from "@/server/page-principal";
 import { readOwnedStageDraftSubset } from "@/server/stage-drafts";
 import { readOwnedStageConfirmationStatus } from "@/server/stage-draft-confirmations";
 import { readCurrentOwnedProjectClassificationSubset } from "@/server/projects";
+import { publicProjectClassification } from "@/server/project-classification-handlers";
+import { ProjectRequirementsPanel } from "@/components/project/project-requirements-panel";
+import { readSpecificationStatus } from "@/server/specification-review";
 
 export const dynamic = "force-dynamic";
 
@@ -54,16 +57,27 @@ export default async function StageDraftPage({ params }: PageProps) {
   if (confirmation.outcome === "denied" || confirmation.outcome === "failed") {
     return <ClosedMessage>受保護資料已隱藏；請重新登入或稍後再試。</ClosedMessage>;
   }
+  const review = target.data.stage === "Specification"
+    ? await readSpecificationStatus(principal.session, target.data.project_id) : null;
+  if (review && review.outcome !== "found") {
+    return <ClosedMessage>目前無法重新確認 Specification 審查資料；受保護內容已隱藏，請稍後重新載入。</ClosedMessage>;
+  }
 
   return (
     <section className="grid gap-4" aria-label="九階段創作步驟">
       <StageNav projectId={target.data.project_id} current={target.data.stage} />
+      {target.data.stage === "A/B" && <ProjectRequirementsPanel
+        key={`${principal.operationStorageScope}:${target.data.project_id}:requirements`}
+        initial={publicProjectClassification(project.project)}
+        accountScope={principal.operationStorageScope}
+      />}
       <StageDraftEditor
         key={`${principal.operationStorageScope}:${target.data.project_id}:${target.data.stage}`}
         hasTrustedPrincipal
         accountScope={principal.operationStorageScope}
         initialDraft={draft.outcome === "found" ? draft.draft : null}
         initialConfirmation={confirmation.outcome === "found" ? confirmation.status : null}
+        initialSpecificationReview={review?.outcome === "found" ? review : undefined}
         target={target.data}
       />
     </section>

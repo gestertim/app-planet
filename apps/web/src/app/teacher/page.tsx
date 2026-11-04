@@ -1,42 +1,71 @@
 import { AppShell } from "@/components/app-shell";
-import { ClosedAction } from "@/components/operation-state";
+import Link from "next/link";
+import { AccountGateNotice } from "@/components/auth/account-gate-notice";
+import { resolvePageAccount } from "@/server/page-principal";
+import { resolveTeacherPageSession } from "@/server/teacher-page-access";
+import { listSpecificationReviews } from "@/server/specification-review";
+import { readTeacherStudents } from "@/server/teacher-resources";
 
-export default function TeacherPage() {
+// 直接輸入網址也須經可信身分與相符角色（readiness §90）；Specification 審查維持原有獨立授權。
+export const dynamic = "force-dynamic";
+
+export default async function TeacherPage({ searchParams }: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const account = await resolvePageAccount();
+  if (account.kind !== "account" || account.record.role !== "teacher" ||
+      account.record.status !== "approved" || !account.record.login_gate) {
+    return <AccountGateNotice account={account} heading="教師工作台" />;
+  }
+  const access = await resolveTeacherPageSession();
+  if (access.outcome !== "ready") return <p role="alert">目前無法重新確認教師資格；受保護內容已隱藏。
+    <Link prefetch={false} href="/teacher">重新讀取教師工作台</Link>
+  </p>;
+  const students = await readTeacherStudents(access.session, {});
+  if (students.outcome !== "found") return <p role="alert">目前無法確認有效學生關係；請重新登入或稍後再試。
+    <Link prefetch={false} href="/teacher">重新讀取教師工作台</Link>
+  </p>;
+  const reviews = await listSpecificationReviews(access.session, await searchParams);
+  if (reviews.outcome !== "found") return <p role="alert">無法讀取待審提交；請核對網址或重新登入後再試。
+    <Link prefetch={false} href="/teacher">重新讀取教師工作台</Link>
+  </p>;
   return (
     <AppShell
+      authenticated
+      logoutRedirect="/login"
+      preview={false}
+      capabilities={[{ href: "/teacher", label: "工作台", prefetch: false },
+        { href: "/teacher/students", label: "學生名冊", prefetch: false },
+        { href: "/account/status", label: "我的帳號狀態", prefetch: false }]}
       heading="教師工作台"
-      subtitle="班級、學生綁定與作品檢視目前只展示空間配置，沒有連接學校或帳號資料。"
+      subtitle="僅檢視目前有效綁定學生的已保存專案資料； Specification 人工審查維持獨立入口。"
     >
-      <section className="grid">
-        <article className="card">
-          <span className="sample-label">合成班級摘要</span>
-          <h2>我的班級（示例）</h2>
-          <p className="muted">尚未連接名冊；此處不含真實學生資料。</p>
-          <span className="status">名冊服務｜尚未接通</span>
-        </article>
-        <article className="card">
-          <span className="sample-label">合成名冊列</span>
-          <div className="list-row">
-            <div>
-              <strong>學生樣例 A-01</strong>
-              <div className="muted">合成識別碼，非真實帳號</div>
-            </div>
-            <span className="status">示範資料</span>
-          </div>
-          <div className="action-list">
-            <ClosedAction label="檢視作品" />
-            <ClosedAction label="提供回饋" />
-          </div>
-        </article>
+      <section className="card" data-testid="staff-session" data-role="teacher">
+        <p>已由伺服器確認教師身分。學生與專案資料只供唯讀檢視；這不代表學生已完成或取得教師批准。</p>
       </section>
-      <section className="card" style={{ marginTop: "1rem" }}>
-        <h2>教師操作</h2>
-        <p className="muted">學生綁定、核發帳號、審查與回饋均未接通，不會產生任何變更。</p>
-        <div className="action-list">
-          <ClosedAction label="綁定學生" />
-          <ClosedAction label="核發帳號" />
-          <ClosedAction label="審查作品" />
-        </div>
+      <section className="card" aria-label="有效綁定學生">
+        <h2>目前有效綁定的學生</h2>
+        <p>只列本次重新確認仍符合資格的學生；停用快照與失效學校名冊不在本輪提供。</p>
+        {students.value.items.length === 0 && <p>目前沒有可檢視的有效綁定學生。</p>}
+        <ul>{students.value.items.map((student) => <li key={student.id}>
+          <Link prefetch={false} href={`/teacher/students/${student.id}/projects`}>
+            {student.display_label} 的專案
+          </Link>
+        </li>)}</ul>
+        {students.value.next_cursor && <Link prefetch={false}
+          href={`/teacher/students?after=${students.value.next_cursor}`}>查看更多學生</Link>}
+        <Link prefetch={false} href="/teacher/students">開啟學生名冊</Link>
+      </section>
+      <section className="card" aria-label="Specification 待審清單">
+        <h2>Specification 待審清單</h2>
+        <p>依提交順序由舊到新；每頁最多 20 筆，只列目前有效且可審的提交。</p>
+        {reviews.items.length === 0 && <p>目前沒有可審的提交。</p>}
+        <ul>{reviews.items.map((item) => <li key={item.id}>
+          <a href={`/teacher/specification-submissions/${item.id}`}>{item.title} — Specification 版本 {item.draft_version}</a>
+          <span>（{item.submitted_at}）</span>
+        </li>)}</ul>
+        {reviews.next_cursor && <a href={`/teacher?after=${reviews.next_cursor}`}>下一頁待審提交</a>}
+        <a href="/teacher">重新讀取第一頁</a>
       </section>
     </AppShell>
   );

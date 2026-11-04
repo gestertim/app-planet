@@ -170,7 +170,7 @@ test("產品 logout＋測試 setup 重新驗證後恢復：真 Auth／Next HTTPS
     const specification = page.getByTestId("workspace-stage-Specification");
     await expect(specification).toContainText("logout 後應由同帳號重新讀回的草稿");
     await expect(specification).toContainText("學生確認目前有效");
-    await expect(specification).toContainText("人工批准尚未取得／尚未開放");
+    await expect(specification).toContainText("Specification 教師審查請至保存頁讀取獨立狀態");
 
     await page.goto(`${appOrigin}/student/projects/${secondProject}/plan`);
     await expect(page.getByTestId("project-task-import-pending"))

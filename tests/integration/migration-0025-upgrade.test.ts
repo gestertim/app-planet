@@ -175,7 +175,8 @@ describe("0024 既有資料升級至 0025（真 Auth → Route Handler → 隔�
     expect((await control.query("SELECT count(*)::int AS n FROM app.stage_draft_confirmations")).rows[0].n).toBe(0);
     for (const [stage, version] of [["Specification", 2], ["點子", 0], ["A/B", 1]] as const) {
       expect((await status(a, stage)).body).toMatchObject({
-        state: "unconfirmed", draft_row_version: version, latest_confirmation: null, approval: "manual_approval_unavailable",
+        state: "unconfirmed", draft_row_version: version, latest_confirmation: null,
+        approval: stage === "Specification" ? "separate_specification_review" : "manual_approval_unavailable",
       });
     }
     expect((await status(a, "Checkpoint")).body).toMatchObject({ state: "no_draft", draft_row_version: null });

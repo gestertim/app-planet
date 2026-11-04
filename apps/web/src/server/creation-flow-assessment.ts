@@ -314,7 +314,7 @@ export interface StageOverviewItem {
   readonly state: StageOverviewState;
   readonly draft_row_version: number | null;
   readonly confirmed_row_version: number | null;
-  readonly approval: "manual_approval_unavailable";
+  readonly approval: "manual_approval_unavailable" | "separate_specification_review";
 }
 export type OwnedProjectStageOverviewResult =
   | {
@@ -416,7 +416,7 @@ export async function readOwnedProjectStageOverviewSubset(
         return Object.freeze({
           stage, order: index + 1, state, draft_row_version: draft,
           confirmed_row_version: current.get(stage) ?? latest.get(stage) ?? null,
-          approval: "manual_approval_unavailable" as const,
+          approval: stage === "Specification" ? "separate_specification_review" : "manual_approval_unavailable",
         });
       });
       return {

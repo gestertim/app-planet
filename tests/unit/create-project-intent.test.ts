@@ -16,7 +16,12 @@ describe("建立專案待確認操作：帳號範圍與 replay-only 紀錄", () 
     expect(parseStoredIntent(JSON.stringify({ ...intent, extra: true })))
       .toEqual({ kind: "unusable", reason: "invalid", operationId: key });
     expect(parseStoredIntent(JSON.stringify({ ...intent, payload: { title: "專案", tier: "B" } })).kind)
+      .toBe("intent");
+    expect(parseStoredIntent(JSON.stringify({ ...intent, payload: { title: "專案", tier: "C" } })).kind)
       .toBe("unusable");
+    expect(resolveStoredIntents(JSON.stringify(intent),
+      JSON.stringify({ ...intent, payload: { title: "專案", tier: "B" } })))
+      .toMatchObject({ kind: "unusable", reason: "conflict" });
   });
 
   it("現行 strict v2 key／本文可安全轉為 replay-only；舊無版本紀錄不可恢復", () => {

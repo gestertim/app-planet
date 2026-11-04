@@ -19,7 +19,8 @@ export function WorkspaceStageCard({ projectId, stage, draft, overview }: Readon
       ? <p role="status">階段資料在讀取期間更新；為避免混用不同版本，請重新載入。</p>
       : <>
         <p>狀態：{stageStateLabel(overview.state)}</p>
-        <p>學生確認只適用於確切已保存版本；人工批准尚未取得／尚未開放。</p>
+        <p>學生確認只適用於確切已保存版本；
+          {stage === "Specification" ? "Specification 教師審查請至保存頁讀取獨立狀態。" : "人工批准尚未取得／尚未開放。"}</p>
         {draft
           ? <div><p>已保存版本：{draft.row_version}</p>
             <p>內容來源：{draft.content_source === "student_input" ? "學生輸入" : "AI 草案"}</p>

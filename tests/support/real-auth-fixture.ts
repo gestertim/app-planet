@@ -221,3 +221,60 @@ export async function closeSyntheticWorkerPool(): Promise<void> {
   workerPool = null;
   await pool?.end();
 }
+
+// readiness §90：既有教職員登入驗收用合成帳號。只建立 Auth 使用者與（可選）平台 profile；
+// 不建立學校、師生關係或任何真實資料。profile=false 代表「Auth 帳號存在但缺平台 profile」。
+export type SyntheticStaffAccount = {
+  id: string;
+  email: string;
+  password: string;
+  role: "teacher" | "admin" | null;
+};
+
+export async function createSyntheticStaffAccount(
+  control: Pool,
+  label: string,
+  options: {
+    readonly role: "teacher" | "admin" | null;
+    readonly status?: "pending" | "approved" | "rejected" | "disabled";
+    readonly deletionState?: "none" | "marked" | "purging" | "purge_failed" | "purged";
+  },
+): Promise<SyntheticStaffAccount> {
+  const email = `ap-staff-${randomUUID()}@example.invalid`;
+  const password = `${randomBytes(48).toString("base64url")}Aa9!`;
+  const createResponse = await authRequest("/auth/v1/admin/users", {
+    method: "POST",
+    headers: {
+      apikey: requireTestSetting(adminKey),
+      authorization: `Bearer ${requireTestSetting(adminKey)}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ email, password, email_confirm: true }),
+  });
+  const created: unknown = await createResponse.json().catch(() => null);
+  const createdUser = z.object({ id: z.uuid() }).safeParse(created);
+  if (!createdUser.success) throw new Error("隔離原生 Auth staff setup response invalid.");
+  const id = createdUser.data.id.toLowerCase();
+  if (options.role !== null) {
+    await control.query(`
+      INSERT INTO app.profiles(id,role,status,deletion_state,school_id,display_label,status_changed_at)
+      VALUES ($1,$2::app.account_role,$3::app.account_status,$4::app.deletion_state,NULL,$5,now())
+    `, [id, options.role, options.status ?? "approved", options.deletionState ?? "none", `合成教職員${label}`]);
+  }
+  return { id, email, password, role: options.role };
+}
+
+export async function deleteSyntheticStaffAccount(control: Pool, account: SyntheticStaffAccount): Promise<void> {
+  await control.query("DELETE FROM app.profiles WHERE id=$1", [account.id]);
+  const response = await fetch(`${requireTestSetting(authOrigin)}/auth/v1/admin/users/${account.id}`, {
+    method: "DELETE",
+    cache: "no-store",
+    redirect: "error",
+    headers: {
+      apikey: requireTestSetting(adminKey),
+      authorization: `Bearer ${requireTestSetting(adminKey)}`,
+    },
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!response.ok && response.status !== 404) throw new Error("隔離原生 Auth staff account cleanup failed.");
+}

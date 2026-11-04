@@ -1,4 +1,5 @@
 "use client";
+import { productFetch as fetch } from "../auth/product-fetch.ts";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -47,6 +48,7 @@ export function CreateProjectForm({ storageScope }: { storageScope: string }) {
   const router = useRouter();
   const accessLost = useProjectAccessLost();
   const [title, setTitle] = useState("");
+  const [requestedTier, setRequestedTier] = useState<"A" | "B" | null>(null);
   const [intent, setIntent] = useState<CreateIntent | null>(null);
   const [stopped, setStopped] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -63,6 +65,7 @@ export function CreateProjectForm({ storageScope }: { storageScope: string }) {
     setLoadedStorageKey(null);
     setStorageUnavailable(false);
     setTitle("");
+    setRequestedTier(null);
     setIntent(null);
     setStopped(false);
     setCreated(null);
@@ -92,6 +95,7 @@ export function CreateProjectForm({ storageScope }: { storageScope: string }) {
       if (resolved.kind === "intent") {
         setIntent(resolved.intent);
         setTitle(resolved.intent.payload.title);
+        setRequestedTier(resolved.intent.payload.tier ?? null);
         setMessage("上次建立結果待確認。只會以原操作識別與原本文查詢／恢復，絕不重新建立或換鍵。");
       }
       setLoadedStorageKey(storageKey);
@@ -120,7 +124,7 @@ export function CreateProjectForm({ storageScope }: { storageScope: string }) {
       const operation = intent ?? {
         v: 3 as const,
         key: crypto.randomUUID(),
-        payload: { title },
+        payload: requestedTier === null ? { title } : { title, tier: requestedTier },
       };
       const initialCreate = intent === null;
       // 本次操作實際保存的來源快照；不可依賴剛呼叫 setter 的 state。
@@ -183,7 +187,8 @@ export function CreateProjectForm({ storageScope }: { storageScope: string }) {
       }
       if (initialCreate && response.status === 201) {
         const parsed = createdSchema.safeParse(await response.json());
-        if (!parsed.success || parsed.data.title !== operation.payload.title || parsed.data.requested_tier !== null) {
+        if (!parsed.success || parsed.data.title !== operation.payload.title ||
+            parsed.data.requested_tier !== (operation.payload.tier ?? null)) {
           setMessage("建立結果待確認：回應無法驗證。下次只會查詢原操作，不會重新建立。");
           return;
         }
@@ -193,7 +198,7 @@ export function CreateProjectForm({ storageScope }: { storageScope: string }) {
       if (!initialCreate && response.status === 200) {
         const parsed = replayedSchema.safeParse(await response.json());
         if (!parsed.success || parsed.data.project.title !== operation.payload.title ||
-            parsed.data.project.requested_tier !== null) {
+            parsed.data.project.requested_tier !== (operation.payload.tier ?? null)) {
           setMessage("恢復結果待確認：回應無法驗證。原操作已保留，請勿另建專案。");
           return;
         }
@@ -210,6 +215,7 @@ export function CreateProjectForm({ storageScope }: { storageScope: string }) {
     const cleared = clearIntentSnapshot(sessionStorage, localStorage, storageKey, sources) === "cleared";
     setCreated(project);
     setTitle("");
+    setRequestedTier(null);
     if (cleared) {
       setStoredSources({ session: null, local: null });
       setIntent(null);
@@ -229,6 +235,17 @@ export function CreateProjectForm({ storageScope }: { storageScope: string }) {
       <label htmlFor="project-title">專案名稱</label>
       <input id="project-title" value={scopeReady ? title : ""} disabled={!storageReady || busy || stopped || intent !== null}
         onChange={(event) => setTitle(event.target.value)} />
+      <label htmlFor="project-requested-tier">建立時的 A/B 偏好（不是正式分類）</label>
+      <select id="project-requested-tier" value={scopeReady ? requestedTier ?? "" : ""}
+        disabled={!storageReady || busy || stopped || intent !== null}
+        onChange={(event) => {
+          const value = event.target.value;
+          setRequestedTier(value === "A" || value === "B" ? value : null);
+        }}>
+        <option value="">尚無偏好</option>
+        <option value="A">偏好 A：靜態作品</option>
+        <option value="B">偏好 B：平台資料服務</option>
+      </select>
       <button type="submit" disabled={!storageReady || busy || stopped}>
         {intent ? stopped ? "操作已停止" : "只查詢原操作" : "建立專案"}
       </button>

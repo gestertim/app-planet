@@ -3,7 +3,7 @@ import { z } from "zod";
 export const createIntentSchema = z.strictObject({
   v: z.literal(3),
   key: z.uuid(),
-  payload: z.strictObject({ title: z.string() }),
+  payload: z.strictObject({ title: z.string(), tier: z.enum(["A", "B"]).optional() }),
 });
 export type CreateIntent = z.infer<typeof createIntentSchema>;
 
@@ -73,7 +73,8 @@ export function resolveStoredIntents(
   const intents = parsed.flatMap((entry) => entry.kind === "intent" ? [entry.intent] : []);
   const selected = intents[0];
   if (!selected || intents.some((entry) =>
-    entry.key !== selected.key || entry.payload.title !== selected.payload.title)) {
+    entry.key !== selected.key || entry.payload.title !== selected.payload.title ||
+    entry.payload.tier !== selected.payload.tier)) {
     return { kind: "unusable", reason: "conflict", operationIds };
   }
   return { kind: "intent", intent: selected, sources: { session: sessionRaw, local: localRaw } };

@@ -22,7 +22,12 @@ $script:MigrationFiles = @(
   (Join-Path $script:RepoRoot 'supabase\migrations\0022_project_create_replay_only.sql'),
   (Join-Path $script:RepoRoot 'supabase\migrations\0023_project_task_done.sql'),
   (Join-Path $script:RepoRoot 'supabase\migrations\0024_project_task_manual_import.sql'),
-  (Join-Path $script:RepoRoot 'supabase\migrations\0025_stage_draft_confirmation.sql')
+  (Join-Path $script:RepoRoot 'supabase\migrations\0025_stage_draft_confirmation.sql'),
+  (Join-Path $script:RepoRoot 'supabase\migrations\0026_account_self_status.sql'),
+  (Join-Path $script:RepoRoot 'supabase\migrations\0027_staff_approval.sql'),
+  (Join-Path $script:RepoRoot 'supabase\migrations\0030_specification_review.sql'),
+  (Join-Path $script:RepoRoot 'supabase\migrations\0031_specification_reason_boundary.sql'),
+  (Join-Path $script:RepoRoot 'supabase\migrations\0032_admin_bindings.sql')
 )
 if ($UsageUpgrade) {
   if ($Scenario -ne 'Usage') { throw 'UsageUpgrade 只適用 Usage scenario。' }
@@ -971,6 +976,13 @@ SELECT current_database(),
   $script:EnvironmentInfo.postgresql_server_version = $preflightFields[5]
   $script:EnvironmentInfo.pgtap_available_version = $preflightFields[9]
 
+  # 固定 DB-only 映像的 auth.users 只有最小欄位；補齊 0027 所需刪除旗標。
+  # 此 harness 不冒充原生 Auth；bootstrap 與 Auth RLS 另由 test-auth-local 驗證。
+  $authShape = Invoke-DbSql -Name 'auth-harness-deleted-at' -Role 'supabase_admin' -Sql @'
+ALTER TABLE auth.users ADD COLUMN IF NOT EXISTS deleted_at timestamptz NULL;
+'@ -PsqlOptions @('-q')
+  Assert-CommandSuccess -Result $authShape
+
   $projectMigrationBefore = $null
   $draftMigrationBefore = $null
   foreach ($migration in $script:MigrationFiles) {
@@ -1002,6 +1014,10 @@ SELECT coalesce(jsonb_agg(to_jsonb(p) ORDER BY id),'[]'::jsonb)::text FROM app.p
       (Join-Path $script:RepoRoot 'supabase\migrations\0023_project_task_done.sql'),
       (Join-Path $script:RepoRoot 'supabase\migrations\0024_project_task_manual_import.sql'),
       (Join-Path $script:RepoRoot 'supabase\migrations\0025_stage_draft_confirmation.sql'),
+      (Join-Path $script:RepoRoot 'supabase\migrations\0027_staff_approval.sql'),
+      (Join-Path $script:RepoRoot 'supabase\migrations\0030_specification_review.sql'),
+      (Join-Path $script:RepoRoot 'supabase\migrations\0031_specification_reason_boundary.sql'),
+      (Join-Path $script:RepoRoot 'supabase\migrations\0032_admin_bindings.sql'),
   (Join-Path $script:RepoRoot 'supabase\migrations\0024_project_task_manual_import.sql')
     )) { 'supabase_admin' } else { 'postgres' }
     $result = Invoke-DbFile -Name "migration-$name" -Role $migrationRole -Path $migration -PsqlOptions @('-q')

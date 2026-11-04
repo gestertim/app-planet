@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/app-shell";
+import { TeacherRelationshipNotice } from "@/components/auth/teacher-relationship-notice";
 import { ProtectedProjectView } from "@/components/project/protected-project-view";
 import { SevenTabs } from "@/components/project/seven-tabs";
 import { readWorkspacePageData } from "@/server/workspace-page-data";
@@ -42,6 +43,7 @@ export default async function ProjectWorkspaceLayout({ params, children }: Layou
           {workspace.requirements ? `；需求版本：${workspace.requirements.revision}` : "；尚無需求版本"}</p>
         <p>草稿與學生確認屬各自的階段內容；學生確認不代表階段完成或人工批准。</p>
       </section>
+      <TeacherRelationshipNotice />
       <SevenTabs projectId={workspace.project.id} />
       {children}
     </AppShell>

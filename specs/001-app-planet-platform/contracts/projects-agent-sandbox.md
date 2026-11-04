@@ -6,6 +6,30 @@
 
 ## 1. 專案、階段與快照
 
+### Specification 單階段提交與教師審查（D-34／§95）
+
+以下只覆蓋本輪已批准的 Specification 審查，取代較早「所有批准操作未開放」在此子集的描述；其他階段、通關規則與服務仍不因此開放。
+
+| 方法／路徑 | 輸入／結果 |
+| --- | --- |
+| `GET /api/v1/projects/{id}/stages/Specification/submissions` | 本人學生可信 current evidence（保存版本／需求 revision／分類確認 ID）及 latest submission，無提交時 latest=null；state 為 pending／approved／returned／invalidated，歷史 decision 與目前 state 分開。 |
+| `POST` 同上 | strict `{ expected_draft_version, expected_requirements_revision, expected_classification_id }`＋UUID `Idempotency-Key`。三項皆為 CAS，原文與身分／時間由 DB 取得，不接受 caller 內容或權限。成功 200 `{ outcome:"submitted"|"replayed", submission_id }`。 |
+| `GET /api/v1/teacher/specification-submissions?after=0&limit=20` | 僅目前有效且未決的可審提交；依不可變提交 sequence 由舊到新，limit=1～50（工程分頁值），多一筆探測 next_cursor，不默默截斷。 |
+| `GET /api/v1/teacher/specification-submissions/{id}` | 當下有效綁定教師的不可變提交詳情；含原 Specification、正式需求與分類證據，不冒充目前編輯內容；同交易寫入 `teacher_view` 去敏稽核，失敗不交付內容。 |
+| `POST /api/v1/teacher/specification-submissions/{id}/decision` | strict `{ decision:"approved"|"returned", reason:null|string }`＋UUID key；批准 reason=null，退回必須有學生可讀理由。200 `{ outcome:"decided"|"replayed", submission_id }`；只能從尚未決策、有效證據建立一筆不可變決策。 |
+
+退回理由防護上限 2000 字元、拒絕控制字元與只有空白；這是工程輸入界限，不是正式配額或內容品質門檻。沿用原草稿空字串與原文保存政策，不增加字數達標等完成規則。不要求其他八階段／學生階段確認；學生必須先保存並核對版本，再透過送審確認對話框明確送出。
+
+兩種寫入皆先鎖原操作鍵，再以一致順序鎖 profiles（UUID 升冪）→school→適用 membership→binding→project→既有 Specification 草稿 advisory lock，等鎖後重驗身分、資格及確切證據。既有需求／分類以 project row lock、草稿以同一 advisory lock 序列化，無須重寫歷史 migration。submission／decision 唯一鍵本身保存原意圖與非秘密 receipt；同鍵異意圖 422、相反決策／舊版本／非可送審狀態 409，成功、必要 audit 與證據同交易。歷史不被新提交改寫，不新增 receipt 到期清除機制。
+
+新增 `specification_review_epoch` 只供本輪持久失效：profiles 的 role／status／deletion_state／school_id、school 的 approval_state／approval_epoch／valid_until 變動，以及 binding／membership 生命週期變動，皆由 DB trigger 增加世代，caller 不能回設世代。提交保存學生／學校世代；決策另保存教師世代及確切 binding／membership ID＋世代。現在資格仍須有效，且世代／草稿版本／需求 revision／分類 ID 全部相符，才可呈現目前有效批准；舊 receipt 不變更任何 current。已到學校有效時間邊界亦拒絕，不新增期限值或管理服務。
+
+可信 Auth 每請求重驗、非特權 actor、FORCE RLS、不可 LOGIN 的窄用途 writer、固定 search_path 與 EXECUTE 白名單沿用；一般 actor 不能直接 DML、讀取審查表或執行內部投影。不提供 service_role 產品捷徑。教師須有有效學校歸屬及師生綁定，無管理員代審；不可見詳情／決策統一 404、未登入 401／帳號拒絕 403，拒絕不回內容。讀取依賴故障 503；寫入結果未知 503 `operation_outcome_unknown`。傳輸輸入 16 KiB／回應 256 KiB，其他錯誤沿 COMMON。
+
+客戶端只在 hydration 後明確操作；未知結果保留帳號／資源隔離 sessionStorage 的原 key／body／版本，不存批准旗標、不自動重送／改決定。狀態只能由 server＋DB 重讀，讀取競態有世代防護，失權安全關閉，共用離開防護保留。總覽與學生確認 DTO 對 Specification 改標 `separate_specification_review`，指向保存頁讀取獨立審查，不虛報「尚未取得」或把單階段批准當成完整旅程完成。
+
+本輪 submission 是審查證據，不是 T068 作品版本／產物快照；不變更 `project.stage`，不授予 Checkpoint／Final Pack／Agent／預覽／發布。綁定管理產品入口仍未實作；隔離測試以合成 setup 建立持久關係，不是完整綁定 E2E。完整驗證與剩餘限制見 [readiness §95](../readiness-review.md#95-2026-11-04-t052-失權修正與-specification-教師審查)。
+
 **P-1 初始化補訂（2026-10-24 教育者明確批准）**：本文仍只有 `{ title, tier?: "A"｜"B" }`；新專案的 `stage` 固定「點子」、`row_version` 固定 0，僅由受控建立流程設定，不接受 caller 傳入上述欄位（即使值恰為「點子」／0 也不接受）。這不是既有資料允許值限制，不重設舊專案階段／版本、不加入全表版本非負約束；舊零／負版本仍可讀。owner 由可信主體、id／created_at 由可信 DB 產生的原要求不變。
 
 **P-1 方案 B（2026-10-24 教育者明確選定；實作範圍見 readiness §41）**：先建立未分類點子，A/B 後續步驟才確認分類。本文保持 `{ title, tier?: "A" | "B" }`；缺省保存 `requested_tier=NULL`，明示 A／B 僅逐字保存為 `requested_tier`，不可作可信正式分類。新列固定 `classification_state="unconfirmed"`、`stage="點子"`、`row_version=0`，`tier` 與 `needs_visitor_identity` 均為 NULL；禁止 caller 指定 owner／角色／學校／id／時間／階段／版本／分類狀態／正式分類／確認證據。建立本身不授予預覽、提交、發布或部署資格。
@@ -13,6 +37,14 @@
 本機隔離 migration 以 `classification_state="legacy_unverified"` 標示遷移前的歷史列，保留原 tier／boolean 值及舊七欄 DTO，不把 false 升格為已確認證據。新的具名 DTO 區分 `unconfirmed`、`confirmed` 與 `legacy_unverified`；舊介面遇無法表示的新列明確回 unsupported，不可靜默濾除或部分成功。§41 的建立子集當時未提供 confirmed 寫入；§43 另行批准並實作最小需求 revision、學生明確確認與失效受控交易，均非 HTTP handler 或一般服務上線授權。細節見 [readiness §41](../readiness-review.md) 與 [§43](../readiness-review.md)。
 
 ### 1.1 需求版本與分類確認
+
+**§93 本輪產品傳輸接線（2026-11-04）**：沿用下列現行交易，不改歷史 SQL。`GET /api/v1/projects/{id}/requirements` 回當前需求與分類；`PUT` 同一路徑保存正式需求，strict body `{ expected_requirements_revision, requirements: { description, runtime_needs, runtime_ai_required } }`。`POST /api/v1/projects/{id}/classification/confirmation` 明確確認，strict body `{ expected_requirements_revision, tier: "A"|"B", needs_visitor_identity: boolean, requested_tier_acknowledgement: "no_preference"|"matches"|"explicit_change" }`。兩種變更皆必填 UUID `Idempotency-Key` 及單一強 `If-Match: "<project row_version>"`；revision 由 body 對應 DB `expected_requirements_revision`，header 唯一對應 DB `expected_row_version`（含合法歷史 signed int32）；body 不接受重複 row version、project id、owner／角色／時間／批准等欄位。`If-None-Match` 不適用。
+
+GET `200` current 固定白名單 `{ id, row_version, requirements_revision, requested_tier, classification_state, requirements, tier, needs_visitor_identity, confirmation }`；confirmation 僅 `{ id, requirements_revision, confirmed_at, source }`，不傳確認者身分。變更 `200` envelope `{ outcome: "saved"|"confirmed"|"replayed", operation, current }`；operation 是原提交 receipt，current 是提交後重新可信讀取的當前結果，二者版本可能不同；ETag 僅描述 current。一般 DTO／receipt 絕不是可信資格物件；資格操作仍須重新 `resolveTrustedProjectClassification`。同鍵重放不重做確認，舊 receipt 不恢復 current。
+
+沿用每次 Auth `/user`→DB 當下 gate／owner、可信同來源變更檢查、no-store／problem+json 與去敏。非本人／不存在 `404`，資格拒絕 `403`、未登入 `401`；雙版本 stale `409 version_conflict`；同鍵異意圖 `422 idempotency_key_reuse`；缺需求 `409 project_requirements_missing`；分類矛盾／偏好未明示 `422 classification_inconsistent`／`classification_acknowledgement_required`；不支援 server／runtime AI 分別 `422 student_server_runtime_not_in_mvp`／`work_runtime_ai_not_in_mvp`。此類需求可如實保存但不能確認；visitor=true 沿用現有分類交易可記錄，公開資格仍由既有 qualification 判斷且不授權公開操作。
+
+本文最大 64 KiB UTF-8，回應最大 256 KiB；輸入過大 `413`，非法本文／版本 `400`，媒體錯誤 `415`。讀取依賴故障 `503 dependency_unavailable`；提交結果、提交後讀取或回應驗證無法確認時 `503 operation_outcome_unknown`（回應超界則 `503 dependency_unavailable`，同樣不能推定未提交）。unknown 保留原 key／body／雙版本，禁止換意圖盲重試；沿用 COMMON 及既有 24 小時 receipt 規則，不提供永久 exactly-once／到期後恢復保證。UI pending 操作記錄使用帳號隔離 sessionStorage；不是持久草稿政策，storage 失敗停止送出並提示。未保存正式編輯仍只存在頁面記憶體。
 
 需求 DTO 為固定欄位 `{ description: string, runtime_needs: "static" | "work_data_api" | "restricted_server", runtime_ai_required: boolean }`；未知欄位、缺漏、錯型別、矛盾值拒絕。文字精確保存，不 trim、不排序、不正規化；相同內容沿用 revision，不同內容建立不可變的新 revision。保存／讀取只處理擁有者學生的當前需求；輸入不得帶 owner、確認者、權限 claim 或時間。
 
@@ -87,6 +119,8 @@
 confirmed 僅普通 DTO，不是 `TrustedProjectClassification`，不加入來源 WeakSet，也不是永久資格／操作授權；後續仍須當下重新呼叫既有 resolver。新交易讀回只是恢復資料準備，**不是登入登出恢復、HTTP／UI 或 E2E 驗收**。不修改 project stage／任何版本、需求、分類或草稿，不產生 user_confirmed／approved、旅程／Checkpoint／Final Pack 判定或下游資格。實作與本輪真實併發證據見 [readiness §46](../readiness-review.md)。
 
 ### 1.4 創作旅程唯讀評估（§49；2026-10-24 單批本機子集）
+
+**§94 產品接線（2026-11-04，有界批准）**：既有專案總覽新增「檢查目標階段」，server rendering 直接沿用下列可信 reader，無新增 HTTP endpoint。URL 只接受選填 `requested_stage` 九階段 enum；省略採目前階段，非法／重複／額外 caller 證據明確拒絕，不作 caller 授權結論。九個同源目標連結、A/B 與階段補齊連結、重新檢查均重新讀取，沿用共用離開防護與受保護畫面；不持久化評估，不改階段／任何版本。只投影 reader 真實結果與可讀文案，草稿觀察不推導學生確認、批准或完成；私人支援範圍不等於公開資格或操作權。評估失敗隱藏本次內容並提供重試；其他區塊為不同 DB snapshots，不合併宣稱完整通關。§49 下述無 UI／真 Auth 是歷史範圍，現行接線及本輪實測見 [readiness §94](../readiness-review.md#94-2026-11-04-t052-目標階段檢查與補齊入口有界產品接線)；不重開 §93／§93.4、不變更 SQL／授權，人工批准與推進規則仍待決。
 
 傳輸無關 `readOwnedProjectCreationFlowAssessmentSubset(context, { project_id, requested_stage })` 經 [projects 入口](../../apps/web/src/server/projects.ts) 匯出。caller 僅能提供 UUID 專案 ID 與九個正式階段之一；strict 輸入拒絕需求／分類／確認／草稿／owner／角色／能力／結論等附加欄位。server 沿用可信唯讀 `AuthorizationContext.runReadOnly`、非特權 authenticated actor、既有 `read_saved_content` gate／owner 查詢、RLS 與逐欄 SELECT；專案／需求／目前確認投影／必要完整確認 evidence／九步草稿均由同一個參數化 SQL statement 讀取，READ COMMITTED 亦不跨 statement 拼接。
 

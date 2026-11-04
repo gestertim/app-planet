@@ -17,6 +17,11 @@ export function findProductionTestEnvironmentViolations(
   if (target !== undefined && productionEnvironmentNames.has(target)) {
     violations.push("APP_PLANET_ENV");
   }
+  // readiness §90：教職員登入隔離測試模式不得與正式環境標記並存。
+  if (environment.APP_PLANET_STAFF_LOGIN_MODE !== undefined && environment.APP_PLANET_STAFF_LOGIN_MODE !== "" &&
+      (environment.NODE_ENV === "production" || (target !== undefined && productionEnvironmentNames.has(target)))) {
+    violations.push("APP_PLANET_STAFF_LOGIN_MODE");
+  }
   for (const name of realServiceCredentialNames) {
     const value = environment[name];
     if (value !== undefined && value !== "") {

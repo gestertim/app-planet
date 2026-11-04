@@ -19,6 +19,10 @@ import { readOwnedStageDraftSubset } from "./stage-drafts.ts";
 const registry = {
   unauthenticated: { status: 401, title: "尚未登入", next: "請先登入後再試一次。" },
   account_disabled: { status: 403, title: "帳號目前無法使用", next: "請聯絡你的老師或管理員確認帳號狀態。" },
+  invalid_credentials: { status: 401, title: "登入資訊不正確", next: "請確認電子郵件與密碼後再試一次。" },
+  login_throttled: { status: 429, title: "嘗試登入次數太多", next: "請稍候一段時間再試。" },
+  account_unavailable: { status: 403, title: "帳號目前無法使用", next: "請聯絡學校或平台管理員確認帳號狀態。" },
+  unknown_field: { status: 422, title: "送出的內容包含不支援的欄位", next: "請重新整理頁面後再試一次。" },
   forbidden: { status: 403, title: "沒有這項操作的權限", next: "請確認使用的是自己的帳號，或聯絡老師協助。" },
   ai_not_open: { status: 403, title: "此功能目前尚未開放", next: "請稍後再試，或詢問老師何時開放。" },
   not_found: { status: 404, title: "找不到資料", next: "請回到清單重新選擇，或確認連結是否正確。" },
@@ -39,6 +43,26 @@ const registry = {
   stage_draft_not_saved: { status: 409, title: "這個階段尚無已保存草稿", next: "請先保存草稿並核對伺服器回應，再明確確認已保存版本。" },
   stage_confirmation_version_mismatch: { status: 409, title: "已保存版本已變更", next: "你的本地編輯仍保留；請重新讀取目前已保存版本、比對後，再明確確認。不會自動確認最新版本。" },
   version_conflict: { status: 409, title: "內容已被更新", next: "你的草稿仍保留；請比對最新內容後再決定如何儲存。" },
+  project_requirements_missing: { status: 409, title: "尚無正式需求", next: "請先保存正式需求，再明確確認分類。" },
+  student_server_runtime_not_in_mvp: { status: 422, title: "首版不支援學生伺服器程式", next: "需求已如實保存，但不能確認這個分類；請與老師討論，不要為通過而改報需求。" },
+  work_runtime_ai_not_in_mvp: { status: 422, title: "首版作品不支援執行時 AI", next: "需求已如實保存，但不能確認分類；平台 AI 輔助創作與作品執行時 AI 是不同能力。" },
+  classification_inconsistent: { status: 422, title: "分類與需求不一致", next: "A 對應靜態作品，B 對應平台資料服務；請依真實需求選擇。" },
+  classification_acknowledgement_required: { status: 422, title: "請明確確認偏好變更", next: "這次分類與建立專案時的偏好不同；請核對後明確確認變更。" },
+  teacher_review_conflict: { status: 409, title: "教師申請狀態或版本已變更", next: "請重新載入清單核對；不會自動覆寫或改成另一項決策。" },
+  teacher_not_verified: { status: 409, title: "這位教師尚未完成電郵驗證", next: "未驗證的申請不能批准或拒絕；請重新載入清單核對。" },
+  binding_exists: { status: 409, title: "這對師生已有有效綁定", next: "請重新讀取關係；不會另建重複關係。" },
+  binding_ended: { status: 409, title: "指定綁定已解除", next: "本次未變更關係；不會解除後來的新關聯。" },
+  teacher_not_eligible: { status: 409, title: "教師目前不符合綁定資格", next: "只可選擇已批准、未停用且未刪除的教師。" },
+  student_not_approved: { status: 409, title: "學生目前不符合綁定資格", next: "只可選擇已批准、未停用且未刪除的學生。" },
+  school_not_eligible: { status: 409, title: "學生學校目前不符合資格", next: "學校須已核准且未到期；本操作不會變更學校核准。" },
+  teacher_school_mismatch: { status: 409, title: "教師沒有學生學校的有效歸屬", next: "請核對持久學校歸屬；本操作不會建立或批准歸屬。" },
+  invalid_binding_pair: { status: 409, title: "不能綁定自己", next: "請選擇不同且角色正確的教師與學生。" },
+  email_not_verified: { status: 403, title: "電郵尚未驗證", next: "請先開啟信箱中的驗證信完成驗證；如未收到，可在註冊頁重寄驗證信。" },
+  signup_throttled: { status: 429, title: "申請或重寄次數太多", next: "請稍候一段時間再試。" },
+  signup_operation_expired: { status: 409, title: "這次申請已逾時", next: "請保留原申請；逾時不代表可以重新建立。請查看信箱或嘗試登入。" },
+  signup_outcome_unknown: { status: 503, title: "申請結果尚待確認", next: "請保留原申請內容；系統不會盲目重新派送。帳號可能尚未建立而安全停止；請查看信箱或嘗試登入。" },
+  verification_link_invalid: { status: 400, title: "驗證連結無效、已過期或已使用", next: "請直接登入；若顯示電郵尚未驗證，請在註冊頁重寄驗證信。" },
+  verification_outcome_unknown: { status: 503, title: "驗證結果尚待確認", next: "請稍後再按一次確認；或直接登入查看狀態。" },
   rate_limited: { status: 429, title: "操作太頻繁", next: "請稍等一下再試一次。" },
   concurrency_limited: { status: 429, title: "同時進行的操作太多", next: "請等目前的操作結束後再試。" },
   quota_daily_exhausted: { status: 429, title: "今天的額度已用完", next: "請明天再試，或詢問老師。" },
@@ -139,7 +163,7 @@ export function versionConflictResponse(
 }
 
 export function jsonResponse(
-  status: 200 | 201, body: unknown, context: ResponseContext, extraHeaders: Record<string, string> = {},
+  status: 200 | 201 | 202, body: unknown, context: ResponseContext, extraHeaders: Record<string, string> = {},
 ): Response {
   return finish(JSON.stringify(body), status, "application/json; charset=utf-8", context.requestId, extraHeaders);
 }

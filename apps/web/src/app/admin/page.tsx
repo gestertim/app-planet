@@ -1,12 +1,28 @@
 import { AppShell } from "@/components/app-shell";
 import { ClosedAction } from "@/components/operation-state";
+import { AccountGateNotice } from "@/components/auth/account-gate-notice";
+import { isApprovedStaff, resolvePageAccount } from "@/server/page-principal";
+import { TeacherReview } from "@/components/auth/teacher-review";
 
-export default function AdminPage() {
+// 直接輸入網址須經可信身分與相符角色；教師審核的每次讀寫仍由 DB 重新授權。
+export const dynamic = "force-dynamic";
+
+export default async function AdminPage() {
+  const account = await resolvePageAccount();
+  if (!isApprovedStaff(account, "admin")) return <AccountGateNotice account={account} heading="管理員工作台" />;
   return (
     <AppShell
+      authenticated
+      logoutRedirect="/login"
+      preview={false}
+      capabilities={[{ href: "/admin", label: "工作台" }, { href: "/admin/bindings", label: "師生綁定" }, { href: "/account/status", label: "我的帳號狀態" }]}
       heading="管理員工作台"
-      subtitle="學校核准、帳號與平台設定的版位預覽；目前沒有管理權限或寫入服務。"
+      subtitle="既有待審教師審核與合格師生綁定；其他管理能力尚未接通。"
     >
+      <section className="card" data-testid="staff-session" data-role="admin">
+        <p>已以管理員身分登入（伺服器確認）。可使用待審教師審核與導覽中的師生綁定。</p>
+      </section>
+      <TeacherReview />
       <section className="grid">
         <article className="card">
           <span className="sample-label">合成學校資料</span>
@@ -20,14 +36,14 @@ export default function AdminPage() {
         </article>
         <article className="card">
           <span className="sample-label">平台狀態</span>
-          <h2>管理功能尚未接通</h2>
-          <p className="muted">沒有連接使用者、稽核、通知、用量或資料保存服務。</p>
-          <span className="status">本機展示｜不寫入資料</span>
+          <h2>其他管理功能尚未接通</h2>
+          <p className="muted">僅待審教師審核、師生綁定與其交易稽核已接通；學校、通知、用量管理仍未開放。</p>
+          <span className="status">其他管理｜尚未接通</span>
         </article>
       </section>
       <section className="card" style={{ marginTop: "1rem" }}>
         <h2>管理操作</h2>
-        <p className="muted">本機原型不核發帳號、不調整預算、不發送通知，也不保存真實資料。</p>
+        <p className="muted">學生帳號核發、預算與通知尚未接通；不會由這些按鈕產生變更。</p>
         <div className="action-list">
           <ClosedAction label="核發學生帳號" />
           <ClosedAction label="調整用量" />

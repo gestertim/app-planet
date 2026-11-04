@@ -9,12 +9,12 @@ const roles = [
   {
     href: "/teacher",
     title: "教師介面",
-    description: "查看合成班級清單與尚未接通的檢視入口。",
+    description: "需以已核准教師帳號登入；班級清單仍為示意，名冊服務尚未接通。",
   },
   {
     href: "/admin",
     title: "管理員介面",
-    description: "查看合成學校狀態與尚未開放的管理操作。",
+    description: "需以已核准管理員帳號登入；學校狀態與管理操作仍為示意。",
   },
 ];
 
@@ -50,6 +50,13 @@ export default function HomePage() {
               </Link>
             </article>
           ))}
+        </section>
+        <section aria-label="教職員登入" className="card" style={{ marginTop: "1rem" }}>
+          <h2>教職員登入</h2>
+          <p className="muted">既有教師或管理員帳號可由此登入；目前僅在隔離本機測試環境啟用。</p>
+          <Link className="button-link" href="/login">
+            前往教職員登入
+          </Link>
         </section>
         <p className="footer-note">
           原型不保存資料、不使用密鑰、不建立供應商資源，也不提供學生帳號或正式操作。

@@ -1,9 +1,11 @@
 "use client";
+import { productFetch as fetch } from "../auth/product-fetch.ts";
 
 import * as Dialog from "@radix-ui/react-dialog";
 import { useEffect, useRef, useState } from "react";
 import { UnsavedChangesGuard } from "./unsaved-changes-guard.tsx";
-import type { StageDraftDto, StageConfirmationStatus } from "@app-planet/core";
+import type { StageDraftDto, StageConfirmationStatus, SpecificationStatus } from "@app-planet/core";
+import { SpecificationReviewPanel } from "./specification-review-panel.tsx";
 import { StageConfirmationPanel } from "./stage-confirmation-panel.tsx";
 import type { StageDraftReadResult } from "../../server/stage-drafts.ts";
 import { presentSaveState, type Connectivity } from "../operation-presentation.ts";
@@ -24,6 +26,7 @@ export interface StageDraftEditorProps {
   readonly hasTrustedPrincipal?: boolean;
   readonly readCurrentDraft?: () => Promise<StageDraftReadResult>;
   readonly initialConfirmation?: StageConfirmationStatus | null;
+  readonly initialSpecificationReview?: SpecificationStatus;
 }
 
 function buildSaveUrl(target: StageDraftTarget): string {
@@ -55,9 +58,11 @@ export function StageDraftEditor({
   hasTrustedPrincipal = false,
   readCurrentDraft,
   initialConfirmation,
+  initialSpecificationReview,
 }: Readonly<StageDraftEditorProps>) {
   const [adapter] = useState(() => createHttpSaveAdapter({
     buildUrl: buildSaveUrl,
+    fetchImpl: fetch,
     isOnline: () => typeof navigator === "undefined" || navigator.onLine,
   }));
   const [controller] = useState(() => new StageDraftSaveController({
@@ -266,6 +271,11 @@ export function StageDraftEditor({
           dirty={state.dirty}
           saving={state.operation.status === "saving"}
         />
+      )}
+      {!presentation.hideServerData && hasTrustedPrincipal && target.stage === "Specification" && initialSpecificationReview && (
+        <SpecificationReviewPanel mode="submit" target={target.project_id} accountScope={accountScope}
+          initial={initialSpecificationReview} savedVersion={serverDraft?.row_version ?? null}
+          blocked={classifyGuardCondition(state) !== "clean"} />
       )}
     </section>
   );

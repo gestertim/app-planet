@@ -10,6 +10,10 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) {
 
 export default defineConfig({
   testDir: "tests/auth-e2e",
+  // readiness §92：教師申請瀏覽器驗收只在 -TeacherSignup 隔離 runner 執行。
+  testIgnore: process.env.APP_PLANET_TEACHER_SIGNUP_MODE === "isolated-local-test"
+    ? []
+    : ["**/real-auth-teacher-signup.spec.ts"],
   fullyParallel: false,
   workers: 1,
   retries: 0,

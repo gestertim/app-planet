@@ -33,7 +33,9 @@ export function ProjectStageOverview({ projectId, items, currentStage, completio
       {item.draft_row_version !== null ? <span>｜已保存版本 {item.draft_row_version}</span> : null}
       {item.confirmed_row_version !== null
         ? <span>｜{item.state === "confirmed_current" ? "確認版本" : "最近確認版本"} {item.confirmed_row_version}</span> : null}
-      <span>｜人工批准：尚未取得／尚未開放</span>
+      <span>{item.stage === "Specification"
+        ? "｜Specification 教師審查：請至保存頁讀取獨立狀態"
+        : "｜人工批准：尚未取得／尚未開放"}</span>
       <span> — <Link prefetch={false} href={`/student/projects/${projectId}/stages/${encodeURIComponent(item.stage)}`}>
         開啟 {item.stage} 草稿</Link></span>
     </li>)}</ol>

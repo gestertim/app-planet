@@ -89,7 +89,8 @@ describe("九階段總覽（真 Auth → 單一 snapshot → 隔離 PostgreSQL�
     if (first.outcome !== "found") return;
     expect(first.items.map((i) => i.stage)).toEqual([
       "點子", "A/B", "Specification", "Checkpoint", "Constitution", "UX/UI", "Specification Sync", "Technical Plan", "Final Pack"]);
-    expect(first.items.every((i) => i.state === "no_draft" && i.approval === "manual_approval_unavailable")).toBe(true);
+    expect(first.items.every((i) => i.state === "no_draft" &&
+      i.approval === (i.stage === "Specification" ? "separate_specification_review" : "manual_approval_unavailable"))).toBe(true);
     expect(first.completion_judgment).toMatch(/unsupported_rules_undecided|missing_classification_evidence/);
 
     expect((await save(p, "Specification", "第一版", null)).status).toBe(201);

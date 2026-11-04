@@ -94,7 +94,7 @@ export async function verifyAccessToken(
 
 const maxAuthBodyBytes = 64 * 1024;
 
-function abortable<T>(work: Promise<T>, signal: AbortSignal): Promise<T> {
+export function abortable<T>(work: Promise<T>, signal: AbortSignal): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const onAbort = () => reject(new DOMException("aborted", "AbortError"));
     const cleanup = () => signal.removeEventListener("abort", onAbort);
@@ -107,7 +107,7 @@ function abortable<T>(work: Promise<T>, signal: AbortSignal): Promise<T> {
   });
 }
 
-async function readBoundedJson(response: Response, signal: AbortSignal): Promise<unknown> {
+export async function readBoundedJson(response: Response, signal: AbortSignal, maxBytes = maxAuthBodyBytes): Promise<unknown> {
   if (response.body === null) throw new TypeError("empty body");
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
@@ -117,7 +117,7 @@ async function readBoundedJson(response: Response, signal: AbortSignal): Promise
       const { done, value } = await abortable(reader.read(), signal);
       if (done) break;
       total += value.byteLength;
-      if (total > maxAuthBodyBytes) throw new RangeError("body too large");
+      if (total > maxBytes) throw new RangeError("body too large");
       chunks.push(value);
     }
   } catch (error) {
@@ -224,4 +224,29 @@ export async function revokeLocalSession(
   }
   if (response.status === 401) return "already_invalid";
   return response.ok ? "revoked" : "unavailable";
+}
+
+// 對 server 剛取得、尚未交給瀏覽器的 access token 做受控 local scope 撤銷。
+// 結果只表示上游回應；"unavailable" 不代表上游 session 已終結或仍有效。
+export async function revokeAccessToken(
+  accessToken: string,
+  config: AuthConfiguration,
+  fetchImpl: typeof fetch = fetch,
+  timeoutMs = 5_000,
+): Promise<LogoutResult> {
+  if (!tokenPattern.test(accessToken)) return "unavailable";
+  try {
+    const response = await fetchImpl(`${config.authOrigin}/auth/v1/logout?scope=local`, {
+      method: "POST",
+      cache: "no-store",
+      redirect: "error",
+      headers: { apikey: config.authApiKey, authorization: "Bearer " + accessToken },
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    await response.body?.cancel().catch(() => undefined);
+    if (response.status === 401) return "already_invalid";
+    return response.ok ? "revoked" : "unavailable";
+  } catch {
+    return "unavailable";
+  }
 }

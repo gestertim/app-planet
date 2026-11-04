@@ -137,7 +137,7 @@ test("真 Auth／Next HTTPS／DB：九階段總覽、導航與未保存離開防
     await expect(page.locator(stageStatePattern(3))).toHaveAttribute("data-state", "confirmed_current");
     await page.reload();
     await expect(page.locator(stageStatePattern(3))).toHaveAttribute("data-state", "confirmed_current");
-    await expect(page.locator(stageStatePattern(3))).toContainText("人工批准：尚未取得");
+    await expect(page.locator(stageStatePattern(3))).toContainText("Specification 教師審查：請至保存頁讀取獨立狀態");
 
     // 3. 再保存 → 失效；改回相同文字不復活
     await page.getByRole("link", { name: "開啟 Specification 草稿", exact: true }).click();

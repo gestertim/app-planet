@@ -41,8 +41,8 @@ function getPool(env: NodeJS.ProcessEnv): Pool | null {
 
 async function inTransaction<T>(
   pool: Pool,
-  subject: string,
-  role: "authenticated" | "app_usage_executor",
+  subject: string | null,
+  role: "authenticated" | "app_usage_executor" | "app_signup_intake",
   readOnly: boolean,
   operation: (client: PoolClient) => Promise<T>,
 ): Promise<T> {
@@ -53,10 +53,12 @@ async function inTransaction<T>(
     await client.query(`BEGIN ISOLATION LEVEL READ COMMITTED ${readOnly ? "READ ONLY" : "READ WRITE"}`);
     active = true;
     await client.query(`SET LOCAL ROLE ${role}`);
-    await client.query(
-      "SELECT set_config('request.jwt.claim.sub', $1, true), set_config('request.jwt.claims', $2, true)",
-      [subject, JSON.stringify({ sub: subject })],
-    );
+    if (subject !== null) {
+      await client.query(
+        "SELECT set_config('request.jwt.claim.sub', $1, true), set_config('request.jwt.claims', $2, true)",
+        [subject, JSON.stringify({ sub: subject })],
+      );
+    }
     const result = await operation(client);
     await client.query("COMMIT");
     active = false;
@@ -96,6 +98,17 @@ export function createDatabaseSession(
     write: Object.freeze({ runTransaction: runWrite }),
     usage: Object.freeze({ runTransaction: runUsage }),
   });
+}
+
+// readiness §92：未登入教師申請只可切換到 app_signup_intake，該角色僅能執行固定申請意圖函式；
+// 不帶任何 subject／JWT claim，也不能指定帳號 UUID、角色或狀態。
+export function runSignupIntake<T>(
+  operation: (client: PoolClient) => Promise<T>,
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<T> {
+  const pool = getPool(env);
+  if (!pool) return Promise.reject(new Error("database_configuration_unavailable"));
+  return inTransaction(pool, null, "app_signup_intake", false, operation);
 }
 
 export async function closeServerDatabasePool(): Promise<void> {

@@ -4552,3 +4552,420 @@ Next 測試 server 在中止 response／navigation 的 browser 案例期間仍�
 **任務狀態**：136 項正文、依賴、勾選／checklist、Gate 及正式啟用狀態不變；T053／T054／T055 仍未勾。T053 的工作區接線已完成，但依賴 T052 尚未結案；T054 的保存／競態子集已接通，但原 T053 及 Q-DATA 前置未結；T055 的本批 browser 子集已驗，仍依賴 T054。下一個原任務為 T052 的九階段旅程／級別需求；未決完成／批准規則仍須保持 unsupported，Q-DATA 未核定前不得擴大資料保存／清除政策。
 
 Analyze skill 的 SHA-256 末尾複核仍為 `0B55C72263C8CB4D8661AEE7AD8EC4C367CB0AF2036FF3C1494D25E0337CC1FA`，未修改／還原／封裝。隔離 runner 清理通過；本機既有 HTTPS certificate/key 檔案末尾 hash 與來源基線不同，無法確認成因；未讀取內容、未納入 ZIP，也未以不完整基線覆寫。
+
+## §90 本 session 一次性有界授權：既有教職員帳號登入＋本人狀態入口（2026-11-03）
+
+**授權來源與範圍**：使用者於本 session 明確批准 T016、T017、T019 的「既有教職員登入／本人狀態」子集，以及 T014／T015 必要接線、授權與回歸；允許必要最小 migration（新編號，不改既有已套用 migration）、受限本人 DB reader／RPC 與測試工具調整，以隔離本機 Supabase Auth、PostgreSQL、Next HTTPS 及合成帳號驗收。內容：A-2 `POST /api/v1/auth/staff/login`（strict `{email,password}`、server 端 Auth 密碼驗證、DB 當下角色／狀態判定、受保護 session cookie）、A-4 `GET /api/v1/me`（本人最小投影、no-store）、產品登入頁／受限狀態頁、teacher／admin 頁可信角色檢查、產品登出後重登。節流與 session TTL 使用本輪明列的**隔離測試值**，不是 PP-03／PP-04 正式核定，不解除 Q-AUTH。
+
+**不在範圍**：註冊、帳號批准、bootstrap、重設密碼、學生登入碼（A-1）、refresh endpoint／自動續期、名冊／批准／管理服務接通、正式環境或多實例節流。完整 Checkpoint／MVP Gate 未通過不阻擋本子集，但本輪也不代表 Gate、Q-AUTH、完整 S 系列或 T014～T019 整項完成；原依賴及 136 項任務正文／勾選不變。§90 為單批一次性授權，不是常設許可；不 commit／push／部署。
+
+**起點**：branch `work/auth-cancel-authorization`、HEAD `c9a05d5e6ec3a1f77900e01ba1652abcc950f9d9`、feature `specs/001-app-planet-platform`。既有未提交工作（Analyze skill SHA256 `0B55C72263C8CB4D8661AEE7AD8EC4C367CB0AF2036FF3C1494D25E0337CC1FA`、`supabase/.temp/cli-latest`、根目錄 `0`／`1`、`apps/web/certificates/`、spike console 結果）保留不改、不封裝；本輪修改前基線為上列 HEAD。
+
+### §90.1 實際結果（2026-11-03，隔離本機）
+
+- **新增可操作能力**：既有 teacher／admin 合成帳號可從產品 `/login` 表單登入 → `POST /api/v1/auth/staff/login`（固定可信 Auth origin、密碼 grant、有界 timeout／大小／UTF-8／JSON／schema、拒絕 redirect；以既有 `/auth/v1/user` 取得可信 user id，不解碼 JWT）→ `app.current_account_status()`（新 `0026`，SECURITY DEFINER、固定 `search_path`、僅 `authenticated` EXECUTE、只讀 `auth.uid()` 本人）判定 → 發 `__Host-app-planet-session`（HttpOnly／Secure／SameSite=Strict／Path=/，Max-Age＝min(Auth `expires_in`, 隔離上限)）→ 依 DB 角色導向 `/teacher`、`/admin`，或 `pending`／`rejected` 導向 `/account/status` → 產品登出（回 `/login`）→ 重新填表登入。`GET /api/v1/me` 每次經 `/user`＋DB 回本人最小投影，`no-store`。teacher／admin 頁直接輸入 URL 亦經可信身分與角色檢查；示意內容如實保留。
+- **隔離啟用與節流（隔離測試值，非 PP-03／PP-04）**：需 `APP_PLANET_STAFF_LOGIN_MODE=isolated-local-test`、loopback Auth／App origin、非 production，否則 503；帳號×來源失敗 5 次／300 秒 → 鎖定 30 秒×2ⁿ（上限 300 秒）、來源 20 次／60 秒、並行 inflight 預留；HMAC 鍵、不存原 email／IP；後端為單程序記憶體（僅本機單 server 拓樸）。來源只信 runner 建立之 loopback HTTPS proxy 注入的來源＋隨機 proof，caller 自帶 `X-Forwarded-*` 等一律剝除。session TTL：Auth `jwt_expiry=60`、cookie 上限 900 秒；不提供 refresh。
+- **共用元件**：AppShell／OperationNotice 增 `logoutRedirect`（預設 `/` 不變），`LogoutAction` 於 hydration 前停用，避免無 handler 點擊（browser 驗收中發現）。
+- **測試（實際執行）**：unit 新增 25、contract 新增 8；聚焦真 Auth＋PG 整合 `real-auth-staff-login` 8/8（首次 2 項因測試預期錯誤失敗：學校 gate 寫死值、problem `instance` 回放路徑；改為與 DB `app.account_gate` 交叉比對及 problem 鍵白名單後通過）；聚焦真 Next HTTPS browser `real-auth-staff-login.spec.ts` 6/6（前 4 次失敗為測試讀取已導向 response body、Next route announcer 亦為 `role=alert`、重複登出按鈕及 hydration 前點擊；修正後通過）。完整 `npm run test:foundations` 一次 7/7 layers：unit 68、contract 719、Usage pgTAP passed、Auth layer 內 pgTAP identity_audit 78／account_gate 53／project-migration-compatibility 32 assertions、真 Auth 整合 43/43（5 檔）、Playwright 21/21；各隔離 project `containers=0 volumes=0 networks=0`。log 未見 Next destination-stream error（webServer stdout 設為 ignore，只檢 stderr）。
+
+### §90.2 限制與未完成
+
+- 僅既有教職員入口；不是學生登入碼（A-1）E2E，也不是完整 S-02 驗收；未以固定 sleep 宣稱耗時不可區分，未知帳號與錯誤密碼僅驗證狀態碼／本文一致。
+- Auth 建立 session 但 DB／角色拒絕時，以 `/logout?scope=local` 嘗試撤銷新 token；撤銷失敗不改拒絕結果，也不宣稱上游 session 已終結；不保證 Auth／平台 DB 跨系統原子性。
+- 節流為單程序記憶體，不適用正式多實例；隔離測試值不得填入 PP 已核定欄位；Q-AUTH 未解除。
+- 未做：註冊、批准、bootstrap、重設密碼、refresh、名冊／管理服務、完整狀態×角色矩陣（T016）、T018、T020。T014～T019 均不勾選，原依賴不變；Checkpoint／完整 Gate 未通過、正式簽核未執行；未 commit／push／部署。
+
+### §90.3 兩項審閱修正：本輪一次性授權（2026-11-03）
+
+使用者明確批准以目前未提交的 §90 工作樹為基線，只修正登入表單 hydration 前原生送出風險，以及 `/me` 將一般 AI gate 拒絕誤推為 `ai_off_duty`；允許直接相關測試與隔離 Auth／DB／Next HTTPS 驗收及增量審閱包。修改前六檔已另存 repository 外並計算 SHA-256。無新增 Auth 入口、值守來源、migration 或政策；不修改 `account_gate`，不改任務／依賴／勾選，不 commit／push／部署，不觸碰 go-anywhere。Gate／Q-AUTH 與正式簽核狀態不變，本授權非下一批或常設許可。
+
+**修正與驗收結果**：
+
+- 登入 email／password／submit 均在 SSR 預設 `disabled`，以 `!ready || submitting` 控制；handler 另拒絕 `!ready`。hydration 後恢復原鍵盤／滑鼠 JSON 登入，保留送出即清除密碼及不入 URL／storage／日誌；新增載入失敗／未啟用 JavaScript 提示，無新增無 JS 後端。
+- `projectMe()` 保留 `ai_available`／`public_deploy_available` 的 DB gate 值，但 `approved` 不附 `reason_code`；`unconfirmed → school_not_confirmed`、`withdrawn／expired → ai_not_open` 保留。現行 `account_gate` 沒有 `ai_call` 成功分支，`false` 不能證明值守原因，本輪刻意不推導；無查詢／建立值守來源，未放行 AI。
+- **修改前紅燈**：聚焦 contract 7 通過／2 失敗，均多出 `ai_off_duty`；受控攔截 Next scripts、`data-ready=false` 的 browser 案例確認原控制項仍啟用。另以暫時診斷分支在原表單點擊，實際觀察到 1 次原生 navigation POST、`application/x-www-form-urlencoded`、HTTP 415、零 cookie。診斷分支已移除，未改 API。
+- **修改後實際執行**：`npm run typecheck` 通過；unit **68/68**、contract **720/720**；真 Auth＋隔離 PostgreSQL 聚焦 integration **9/9**；真 Next HTTPS＋可信來源 proxy 聚焦 browser **9/9**。不跨層重複加總。HTTP `/me` 與控制 DB 事實逐一核對：approved 為 `ai=false, deploy=true`，HTTP 200 的 school gate 為 `ai_available=false, public_deploy_available=true` 且無 `reason_code`；其餘三種學校狀態的原因均符合上列映射。teacher／admin、受限帳號、停用／刪除／缺 profile、本人投影及 teacher_notice 相關回歸通過。
+- **hydration 驗收**：兩項案例皆先攔住實際 Next script request、觀察 `data-ready=false` 再檢查，不先等待 ready；email／password／submit 不可操作，真滑鼠點擊及鍵盤 Enter 後 **0 登入 POST／0 額外文件請求／0 cookie**。釋放 scripts 後不重新載入，同頁分別以滑鼠與 Enter 完成 1 次 JSON POST（200）、教師頁與受保護 cookie 驗證及登出。另驗證 JavaScript 停用時提示可見、控制項停用。暫時開放／聚焦 email 的 DOM 操作只輔助探測 implicit-submit 演算法（submit 仍停用），不取代真滑鼠／鍵盤證據；以 request 攔截及 browser task／繪製同步，不以短 sleep 判定 hydration。
+- **中途測試修正與揭露**：首次修改後 runner 的 integration 9/9、browser 前兩項通過，但 no-JS 案例使用 `toContainText` 讀取 `noscript` 得空值，導致 1 失敗、後 6 項未執行；改用 `toBeVisible`＋原生 `textContent()` 核對後，重跑 browser 全檔 9/9。Next 有 self-signed HTTPS experimental warning；未以此宣稱正式 TLS 驗收。未重跑完整 foundations、M2／M3、Issuer GUC、安全研究或供應商詢證，也未追查既有 stdout／cli-latest 歷史基線。
+- **審閱補證重跑（同日，程式未再修改）**：因前一版證據只有摘要，重新實跑並把去敏後原始輸出放入審閱包：`npm run typecheck` exit 0；unit 68/68、contract 720/720；同一隔離 project `65616bb82868` 的聚焦 integration 9/9 與 browser 9/9（exit 0）。紅燈另以暫時換回 §90 原兩個產品檔（測試維持修正版）實跑：contract 2 失敗／7 通過、browser 控制項仍 enabled；暫時探針（不填憑證）觀察到 1 次原生 navigation POST、urlencoded、415、0 cookie；還原後雜湊與修正版一致，同一探針在修正版為 0 POST、按鈕停用（project `1063679b3e7b`、`9291eebe20f4`）。探針已刪除；三個 project 皆 containers／volumes／networks 0。
+- **資源與交付**：四次隔離 project（`33d6dc9e0f99`、`d84d8821957a`、`9ce0cc8072f9`、`e2703cc86557`）runner 均確認 containers／volumes／networks 為 0，末尾再次核對無殘留。repository 外增量 ZIP 限六個修改檔的 before／after、實際本輪文字 diff、直接相依 reference、去敏證據與 manifest；不納入秘密、certificate/key、原始 console、依賴目錄或無關 dirty 檔。未 commit／push／merge／部署；不等於 T016～T019 整項完成，Gate／Q-AUTH 不變，完成後停止等待審閱。
+
+## §91 本 session 一次性有界授權：首位管理員 bootstrap＋既有待審教師批准／拒絕（2026-11-03）
+
+本輪使用者明確批准 T018 主要子集及 T016／T019／T020、T011／T014／T015 必要相依：非 HTTP 一次性 bootstrap、最小 migration／受限 RPC／server、HTTP／產品畫面、去敏稽核與競態／故障／隔離 Auth／Next HTTPS browser 驗收。不擴及註冊、重設、學生碼、其他 admin、任意角色修改、停用／恢復、學校／綁定、AI、正式資源或啟用。完整 Gate 未過不作本輪共同凍結條件；原任務依賴、未勾選、Q-AUTH 與正式簽核狀態不變。本授權不是常設許可，完成即停待審閱。
+
+已核對 origin、`work/auth-cancel-authorization`、HEAD `c9a05d5e6ec3a1f77900e01ba1652abcc950f9d9` 與 `.specify/feature.json`。基線是含 §90 審閱修正的目前 dirty 工作樹；動工前 230 份來源實際內容與 SHA-256 保存於 session 外部基線，增量 diff 不相對舊 commit。未發現適用 AGENTS.md 或 extensions.yml。checklist 唯讀：mvp-plan 24/24、plan-finalization 0/31、requirements 22/38；確認工具回覆使用者暫不可用，依本 prompt 已明確准許的有界子集繼續，沒有改 checklist 或宣稱 Gate 通過。驗收結果於實跑後追加。
+
+### §91.1 實作與實際驗收
+
+- **已接通**：`apps/worker/src/admin/bootstrap{-cli,}.ts` 的非 HTTP CLI，只輸入既有 pending teacher UUID；專用 LOGIN 僅可切換 `app_bootstrap_executor`，web／authenticated／anon／service_role 無 bootstrap EXECUTE。`0027` 提供受限 NOLOGIN／NOBYPASSRLS writer、全域鎖與永久完成 singleton；既有任何 admin 而無紀錄時拒絕，同目標重跑無額外 audit，停用或刪 profile／Auth 後仍不能重開。Auth 原生 RLS 只補 bootstrap 專用讀取／share lock policy，`UPDATE WITH CHECK(false)` 禁止 Auth 實際寫入；不更改憑證。
+- **產品流程**：正式 `/login` → `/auth/v1/user` → 當下 DB admin → `/admin` 真 pending teacher 清單（id 升冪、每頁最多 50、明列 next_cursor）→ 目標與決策確認 → 具名審核 POST／RPC → 同交易狀態／trigger row_version／receipt／audit。actor／key 與 target 鎖序列化、profile 依 UUID 鎖定後重驗；僅 pending 未刪除 teacher→approved／rejected，不改 role／school／Auth。教師本人 reload 使用既有 `/me`／狀態頁邏輯，approved 可進教師工作台、rejected 仍受限。不能批准自己或其他角色。
+- **未知結果**：COMMIT／response-loss 回待確認；UI 保留本頁記憶體的原鍵／目標／版本／決策，原鍵重試，401／403 不自動換鍵；頁面關閉不是持久恢復，畫面有明示。replay 仍當下重驗 admin。receipt TTL=86400 秒為隔離設定，缺 DB 設定關閉；到期不承諾永久 exactly-once，也不重新審核已非 pending 帳號。web 啟用需隔離旗標／loopback，bootstrap 憑證與設定不傳進 Next 子程序。
+
+| layer | 最終實際結果（各層分列、不重複加總） |
+| --- | --- |
+| 聚焦 unit／contract | 新增 2／5 通過；全量 unit 70／70、contract 725／725 |
+| 相容／typecheck／production build | 通過；含四個 workspaces、測試型別、兩條新增 API |
+| 真原生 Auth＋PostgreSQL／handler | 全量 66／66（6 檔），其中本輪 22／22；bootstrap／CLI、消耗後停用及刪除、競態唯一 winner、缺資料／角色／標記、RLS／ACL、Auth 真 UPDATE 拒絕、audit JSON null／自由文字拒絕、等鎖失權、CAS／同異鍵／expiry／COMMIT loss／回滾／有界分頁均實跑 |
+| 真 Next HTTPS＋可信來源 proxy／Edge browser | 全量 25／25，其中本輪完整流程 1／1；管理員與兩位教師各獨立 context、全由產品表單登入，非 cookie／storageState 注入。UI 實際丟棄已提交的批准回應後，原鍵 replay；教師 approved／rejected 與 DB 狀態／唯一稽核逐筆交叉核對 |
+| DB-only pgTAP | identity_audit 78／78、account_gate 53／53、migration compatibility 32／32 |
+| 既有隔離 DB／HTTP／Worker／Edge | Authorization 42／42、Projects 210／210、Usage Worker 31／31、HTTP foundation 47／47（含其既有 React／Edge cases） |
+
+**失敗／修復／not_run 保留**：聚焦 build 首次因 Next GET 第二參數型別失敗，改為正式 Request wrapper 後通過。首次 bootstrap／browser 失敗，聚焦 integration 為 18 失敗／2 通過（共同 bootstrap 提前 `invalid_target`），根因為原生 Auth RLS 未授專用 writer 讀取／鎖權；補最小 policy 後 integration 20／20。browser 再因同時 loading／success 的 `role=status` locator 多筆失敗，僅修定位後 1／1。追加 2 項刪除後消耗／Auth 寫入禁止及 audit 白名單回歸，完整 Auth 層本輪 22／22。
+
+完整 `npm run test:foundations` **實際執行一次**：前五層通過，第六層在 `0027` 失敗，第七層當時 **not_run**；原因為固定 DB-only image 的最小 `auth.users` 沒有 `deleted_at`（不是原生 Auth 服務）。僅補隔離 harness 該欄位並以既有 `supabase_admin` 執行新 migration，不降低產品 SQL 驗證。依失敗後最小重跑要求，只重跑 `test:usage:db`（通過，臨時 grants 撤銷 verified、cleanup complete）並補跑未執行的完整 `test:auth:local`（66／66＋25／25）。七層最終分別通過；**不宣稱首次 foundations 全綠**。審閱前為提供可核驗連續證據，於最終工作樹再完整執行 `npm run test:foundations` 一次（2026-11-03 10:06:29～10:16:50），exit 0、7／7 layers 連續通過：unit 70／70、contract 725／725、Usage DB／HTTP／Edge passed（Revocation verified、Cleanup complete）、Auth 整合 66／66（本輪 22）、browser 25／25（本輪完整流程 1）；Auth project `a7127dd049af` containers／volumes／networks=0。未執行部署／正式 Auth／學生碼／M2／M3／供應商詢證，不追查歷史 stdout／cli-latest。
+
+### §91.2 界線、剩餘與清理
+
+T018 只完成首位 bootstrap 與「既有 pending teacher」審核子集；註冊申請角色建立未實作，T017 註冊／經核定重設／refresh／Q-AUTH 仍未結案；T016／T020 尚缺全部 AUTH、學生及完整狀態×角色矩陣／故事驗收，T019 全角色入口及原依賴未全完成。T011 全端點／各 kind／A-9、T014 全角色導覽與 T015 完整矩陣及原依賴保留。T077、第二管理員、停用恢復、拒絕重申請、學校核准、綁定與 AI 均未納入；不得統稱只差 Gate。沒有擴張保存政策或正式啟用。
+
+本輪 Auth projects：`4ff4d14cb8bc`、`c7011162319b`、`ee9f2dbc7cdc`、`83008d1d9389`、`36ebebf017fd`、`a7127dd049af` 均由 runner 回報 containers／volumes／networks=0；DB-only 失敗／修復兩次均 cleanup complete，成功輪臨時 grants 撤銷 verified。Next／proxy／專用 browser 隨 runner 停止，暫存秘密只在本輪子程序／專用暫存目錄，runner 已清除；未觸碰其他專案或日常瀏覽器。專案外審閱包只收本輪 before／after／實際 diff、必要 reference、去敏測試及 manifest，最終 ZIP bytes／SHA-256 另於交付回報。未 commit／push／merge／部署；原 136 項未勾選、Gate／Q-AUTH／正式簽核與啟用狀態不變，完成後停止待審閱。
+
+## §92 本 session 一次性有界授權：T017 教師註冊申請→電郵驗證→待審→§91 批准／拒絕→教師登入（2026-11-03）
+
+本輪使用者明確批准 T017 主要子集，T016／T018／T019／T020 與 T011／T014／T015 僅必要相依：產品註冊頁、受信任 Auth 註冊／驗證、最小 migration 與受限函式、§91 清單／批准前置擴充、隔離 Auth＋PostgreSQL＋Mailpit＋Next HTTPS 驗收及增量審閱包。同時批准 D-20／PD-07 的教師申請部分（已同步至 decision-register D-20 首列與 product-decisions PD-07）：欄位為電郵、密碼、顯示名稱、所屬學校／任教說明；電郵驗證必要且不等於批准；初始固定 teacher＋pending；學校說明只供管理員審核；本機以隔離郵件接收器驗證。不含密碼重設、學生註冊／登入碼、公開管理員註冊、第二管理員、被拒重申請、變更電郵或一般帳號生命週期；D-20 其餘列、Q-AUTH 與正式 Gate 不因此解除。完整 Gate 未過不作本輪共同凍結條件；原任務依賴與未勾選狀態不變。本授權不是常設許可，完成即停待審閱。
+
+已核對 origin、`work/auth-cancel-authorization`、HEAD `c9a05d5e6ec3a1f77900e01ba1652abcc950f9d9` 與 `.specify/feature.json`；未發現適用 AGENTS.md 或 extensions.yml。基線為含 §90／§91 的動工前 dirty 工作樹，367 份實際內容與 SHA-256 保存於 repository 外。checklist 唯讀：mvp-plan 24/24、plan-finalization 0/31、requirements 22/38；依本 prompt 明確授權繼續，未改 checklist、未宣稱 Gate 通過。
+
+### §92.1 實作
+
+- **流程**：`/login`「申請教師帳號」→ `/signup` 四欄表單（hydration 前停用、送出中防重、未知結果保留原鍵）→ `POST /api/v1/auth/teacher-signup` 中性 202 → 隔離 Mailpit 收到 GoTrue 真實驗證信 → `GET /auth/confirm` 將 token hash 放入短期 HttpOnly `__Host-` cookie 後 303 → `/signup/verify` 按確認 → `POST …/verify` 呼叫 Auth `/verify` 並立即撤銷上游 session → 產品登入只到待審狀態頁 → 管理員從 §91 `/admin` 看到顯示名稱與申請說明並批准／拒絕 → 教師 reload／重新登入取得 approved 工作台或 rejected 受限狀態。契約見 auth-and-identity.md「本輪 T017」小節，資料見 data-model.md §92 補充。
+- **身分邊界**：`0028_teacher_signup.sql` 以受限 intake 建立帶隨機選擇子的意圖；Auth `auth.users` AFTER INSERT 觸發器只在選擇子、email 雜湊、未逾時、未使用、未確認時同交易建立固定 teacher＋pending profile 與申請，其他 metadata 一律忽略。原生 signup 無選擇子僅留無平台權限 Auth 帳號；偽造／他人選擇子整筆回滾。BEFORE UPDATE 守衛拒絕未發信 token 的直接確認（admin `email_confirm=true`）。不使用 admin createUser、不自動確認、不保存密碼。
+- **批准前置**：驗證狀態只取自 Auth（DB 端 `email_confirmed_at`、登入端 `/auth/v1/user`）。未驗證者登入回 `email_not_verified` 不發 session、不入清單，`review_pending_teacher` 回 `not_eligible`（server／DB 強制）。
+- **審閱中發現並修正的接管風險**：讀 GoTrue `signup.go` 確認對既有**未驗證**帳號再次 signup 會覆寫密碼。因此平台在意圖函式內以 email 雜湊 advisory lock 先查既有 Auth 帳號：存在即回 `existing`（不呼叫 Auth signup，只中性重寄，202）；同 email 另一未完成意圖 120 秒內回 `in_flight`（503 `signup_outcome_unknown`）。
+
+### §92.2 實際驗收（各 layer 分列、不重複加總）
+
+| layer | 結果 |
+| --- | --- |
+| typecheck／tests typecheck／production build | `npm run typecheck` exit 0；`npm run build` exit 0 |
+| unit | 9 檔 89／89（本輪 `teacher-signup.test.ts` 19） |
+| contract | 24 檔 725／725（含 staff-approval school_note） |
+| 真 Auth＋PostgreSQL＋Mailpit／handler（`-TeacherSignup -IntegrationOnly`） | 8／8：正常申請＋真實信件＋批准；拒絕；重送／重複／既有 approved·rejected·未驗證·缺 profile 不重設不接管；並行同 email；越權（自報欄位、原生 signup、偽造意圖、admin 已確認建立、受限 DB 角色）；郵件中斷／Auth 不可達／設定缺失／response-loss；竄改／未知／重放／取消／上游不明／**真實 120 秒 OTP 逾期後重寄完成**；中性回應與限流 |
+| 真 Next HTTPS browser（`-TeacherSignup -BrowserOnly`） | 1／1 完整流程：教師全由產品註冊建立、真實驗證信、hydration 前不送出、未驗證阻擋、待審、管理員 bootstrap＋表單登入、UI 批准一位／拒絕另一位、重放與未知連結、重新登入、URL／storage／console 無密碼或驗證值、瀏覽器未連 Mailpit、DB 角色／狀態／驗證／去敏 audit 交叉核對 |
+| §90／§91 回歸（`scripts\test-auth-local.ps1`） | 整合 6 檔 66／66、browser 25／25，exit 0 |
+| `npm run test:foundations`（最終程式後一次） | exit 0，7／7 layers：compatibility、typecheck、build、unit 89、contract 725、DB-only pgTAP（identity_audit 78、account_gate 53、compatibility 32）＋Authorization 42／Projects 210／Usage 31（Revocation verified）／HTTP 47、Auth 66＋browser 25 |
+
+**失敗／修復保留**：run1 整合 6／8（`unknown_field` 實為 422，測試修正；既有帳號新鍵申請由上游拒絕→導出上述密碼覆寫風險並改為 `existing`）。run2 完整 8／8 失敗：新查詢需要 `app_signup_writer` 的 `USAGE ON SCHEMA auth`，補最小 grant。run3 7／8：admin `email_confirm=true` 帶有效選擇子仍被接受（GoTrue 先 INSERT 未確認列再同交易確認），新增確認轉換守衛；run4 8／8、run5 browser 1／1 首跑通過。
+
+**not_run／限制**：DB-only pgTAP harness 的 migration 清單止於 0027，0028 未納入 pgTAP（改由真 Auth stack 實測）；未用正式郵件供應商、未寄外部信件；限流為單程序記憶體、測試值（每 10 分鐘 申請 來源 20／email 5、重寄 10／3、驗證 來源 30）、OTP 120 秒、意圖 3600 秒、in-flight 120 秒、verify cookie 600 秒皆為隔離選定值，非 PP 核定。上游限流時仍回中性 202；`in_flight` 在約 120 秒內可推知有進行中申請；未實測回應耗時不可區分；不承諾跨服務全面原子性；意圖保留 email 雜湊、保存期限未核定。持有高權限 Auth key 者仍可對已發信但未驗證的申請直接確認或產生連結，此 key 僅限伺服器隔離設定、不入瀏覽器或一般產品請求。
+
+### §92.3 剩餘與清理
+
+T017 只完成教師申請＋驗證＋登入銜接子集；經核定密碼重設、refresh、正式郵件供應商與啟用條件、Q-AUTH 未解除，不勾選。T018 僅擴充清單／批准前置；T016／T020 仍缺全 AUTH、學生與完整狀態×角色矩陣；T019 全角色入口未完；T011／T014／T015 原剩餘不變。學生登入碼、第二管理員、被拒重申請、變更電郵、學校歸屬／綁定均未納入。
+
+本輪 Auth projects `c46254580c0b`、`4f993f771f49`、`43b12b94c34e`、`2f8614c885b5`、`4991b09e8da6`、`f988af6ed447`、`ab518e10b4bf` 皆由 runner 回報 containers／volumes／networks=0；Mailpit 隨 project 移除，Next／proxy／browser 隨 runner 停止；事後核對僅剩既存 go-anywhere 與先前 pgtap 容器，未觸碰。`next build` 改寫的 `apps/web/next-env.d.ts` 已還原為基線雜湊。審閱包在 repository 外，ZIP bytes／SHA-256 另於交付回報。未 commit／push／merge／部署；原 136 項未勾選、Gate／Q-AUTH／正式簽核與啟用狀態不變，完成後停止待審閱。
+
+### §92.4 註冊安全與驗證結果修正：本輪一次性授權（2026-11-03）
+
+依教育者本輪明確批准，只修正在途／未知申請重送、未授權回應差異、非法 Auth 200 誤報成功及相依 UI；允許必要 server／新 migration／受限 RPC、真隔離 Auth／PostgreSQL／Mailpit／Next HTTPS 驗收及 repository 外增量包。不改 0028 歷史檔，不重做 §90／§91，不新增密碼重設、學生登入碼、第二管理員，不重開 M2／M3、Issuer GUC 或 A-9 研究。不 commit／push／merge／部署；Gate／Q-AUTH／正式啟用及任務未勾選狀態不變。基準為 HEAD `c9a05d5e6ec3a1f77900e01ba1652abcc950f9d9` 加本輪開始時工作樹；修改前來源及 SHA-256 已保存於本 session 外置審閱目錄，diff 不以 HEAD 代替。
+
+**修正**：0029 保留 0028 原檔與既有列；未消耗（含過期）升級為 `dispatch_unknown`。受限 RPC 以 operation／email 交易鎖原子核發一次派送，COMMIT 後唯首次 `created` 可呼叫 Auth；同鍵／異鍵／過期／重啟不解鎖，觸發器同交易才記 `completed`，已核對既有帳號而未派送記 `not_applied`。未驗證申請加密碼 UPDATE 守衛，首次建立／寄信／確認不受阻。所有有效新操作採相同中性 202，不回派送狀態，也不自動重寄；限流先於存在性查詢。UI 保留原操作與欄位，改欄位不換鍵，過期／衝突不清鍵；reload／新分頁仍受 DB 未結限制。Auth 200 必須通過 MIME／UTF-8／大小／JSON／session／權威 user 驗證欄位檢查；非法回應保持 unknown。合法驗證與 local scope 撤銷結果分開，撤銷不明明示 `session_cleanup:"unknown"`，不交出 token／登入 cookie。最小契約已同步。
+
+**重現與修復證據（GoTrue `v2.196.0`，Supabase CLI `2.117.0`）**：
+- 修改前 unit：18 passed／1 failed，實測 `{unexpected:true}` 被誤判 verified。真 Auth 聚焦：1 passed／2 failed，重現同鍵可再取 pending 派送資格及在途 503／新申請 202 差異；原生不同密碼 signup 回 200，但原密碼可登入、替換密碼不可登入，**未重現原生憑證覆寫，不宣稱已發生接管**。
+- 修改後以真 Auth 等待 `auth.users` SHARE lock 的 DB barrier（觀察 `pg_blocking_pids`，非 sleep 猜測）測同鍵／異鍵、不同密碼、過期及新 Node 程序：各 Auth signup=1、帳號／profile／申請各1，原派送密碼有效、替換密碼無效，新程序派送=0。另以 Promise.all 三組不同密碼同時競爭，各情境恰一個有效且是實際派送密碼。Auth 提交後丟回應，再以同鍵／新鍵不同密碼重試仍僅派送1次。直接原生公開入口及 DB 守衛均實測；不覆寫 profile／說明、不補 missing profile。
+- 真 Auth 驗證後回應遺失、回應改為畸形及撤銷失敗均已實測：DB 確認事實仍成立，unknown 不清恢復 cookie／不宣告成功；合法驗證加撤銷不明回最小警示，均可後續產品登入。沒有把本機故障注入說成供應商保證。
+
+| Layer | 實際結果（不跨 layer 加總） |
+| --- | --- |
+| Typecheck／production build／workspace compatibility | 全通過（完整 foundations 的前段） |
+| Unit | 9 files／106 tests 通過；其中 teacher signup 36 |
+| Contract | 25 files／729 tests 通過；新增中性投影 4 |
+| 註冊真 Auth＋PostgreSQL＋Mailpit | 乾淨 0029：18／18；其後只增強測試，競態等受影響子集11／11、response-loss子集1／1補跑通過 |
+| 0028→0029 既有資料升級 | 保留3列內容（未結／過期／已完成），2個未結均阻擋，已完成可回看／真實確認；聚焦10／10（其餘8未選，不作通過計數） |
+| 註冊 Next HTTPS browser | 4／4：正常申請→真信→待審→UI批准／拒絕→登入；unknown改欄位／reload／新分頁；非法200；過期／衝突原鍵保留 |
+| Foundations DB-only | pgTAP 78／53／32 assertions；授權42、projects210、worker31、HTTP47，各層通過；0028／0029不列為此 harness 已驗 |
+| Foundations 最後 Auth／browser 層補跑 | 真 Auth 6 files／66 tests（含 §90登入9、§91審核22）；browser25／25通過 |
+
+**失敗／修復如實記錄**：新測試最初使用超出 tests lib 的 `Promise.withResolvers`，改既有 Promise barrier；新程序增加 Node 的 TypeScript transform 旗標。Browser 測試最初放錯 hook 範圍，以及多測試共用觀察陣列造成 hydration 斷言污染，均修正後4／4。完整 foundations **只執行一次**，前6／7層通過，最後層因同一 PowerShell 串接殘留 TeacherSignup／Mailpit 模式而誤載專項、exit1；已補 runner 模式清理，實測 `RunnerModeCleanup=verified`，僅補跑最後 Auth／browser 層，exit0。不是宣稱原完整命令7／7或第二次完整重跑。此後無產品程式修改。
+
+**限制／not_run**：未結可能永久安全停止且尚未建立帳號，無自動重新派送／恢復保證；本輪不新增恢復查詢或教師權限。舊120秒／過期界線以 DB 時間欄位跨界的受控fixture驗證，不宣稱 barrier 實際維持120秒；既有 OTP 過期仍實際等候125秒。未實測回應耗時分佈不可區分；單程序限流／測試值與保存政策未正式核定。DB-only pgTAP 未涵蓋 Auth schema 相依 migration，0028／0029以真 Auth stack 驗收。沒有正式供應商、外部收件者、付費服務、部署、學生登入碼、密碼重設或第二管理員；不承諾跨服務全面原子性或所有管理權操作均受防護。T017 與原任務仍未勾選、Gate／Q-AUTH／正式啟用狀態不變。
+
+**清理／交付**：本輪9個專屬 Auth projects 均事後核對 containers／volumes／networks=0，Mailpit 隨專屬 project 移除；repository 路徑限定的 Node／browser processes=0。DB runner 回報 cleanup complete、temporary grant revocation verified；未觸碰其他專案或既存資源。原有 certificate 未讀出或封裝；`next-env.d.ts` 最終與修改前 SHA-256 相同。repository 外增量包包含原始 before／after、實際文字 diff、必要 reference、去敏命令／失敗及補跑輸出、清理與 manifest；ZIP bytes／SHA-256 於交付回報。完成後停止待審閱，不 commit／push／merge／部署。
+
+## 93. 2026-11-04 T051 正式需求保存＋A/B 分類確認產品接線
+
+### 93.1 本輪一次性授權與基線（先登錄）
+
+教育者明確批准本輪 T051 正式需求／分類 HTTP、學生工作區 UI、必要 DTO／adapter 及 T050／T015、T006／T008／T011／T014 接線驗收；沿用既有分類交易、可信 Auth `/user`、隔離 PostgreSQL、Next HTTPS 與合成學生 session。缺少傳輸路徑時只補最小契約並直接實作，不另開文件批次。學生 session 由既有測試 setup 建立，**不是學生產品登入／登入碼 E2E**。
+
+Repository／origin／分支／HEAD 已核對為本專案、`https://github.com/gestertim/app-planet.git`、`work/auth-cancel-authorization`、`c9a05d5e6ec3a1f77900e01ba1652abcc950f9d9`。基線是目前完整工作樹，保留 §90～§92.4 及全部其他未提交修改；237 個非秘密來源修改前副本與 SHA-256 位於 repository 外本 session `files/t051-review/baseline`，manifest SHA-256 `f77fd6d908f9571e9453ffd9cf7b2430fefa94a5005b545359b6ce4e34017422`。未找到適用 AGENTS.md／extension hooks；feature 由 `.specify/feature.json` 核對，不以分支推斷。
+
+Checklist：mvp-plan 24／24、plan-finalization 0／31、requirements 22／38；教育者另行明確確認依本輪批准繼續，原標記不變。無 Gate／Q-AUTH／正式啟用放行；不改 project.stage、不新增批准／Skills／AI 分類／學生登入捷徑，不含 IDE、預覽執行、測試執行、快照、發布或部署。T051 與其他原任務勾選及依賴不變。僅清理本輪專用資源，不 reset／clean／stash／commit／push／merge／部署，不觸碰 go-anywhere。
+
+### 93.2 已完成產品流程與界線
+
+新增 [傳輸 handler](../../apps/web/src/server/project-classification-handlers.ts)、需求 GET／PUT 與分類 POST，沿用 `saveOwnedProjectRequirementsSubset`／`confirmOwnedProjectClassificationSubset`／current reader，不重寫成熟 DB 交易、不新增 migration／歷史 SQL 修改。row version 唯一由強 If-Match 對應 DB，requirements revision 唯一由 strict body 對應；變更必填 UUID key，同來源及每請求可信 Auth `/user`→DB 當下 gate／owner，無 service_role runtime 授權。輸入 64 KiB／回應 256 KiB，no-store／安全 problem+json，白名單投影不回 confirmed_by。receipt 與重新讀取 current 分開；一般 DTO 不被建構為可信資格。
+
+既有 [A/B 階段頁](../../apps/web/src/app/student/projects/[id]/stages/[stage]/page.tsx) 接 [正式需求面板](../../apps/web/src/components/project/project-requirements-panel.tsx)／[controller](../../apps/web/src/components/project/requirements-controller.ts)，仍使用共用 layout／七頁籤。正式需求與自由文字階段草稿、學生階段確認、正式分類確認及尚未取得的教師／管理員批准分離，不自動帶入草稿。建立偏好透過原 P-1 optional tier 保存，待確認原意圖／recovery 同時核對該偏好；不把偏好當分類。visitor 初始 NULL 選擇，必須學生明選；偏好不同須勾 explicit_change。dirty、保存中、unknown／尚未核對禁止確認；unknown 不展示本次成功 badge，原 key／本文／雙版本以帳號隔離 sessionStorage 保留，reload 只恢復原意圖。保存中續編與衝突不蓋本地內容；明確放棄不撤銷已送操作。沿用同一 UnsavedChangesGuard，不建立 history sentinel；未保存編輯只在頁面記憶體，無 Q-DATA 新政策。
+
+static／work_data_api 與 A／B 沿用現行一致性檢查；restricted_server／runtime AI 可如實保存但確認回 422，沒有默改。visitor=true 可由既有交易如實記錄，但公開 qualification 仍拒絕不支援組合，不授予發布／部署。學校 unconfirmed 拒絕；withdrawn／expired 沿既有契約仍可保存內容，不改成新政策。
+
+### 93.3 實際驗證、失敗與修復
+
+| Layer | 本輪實際結果 |
+| --- | --- |
+| 新 controller 紅燈 | 尚未建立 controller 時，聚焦 unit 預期 import failure，exit 1；不是測試通過。 |
+| 最終 typecheck | workspace＋tests 通過，exit 0。曾有新 browser 測試 closure 型別被縮窄為 null，改明確 RequestSnapshot 後受影響 tests typecheck 通過。 |
+| Production build | 最終 foundations 中 Next production build 通過，具名新路由列入輸出，exit 0。 |
+| Unit | 最終 10 files／112 tests 通過（本輪 controller 6、建立原意圖 9 含偏好相容／衝突）。 |
+| Contract | 最終 25 files／731 tests 通過（分類契約 9，含 strict body、signed header／revision、receipt／current）。 |
+| Projects DB | 首次 database-preflight 遇啟動期 PostgreSQL shutting down，exit 1，未執行測試；只重跑受影響 DB 層，exit 0、撤權 verified／cleanup complete。既有授權42、Projects 7 files／210 tests 通過；歷史升級／不可變性／最小權限沿既有 runner 驗證。 |
+| 真 Auth＋Route Handler＋DB | 本輪 11／11 通過，最終 foundations 全層 7 files／77 tests 通過。首次 10／11：測試誤把 withdrawn／expired 當應拒絕保存；依現行 0002 契約修正測試預期，未更改授權政策。包含雙版本 stale、並行同鍵、競態、unsupported、非本人／非學生／失權、Auth 容器故障、DB EXECUTE 撤權、需求與確認中途失敗全 rollback、歷史 UPDATE 拒絕。 |
+| 本輪真 Next HTTPS browser | 最終聚焦 1／1 完整情境通過，涵蓋 UI 建立兩專案→A／B→reload→修改失效／重確認、偏好 explicit_change／visitor 明選、unsupported、兩分頁409保留、本次 confirmation response-loss→另分頁修改→reload→原 key／body／版本 retry、不復活 current、共用雙資源 guard、失權與跨帳號隱藏、Enter／錯誤焦點／hydration前無原生變更。首兩次 browser 分別因 select 包裹 label 的可存取名稱不精確、測試誤用「設計」而非既有「畫面設計」失敗；補精確 aria-label、有限 action timeout 並修正 locator，受影響 browser 層重跑通過。 |
+| 最終 foundations | **僅完整執行一次，7／7 layers，exit 0**。workspace、typecheck、build、unit、contract、隔離 DB／HTTP／Worker／Edge、真 Auth／產品 HTTP／browser 皆通過；pgTAP 78／53／32，授權42、Projects210、Worker31、HTTP47；browser26／26（保留草稿、階段確認、任務、導覽／history、logout＋setup 重新驗證回歸）。開始前清除 TeacherSignup／Mailpit 專項旗標，既有 §92.4 runner 清理不改寫。 |
+
+**DB 交叉證據**：聚焦 HTTP 以精確原文建立 revision1→2→3，row_version4、current=NULL，改回原值與原確認 replay 仍不復活；確認者／DB 時間由 DB 產生，resolver 修改後 unconfirmed。Browser A 最終 revision5／row_version8、B revision2／row_version3，兩者 current=NULL／stage「點子」；原確認逐列內容保持相同，原 key／body／If-Match 的重試與 receipt/current 分離均實際斷言。需求與分類不是由 fixture 預插替代產品操作。僅合成帳號／資料；截圖、去敏命令、exit code、各層原輸出與失敗／修復保存在 repository 外審閱包。
+
+**完成／剩餘與 not_run**：本輪正式需求／A/B 產品接線子集完成，無本輪未解程式阻擋；整個 T051 不勾選，仍缺教師／管理員人工批准規則及其持久授權／產品路徑、T039 Skills 來源／授權／版本與 Q-TL，以及 T050 完整驗收依賴。T015 全政策／角色／provider／kind 矩陣與其他原前置未結案；Q-DATA 持久草稿政策未核定，不統稱只差 Gate。未執行學生產品登入／登入碼 E2E、TeacherSignup／Mailpit 專項或 0028→0029 升級重驗、AI／Skills／Agent／IDE／預覽／作品測試／快照／發布／部署、正式 PP／Gate／啟用審議；不挪用 §92 的歷史驗收作本輪通過。
+
+**清理／交付**：6 個本輪專屬 Auth projects（含首次失敗與最終 foundations）均核對 containers／volumes／networks=0；3 個隔離 pgTAP runs 清理 complete，成功者撤權 verified，首次 preflight 失敗未進入暫時 grant。測試 finally 明確 close 專用 browser contexts、清除合成 DB／Auth 資料；最終 repository-scoped Node／browser processes=0，Next／proxy 由既有 runner 子程序生命週期結束，未停止日常瀏覽器或既存其他容器。生成 next-env 最終無 Git 文字差異；未讀／封裝既有 certificate。來源增量、before／after、實際 diff、直接相依 reference、命令／測試輸出／not_run／清理、逐 entry manifest 及 CRC／安全路徑／唯一 entry／git apply 回放驗證封裝於 repository 外 ZIP；manifest 自身由外部 entry manifest 提供實際 hash，避免遞迴自雜湊。ZIP bytes／SHA-256 於交付回報。未 commit／push／merge／部署，Gate／Q-AUTH／正式啟用狀態不變；本輪後停止等候審閱。
+
+### 93.4 正式需求面板非同步讀取競態修正（2026-11-04，有界增量）
+
+依教育者本輪明確批准，只修正既有 T051 面板的過期 GET 與採用期間續編；不重開 signup／供應商研究。repository／origin／分支及 HEAD 仍與 §93.1 相同，未找到適用 AGENTS.md；feature 由 `.specify/feature.json` 核對。增量基準是接手時完整未提交工作樹，五個修改檔的 before／bytes／SHA-256 已先保存於 repository 外本 session `files/s93-read-races`，不是與 HEAD 比較。保留 §90～§93 與其他既有修改；不改 checklist、原任務勾選／依賴、Gate、Q-AUTH、政策或啟用狀態。
+
+**處理規則**：
+
+- [controller](../../apps/web/src/components/project/requirements-controller.ts) 以讀取世代判斷回應有效性；新 GET、保存／確認開始、原鍵重試、恢復原意圖與明確放棄使舊 GET 失效。過期成功／一般故障不修改 current、editor、status、message、receipt 或 intent；獨立 `reading` 不取代 saving／unknown／conflict，也不增加離開防護條件。
+- 唯一保守例外是經既有 transport 驗證的 `closed`（401／403／404）：即使讀取已過期仍 fail-closed、隱藏受保護資料；後續成功 GET／寫入不得重新開啟，原未知 intent 不清除，不在關閉狀態重試／採用／放棄。重新取得權限仍須既有重新載入／驗證流程；不把過期成功當成授權證據。
+- `refresh(true)` 記錄編輯世代。等待期間任何再次編輯（包含改回原值）都保留 editor，更新可信 current 後提示重新核對／再次明確採用；無未知操作時維持 conflict 供再次採用。沒有續編時正常採用；一般 refresh 一律保留 editor。
+- [面板](../../apps/web/src/components/project/project-requirements-panel.tsx) 顯示讀取中並停用重複讀取／採用，不禁止續編或保存。操作 UUID key、body、If-Match、requirements revision、receipt/current 分離與舊確認失效語意不變；共用 guard、HTTP DTO、DB migration／交易均未修改。
+
+| 本輪驗證（不計 §93.3 歷史結果） | 實際命令／結果 |
+| --- | --- |
+| 受控 Promise 紅燈→修復 | `npm run test:unit -- tests\unit\requirements-controller.test.ts`：先 10 failed／8 passed，exit 1；修復後同批 18 passed，exit 0。後補 pending／過期故障／失權與放棄防護，controller 共 21 項納入完整回歸。 |
+| 完整型別 | `npm run typecheck`：workspace＋tests，exit 0。瀏覽器測試 URL 修正後另跑 `npm run typecheck:tests`，exit 0。 |
+| 完整 unit／contract | `npx vitest run --project unit --project contract`：35 files／858 tests，exit 0。 |
+| Production build | `npm run build`：exit 0。 |
+| 真 Next HTTPS 初次 | `& .\scripts\test-auth-local.ps1 -BrowserOnly -E2EFilter @('real-auth-project-classification.spec.ts','real-auth-stage-overview.spec.ts')`：2 passed／1 failed，exit 1。新增情境的舊 GET 晚到斷言已通過，後續測試誤把「畫面設計」連結預期成 stages 路徑；實際既有路由為 `/design`。只修正測試 URL，未改產品導航。既有完整分類與 stage overview／共同 guard 通過。 |
+| 受影響 HTTPS 重跑 | `& .\scripts\test-auth-local.ps1 -BrowserOnly -E2EFilter @('real-auth-project-classification.spec.ts')`：2 passed，exit 0。新測試延遲實際 GET 回應，保存／衝突均由產品面板送出；驗證版本不倒退、保存後離開不誤攔、採用等待續編保留、再次採用正常及獨立階段草稿仍攔截。DB 輔證 revision／row_version=3、stage 仍「點子」。既有分類／原鍵 replay／失權情境也通過。 |
+
+**清理／限制／交付**：上述兩組專屬 `app-planet-auth-06e213a05623`、`app-planet-auth-c757f89bb423` 的 containers／volumes／networks／暫存根目錄皆核對為 0，測試 finally 已關閉 browser contexts 並清除合成資料；測試後 Node 程序與測試 HTTPS 埠 listener 為 0，未停止既存其他資源。只使用合成學生 session setup，**不是學生產品登入／登入碼 E2E**；未新增 trace／HAR／影片，既有 certificate 未讀出／封裝。完整 foundations、獨立完整 DB／Auth integration、signup／Mailpit／升級專項均 **not_run**，此純前端修正不需重跑，不能引用歷史全綠代替。T051 整項仍未勾選，§93.3 的剩餘能力與政策界線不變。審閱 ZIP 含五檔 before／after、相對本輪工作樹的 diff、必要唯讀相依、去敏輸出／命令／清理與 bytes／SHA-256 manifest；CRC／安全唯一路徑／manifest／diff 回放驗證結果及 ZIP hash 於交付回報。未 commit／push／merge／部署，完成後停止等待審閱。
+
+## 94. 2026-11-04 T052 目標階段檢查與補齊入口（有界產品接線）
+
+### 94.1 本輪明確授權與基線
+
+教育者明確批准本輪 T052 唯讀產品接線與 T051 剩餘批准規則核對；未完成 checklist 不重複索取相同授權。Repository／origin／分支／HEAD 均吻合 §93.1；HEAD 未前進。未找到適用 AGENTS.md／extension hooks，feature 由 `.specify/feature.json` 核對。Checklist 仍為 mvp-plan 24／24、plan-finalization 0／31、requirements 22／38，標記不變。
+
+動工前已保存五個既有將改檔案的完整工作樹 before／bytes／SHA-256，位於 repository 外本 session `files/t052-review`；初始 before manifest SHA-256 `053b851c805d08a3da8a64b4ba2e94d6452febe2dab7e641acf8ae82d8cb513d`。後因直接渲染 TSX 契約測試，先另存 tests tsconfig before 再增加 `jsx: react-jsx`；最終六個既有檔案 before manifest SHA-256 `26c19645aeb32e323dd7a67e6dc85788b731f1022a4af652d851d2893612c617`。新增六個檔案以不存在為 before；不使用 HEAD 代替未提交基線。保留 §90～§93.4 全部成果，不重新開發或重審 §93／§93.4，不 commit／push／merge／部署，不觸碰其他專案。
+
+### 94.2 產品界線與人工批准核對
+
+既有專案「我的藍圖」新增具名「檢查目標階段」，九個鍵盤可操作連結以 `requested_stage` 保存本次目標；省略時檢查目前階段。URL strict 白名單拒絕非法／重複目標及 role／owner／approved／其他 caller 證據。原生同源連結每次重新 server rendering，不新增 HTTP endpoint、快取或持久化評估，並經既有 anchor／離開防護。
+
+沿用頁面可信 principal／read context，直接呼叫既有 `readOwnedProjectCreationFlowAssessmentSubset`，不改成熟 SQL／RLS／授權、不把 DTO 包裝成可信資格。顯示 reader 的目標／目前階段、有效分類、私人作品支援範圍、先前階段順序、草稿存在觀察及未決事項。內部 code 轉學生文案；草稿不推導學生確認、批准或完成。支援範圍不同於公開資格；無確認時如實「尚不能判斷」，不由不支援需求自行推導通過／改寫需求。讀取失敗隱藏本次結果、提供重試；沿用受保護畫面的失權重驗。頁面其他區塊各自讀取，明示不是同一時點的完整通關證據。
+
+補齊連結直接前往既有 A/B 或對應階段頁，保存／確認後可返回或重新檢查。選目標不改 `project.stage`、project version 或 requirements revision；不授予 AI／Agent／預覽／發布能力。T052／T050／T015 及相關接線僅本輪子集；原任務勾選、T052→T051→T050／T039 依賴、Gate、Q-AUTH 及正式啟用狀態不變。
+
+**T051 核對結論**：契約 §1.1／§1.2／§1.4、D-31、PD-17／OD-12 及 §93.3 仍不足以實作「提交→審查→批准／退回→讀回」。學生需求／分類與階段保存確認已接通，不重列為未實作；教師帳號批准不是專案批准權。PD-17 明示仍為提案，既有原則不能補足審查者範圍、確切證據與失效／推進契約。本輪不新增批准 writer／migration 或假批准畫面。下一批最小決定最多三項（均待裁決，推薦不是採用）：
+
+1. **誰審哪些學生／專案／階段**：推薦僅當下有效綁定且帳號／學校資格有效的教師，可審其綁定學生本人專案的九階段提交，逐請求重驗；管理員不自動取得代審權。替代為僅指定教育者／管理員審查（需指定學生／專案範圍）。影響 reviewer RLS、審查入口與跨校邊界；不重開既有帳號審批政策。
+2. **批准證據及失效**：推薦提交不可變的確切階段草稿版本、正式需求 revision 與分類確認 ID，批准／退回綁該提交；任一相依內容改變、失權或綁定解除即不再作有效批准，歷史稽核保留且恢復不自動復活。替代為批准只綁單一草稿版本（仍須裁定需求變更是否失效）。影響 submission／CAS／冪等、審查交易與去敏稽核。
+3. **批准與階段推進**：推薦先以 Specification 單階段獨立交付提交／審查／讀回，不自動推進；九階段需哪些證據才能推進及 PD-17 映射另行核定。替代為同批明確列出各階段證據矩陣與獨立推進操作。影響下一批範圍；前者可先完成批准垂直子集，不代選逐階段完成規則。
+
+### 94.3 本輪實測
+
+| 層級 | 實際命令、結果與失敗修復（僅本輪） |
+| --- | --- |
+| 初次測試呼叫 | `npm exec vitest run --project unit --project contract ...` 的 npm 參數解析發出 warning，實際執行完整 37 files／887 tests，exit 0；不冒稱聚焦紅燈。後以正確 `npx` 指令完整重驗。 |
+| 型別 | `npm run typecheck` 初次 exit 1：workspace stage 為 string，改以 schema 驗證而非強制轉型。第二次 exit 1：tests 未啟用 TSX；先備份設定再只增 JSX 選項。第三次 workspace＋tests 全通過，exit 0；追加故障測試後 `npm run typecheck:tests` 再通過，exit 0。 |
+| 完整 unit＋contract | `npx vitest run --project unit --project contract`：37 files／887 tests，exit 0；本輪新增 strict 選擇 22、直接渲染元件契約 7 項。不修改既有 §93／§93.4 測試。 |
+| 真 Auth／DB 首次 | runner `-IntegrationFilter @('real-auth-creation-flow.test.ts') -E2EFilter @('real-auth-creation-flow.spec.ts','real-auth-stage-overview.spec.ts')`：1 passed／1 failed，exit 1；新測試誤用不存在的 `suspended` enum。依現行模型改 `disabled`，未修改政策。Browser 因整合失敗 **not_run**。 |
+| 真 Auth／DB＋HTTPS 第二次 | 同指令：integration 2／2、browser 2／2，exit 0；包括新產品流程及既有九階段／兩專案／七頁籤／Navigation API back／forward／multi-step／離開防護回歸。 |
+| 最終故障增補 | runner `-IntegrationFilter @('real-auth-creation-flow.test.ts') -E2EFilter @('real-auth-creation-flow.spec.ts')`：integration 3／3、browser 1／1，exit 0。真正暫停本輪 Auth 容器→dependency unavailable；DB SELECT 撤權→reader failed；復權後新讀取恢復。HTTPS DB 故障隱藏、復權重新載入，以及 disabled／跨帳號／匿名均隱藏評估。 |
+| Production build | `npm run build`：exit 0，專案總覽維持 dynamic server rendering；無新 HTTP endpoint。 |
+
+**產品／DB 證據**：新建專案只由 UI 建立；正式需求與 A 分類由既有面板保存／明確確認，不以 SQL 預填替代。無需求→缺確認，確認後顯示有效分類與範圍、但仍非人工批准；修改後立即無有效確認。真 Auth integration 另以原確認鍵 replay 驗證舊 receipt 不復活。九個 requested_stage 均送真 reader，先前順序逐一斷言；HTTPS 實際選 Final Pack／Constitution／A/B，含 Enter 操作與補齊／重查。DB 在每次唯讀前後比較 stage、row_version、requirements_revision：初始 0／0，產品確認後 2／1，修改後 3／2，不支援需求保存後 4／3，stage 一直「點子」；草稿保存亦不改 project 版本。草稿只顯存在觀察，不推導階段學生確認或批准。
+
+**不支援需求的精確範圍**：UI 可如實保存 restricted_server，但既有確認交易回 422，因此本次 reader 正確回「缺有效分類／尚不能判斷支援範圍」，不假稱 reader 回 unsupported。元件契約另驗 reader 若回 unsupported 時將各 reason 轉可讀文案；未改需求／分類政策或 reader 邏輯。
+
+**修改檔與原因**：既有 [總覽頁](../../apps/web/src/app/student/projects/[id]/page.tsx) 接 [server strict 選擇投影](../../apps/web/src/server/creation-flow-page-data.ts) 與 [學生檢查元件](../../apps/web/src/components/project/creation-flow-check.tsx)；新增 unit／contract／真 Auth integration／HTTPS browser 四個測試檔。[Auth test config](../../vitest.auth.config.ts) 納入新 integration；[tests tsconfig](../../tests/tsconfig.json) 僅增加 TSX 型別支援。另改本紀錄、契約 §1.4、tasks 的實際子項註記；合計 12 檔，不改成熟 reader／SQL／授權／§93 面板或封裝工具機制。
+
+**not_run／剩餘**：本輪未改 SQL／授權，不重跑完整 DB／foundations；signup／Mailpit／升級專項、學生產品登入／登入碼 E2E、人工批准／階段推進 writer、Skills／AI／Agent／IDE／預覽／發布／部署均 not_run。真 Auth 仍由隔離合成學生 session setup，不是學生產品登入測試。人工批准必要三項仍待裁決；T039 Skills 來源／授權／版本與 Q-TL、T050／T015 全部原依賴及 Q-DATA 未因本輪完成。已批准及已實作部分不重新送批。
+
+### 94.4 清理與增量交付
+
+三個本輪專屬 Auth projects（首次失敗、第二次與最終）runner 均回報 containers／volumes／networks=0；測試 finally 關閉 contexts、刪除所屬合成 rows／accounts，Auth pause 與 DB SELECT 撤權均以 finally 復原。最終精確資源核對與 ZIP 驗證見 repository 外 `files/t052-review` 的 cleanup／execution report；不清理其他專案或既存資源、不新增 trace／HAR。審閱包沿用既有機制，包含當前未提交基線 before／after、實際 diff、必要 reference、去敏原輸出與命令／exit code、manifest；核對 CRC、唯一路徑、安全路徑、manifest 與逐 bytes diff 回放，ZIP bytes／SHA-256 於交付回報。Gate／Q-AUTH／正式啟用不變，未 commit／push／merge／部署；完成即停止等待審閱。
+## 95. 2026-11-04 T052 失權修正與 Specification 教師審查
+
+### 95.1 本輪授權、工作樹與保護
+
+教育者本輪明確批准「T052 失權修正＋T051 Specification 提交與教師審查」的完整有界垂直流程與 D-34 三項決定。Checklist 未完成不再重複問相同授權；mvp-plan 24／24、plan-finalization 0／31、requirements 22／38，標記與 Gate、Q-AUTH、正式啟用狀態不變。其他八階段、AI／Agent／IDE／預覽／部署／寄信與綁定管理 UI 不納入。
+
+核對 repository／origin／分支及 HEAD 均符合本輪指定：`gestertim/app-planet`、`https://github.com/gestertim/app-planet.git`、`work/auth-cancel-authorization`、`c9a05d5e6ec3a1f77900e01ba1652abcc950f9d9`；HEAD 未前進。適用祖先／repository 未找到 AGENTS.md，無 extension hooks；feature 由 `.specify/feature.json` 指定。完整初始非秘密來源工作樹 386 檔 before／bytes／SHA-256 已在本 session repository 外 `files/before`／`before-manifest.json` 保存；增量不以 HEAD 取代未提交成果。§90～§94 與所有無關修改保留，未 reset／clean／commit／push／merge／部署，未觸碰其他專案。
+
+### 95.2 已接通能力與持久依據
+
+- T052 只在最後 reader 明確 denied／not_found 時關閉整個專案頁，避免先前受保護需求／草稿／總覽洩漏；invalid_selection／一般 failed 仍維持獨立處理，未改成熟 reader／SQL。
+- 學生於既有 `/student/projects/{id}/stages/Specification` 保存→核對保存版本／正式需求 revision／分類 ID→確認送審。缺證據有補齊入口；未保存／保存未知／衝突不能當作提交；不新增空草稿品質門檻、學生階段確認或其他八階段前置。
+- 教師經既有 `/login` 產品表單登入，從 `/teacher` 真實待審清單進 `/teacher/specification-submissions/{id}`，查看確切提交內容並確認批准／退回；理由可由學生讀回。列表由舊到新、具 next_cursor；無自審／非綁定／跨校越權或管理員自動代審。
+- `0030_specification_review.sql` 是新後續 migration。不可變 submission 保存 DB 確切草稿與需求／分類關聯；決策只可新增一次，持久原鍵與意圖供 replay。profiles／school／binding／membership 專用 epoch trigger 加上既有保存版本、revision、分類 ID 使失權恢復／重建綁定／改回原文均不復活；不寫 project.stage，不是 T068 作品產物快照。
+- 非特權 Auth actor、FORCE RLS／窄用途 NOLOGIN writer／固定 search_path、內部 helper 不對產品 actor EXECUTE；無 service_role runtime 捷徑。寫入依序鎖主體／學校／必要歸屬與綁定／project／Specification 資源，再重驗；CAS、決策、原鍵證據與去敏 audit 同交易。學生／教師 UI 未知結果保留原 key／body／版本，receipt 不回填 current。
+- 總覽／學生確認對 Specification 改標獨立審查讀取，避免仍宣稱「人工批准尚未取得」；既有學生確認與未決完整旅程規則仍分離。改動契約見 [projects-agent-sandbox](./contracts/projects-agent-sandbox.md#specification-單階段提交與教師審查d-3495)、[D-34](./decision-register.md#d-34-specification-單階段提交與教師審查2026-11-04本輪明確批准)。
+
+### 95.3 本輪實際驗證
+
+| 層級 | 本輪結果 |
+| --- | --- |
+| T052 頁面與 reader 聚焦 | 27 tests 通過；最後 denied／not_found 時不輸出先前需求、草稿與總覽。 |
+| 完整 unit／contract | 最後重跑 40 files／899 tests 通過（unit 158、contract 741）。 |
+| workspace＋tests typecheck／production build | 最終 `npm run typecheck`、`npm run build` 均 exit 0；新增正式頁面與 HTTP 路由納入 build。 |
+| 完整 DB foundations 層 | `npm run test:usage:db` 最終 exit 0；pgTAP 78／53／32，authorization 42、projects 210、usage-worker 31、HTTP 47；Revocation verified、Cleanup complete。 |
+| 完整真 Auth integration | 9 files／104 tests 通過，含新增 Specification 24 tests：不可變歷史、CAS／冪等、audit 回滾、內容與各資格失效／恢復、等鎖失權與跨學校有效期限、最小權限及列表分頁。 |
+| 真 Next HTTPS | 完整適用 29 情境首輪 27 通過、2 失敗；聚焦重跑分類 2 情境及 Specification 1 情境全數通過。涵蓋真教師表單登入、學生 UI 保存／提交、教師 UI 批准／退回、reload 讀回、修改失效、雙方 response-loss 原鍵恢復及既有導覽／離開防護。 |
+
+完整 `npm run test:foundations` **只啟動一次，原 exit 1 保留**：workspace、typecheck、build、unit、contract 前五層通過，DB 因新 migration 未列入 privileged migration-role 清單而停止。第一次局部補丁匹配到同名 migration 的前方清單，DB 仍失敗；修正到 role 清單並移除本輪誤增重複後，完整 DB 層通過，再獨立執行剩餘完整 Auth／browser 層。新增 Auth 測試已納入 runner，不以舊 runner 全綠代替新功能覆蓋。
+
+其他首次失敗與修復：BigInt target／Next NodeNext 測試 import 型別、Next route params adapter、migration 函式語法、草稿首建既有 201 期望、鍵盤操作需等待可信 GET 後 enabled。完整 browser 的兩項失敗分別為分類導覽 5 秒斷言逾時（無產品／測試修改，聚焦重跑通過，不能斷言成因已排除），以及無 JS 時 Next 串流停留安全 fallback，測試錯誤要求可見停用按鈕；後者改驗沒有任何 enabled 送審按鈕、確認 dialog 或 POST，重跑通過。未放寬授權或用 SQL 代替產品決策。
+
+未執行學生登入碼、完整綁定管理、TeacherSignup／Mailpit、舊 0025／0028 升級專項、正式啟用／部署或其他八階段批准驗收。全新隔離 DB 上依序套用既有及新 migration 的相容／權限驗證已執行，但不等於上述專項。逐次 commands／exit code、去敏輸出及首次失敗均隨增量包保存。
+
+### 95.4 限制、清理與交付
+
+學生 session、合成帳號、學校及持久師生綁定為測試 setup；教師登入使用真產品表單，送審與決策均由真產品操作，不用 SQL 插入批准結果。這不是學生登入碼 E2E，也不是完整師生綁定管理 E2E。未啟用正式產品／部署、T101 帳號生命週期、T022 學校管理、T068 產物快照或其他階段批准；原任務只記完成子集，136 項仍不勾選且保留依賴。
+
+只清理各輪 runner 專屬容器／volume／network、連線與瀏覽器；不讀出／封裝密碼、cookies、tokens、私鑰或 `.env`。交付沿用既有封裝工具核對 CRC、安全唯一路徑、manifest 與 diff replay＝after；增量包包含 before／after、必要 reference、去敏輸出、commands／cleanup。最終資源核對及 ZIP 路徑／bytes／SHA-256 於交付回報。
+
+### 95.5 2026-11-04 審閱缺陷修正與驗收補齊（本批增量）
+
+本批依教育者明確批准，只修正晚到本文、退回理由 DB 邊界及補齊 hydration／焦點／跨學生驗收；完成後停止待審。HEAD 仍為 `c9a05d5e6ec3a1f77900e01ba1652abcc950f9d9`，分支／origin 符合指定，適用祖先及 repository 未發現 AGENTS.md；feature 仍由 `.specify/feature.json` 指定。動工前保存 410 個非秘密來源檔完整 before／bytes／SHA-256；本批 diff 以該未提交工作樹為基準，不以 HEAD 代替。§90～§95 既有成果及 reviewer agent 等無關修改保留。
+
+- **晚到本文**：先補 submit／decide 受控 Promise 紅燈：成功標頭已收到、本文 pending→close→成功本文，兩項均重現 storage 原紀錄遭刪除。只在 `response.json()` 後、解析 receipt／清理前再次檢查 closed；既有 terminal closed 行為不變。10 項 controller 測試通過，包含本文解析失敗、storage 逐字不變、reload restore 相同 key／body／target／版本、只能明確原鍵 retry、正常成功／replay 清理及清理失敗保留 unknown。
+- **Unicode DB／RPC**：新增 `0031_specification_reason_boundary.sql`，不改 0030／正式 DTO／產品決議。固定列舉 ECMAScript trim 空白，控制字元以碼點 0～31／127～159 拒絕，不依賴 POSIX locale。現行 Zod `.max(2000)` **實測為原文 Unicode 碼點數**，不是 UTF-16 單元；DB 改用原文 `length(reason)`，保留合法前後空白與 supplementary 字元，不 trim 保存值。初版測試錯把 1000 emoji＋一字視為超界而失敗，已依正式 schema 實測修正，未改 DTO。
+- **DB 獨立證據**：有效綁定教師的非特權 context 直接呼叫 RPC，18 個拒絕值涵蓋 U+3000、U+00A0、混合空格、U+1680／U+2000／U+200A／U+2028／U+2029／U+202F／U+205F／U+FEFF、控制字元及原文長度超界；逐次核對 submission／decision／版本／成功 audit 不變。7 個合法值含繁中原文前後空白、2000 碼點 emoji、邊界混合字元及不屬 trim 的 U+200B／U+180E，逐字讀回、原鍵 replay、異意圖拒絕均通過。constraint 另以交易內暫時 INSERT／helper 權限及 authenticated 教師身分直接 INSERT，獨立取得 `23514 / specification_decisions_reason_valid`；合法值逐字保存；finally ROLLBACK 後確認臨時 policy／DML／EXECUTE 均不存在，後續合法 RPC 仍成功。helper 固定 search_path，只授予既有窄用途 reviewer EXECUTE。
+- **升級**：新庫依序套用全部 migration；另以 `-Upgrade0031 -IntegrationOnly` 先建立 0030 合法 approved／returned／pending 歷史再升級，整列與關聯逐項不變。在專用未提交 seed 交易重現舊 RPC 接受 U+3000：新 migration 明確阻擋且訊息只有 `specification_reason_upgrade_blocked count=1`，不含理由；rollback to savepoint 後確認非法 seed 未被改寫，再回滾整筆合成 seed。這不是歷史修補工具；未讀取正式資料。實際環境若有不合法歷史，migration 會原樣阻擋，不修改或刪除。
+- **hydration／取消／焦點**：保留無 JS fallback 測試。真 Next HTTPS 同頁暫停外部 scripts，學生頁曾觀察 streaming fallback，最後一輪觀察到權限確認 fallback（20 scripts 暫停），不宣稱測到可見送審控制項；兩者均無 POST。教師頁實際可見停用控制項（19 scripts 暫停），真滑鼠／鍵盤不能送出。釋放後學生送審、教師批准及退回均驗開框／取消／Escape 無 POST、焦點返回原觸發按鈕；重新開框明確確認才各送一筆 POST／新增一筆紀錄。先重現取消後焦點 inactive，再以面板 trigger ref／Dialog close autofocus 最小修正；未移除 disabled、未直接呼叫 handler、未偽造成功或 SQL 預填批准。既有保存／讀回／修改失效／雙方 response-loss 原鍵恢復仍通過。
+- **跨學生既存專案**：第二名真合成 Auth 學生 B 透過產品 handler 合法建立、保存需求／分類／Specification、送審並取得可讀退回理由。A 對該真實既存專案 GET／POST 均 404，回應不含需求、Specification、理由、submission ID、分類證據或 latest／evidence；前後完整 project／draft／submission／decision／audit snapshot 相同。B 本人重新送審及教師批准成功，未以特權 actor 代替被測請求。
+
+| 本批實際驗證 | 結果 |
+| --- | --- |
+| workspace＋tests typecheck | 最後 `npm run typecheck` exit 0。首輪 tests 型別失敗（ES2022 不含 Promise.withResolvers、DB row 為 unknown）已用既有 Promise 型別方式／正式 schema 解析修正。 |
+| 完整 unit＋contract | 最後 `npx vitest run --project unit --project contract`：40 files／906 tests，exit 0；不是 §95.3 的 899 tests。 |
+| 新庫 Specification 真 Auth／DB | 27 passed／1 skipped（只跳過獨立升級情境），integration 層 exit 0；同次 browser 首輪失敗另列。 |
+| 0030→0031 專項及 Specification 回歸 | 28 passed，runner exit 0，含非法歷史阻擋、合法歷史原文／關聯與全部新增 RPC／constraint／跨學生案例。 |
+| 真 Next HTTPS Specification | 最後 1 完整垂直情境通過，runner exit 0；內含兩個 hydration 邊界、三種確認取消／焦點及既有產品流程。 |
+| Production build | `npm run build` exit 0。 |
+
+本批所有失敗及命令 exit code 均隨增量包保存。除上述 controller／DTO 測試／型別失敗，browser 前幾次另有測試 barrier 過早 unroute／fallback 階段錯誤互動、僅辨識 streaming 而漏掉權限 fallback，以及真產品取消焦點失敗；逐項修正後通過，未放寬產品前置防護。§95.3 原 foundations exit 1 與未明分類導覽逾時保留揭露，不在本批擴張調查。
+
+**not_run／不變狀態**：完整 foundations、無關 signup／Mailpit、0025／0028 歷史升級、其他 DB application 層、正式資料巡檢／migration／部署均未執行。T051／T052／T071／T072 及 T008／T011／T014／T015 僅本批實際涉及修正／驗收子項；原 136 項正文、依賴及未勾選、Gate、Q-AUTH、正式啟用狀態不變，三項 D-34 決議不重送批。只核對並清理本輪 runner 自有資源／臨時權限，不動既存容器或其他專案；未 commit／push／merge／部署。封裝含 before／after、incremental.diff、必要 reference、去敏命令輸出／cleanup、manifest 與外部 entries，沿用既有工具驗 CRC、安全唯一路徑與 diff replay＝after；ZIP 詳情見交付回報。
+
+## 96. 2026-11-04 T077 既有合格師生綁定有界子集
+
+### 96.1 本輪明確授權與基準
+
+教育者明確批准管理員經產品建立／解除／重綁「既有合格師生」的垂直流程、必要持久化／授權與驗收。T077 僅綁定子集；T076／T078／T079 及 T008／T011／T014／T015 僅直接涉及契約、UI、接線與回歸，136 項正文／依賴／勾選不變。Checklist 唯讀核對：mvp-plan 24/24、plan-finalization 0/31、requirements 22/38；不再次要求相同批准，也不表示完整 Gate、Q-AUTH 或正式啟用通過。
+
+開始時 repository／origin／分支／HEAD 均符合指定，HEAD 未前進：`work/auth-cancel-authorization`／`c9a05d5e6ec3a1f77900e01ba1652abcc950f9d9`。功能目錄依 `.specify/feature.json`；適用祖先與 repository 未找到 AGENTS.md，無 extension hooks。Repository 外 session `9c77860f-c040-46cb-a4eb-d41e1d1c4f19/files` 已保存 412 個非秘密來源的完整 before、bytes／SHA-256 與初始 status；增量以開始時完整工作樹為基準，保留 §90～§95.5 與 reviewer.agent.md 等既有成果。敏感設定、憑證與產生物排除，不讀出密鑰。
+
+建立只允許當下有效管理員、有效已批准教師與學生、有效已核准未到期的學生學校及該校有效持久教師 membership；解除收回指定關聯，不因目標後來失效阻擋。新 migration 不改舊 migration；end 保留歷史並沿既有 binding epoch 失效，重綁新 ID、不復活舊批准。主驗收綁定操作必須走管理 UI；合成 setup 僅供既有帳號／學校／membership 與學生 session，不代表學生登入碼、學校或 membership 管理 E2E。不新增其他階段規則、帳號／學校／membership 管理或部署。
+
+### 96.2 實作結果與交易界線
+
+- 正式 T-1 `POST /api/v1/admin/bindings` 與 T-2 `DELETE /api/v1/admin/bindings/{id}` 已接可信 `/auth/v1/user`、DB 當下帳號及窄用途 RPC。兩者要求 UUID `Idempotency-Key`；新增最小 GET 候選／關係投影，固定 20 筆、穩定 UUID keyset 分頁。管理入口為 `/login` → `/admin` → `/admin/bindings`，不是任意 UUID 輸入器。
+- 新增 `0032_admin_bindings.sql`，未改寫既有 migration。`app_binding_writer` 為 NOLOGIN／NOINHERIT／NOBYPASSRLS；receipt 表 FORCE RLS，固定 `search_path`、最小 grant、內部 helper 不開一般 EXECUTE，authenticated 不能直接寫 binding／receipt／audit。建立鎖順序為原鍵 advisory → UUID 排序 profiles → school → membership → 師生 pair advisory → binding；鎖後重驗當下資格。解除仍要求有效管理員，但不以目標後來失效阻擋收權。
+- 同一 pair 至多一筆 active；建立衝突為 409，指定 ID 解除採 active→ended 的單向 CAS，已 ended 為 409、不存在為 404，不會解除後來的新 ID。成功 receipt、異動與去敏 audit 同交易；同鍵同內容回原操作結果，同鍵異操作／對象／理由為 422。舊建立鍵在解除後重放不重綁；明確重綁使用新鍵與新 ID。Receipt 與目前關係分開讀取。
+- 理由沿用既有 Unicode／控制字元與 2000 Unicode 字元工程防護，合法原文不 trim；該限長不是正式產品配額。理由只進必要業務欄位與私有意圖，不放 audit meta。Audit 僅必要舊新狀態、去識別操作者／目標、binding ID 與 DB 時間；非管理員 HTTP 拒絕沿既有白名單 diagnostic，不記任意本文或憑證。
+- 完全沿用 §95 binding ID／epoch；解除提交後的新教師 GET／POST 不取得舊關係授權，重綁不復活舊批准，重新送審及教師明確批准才有效。不承諾收回已送達內容或所有在途請求撤銷上界。
+- 管理 UI 有核對、明確確認、取消／Escape／焦點返回、hydration 前停用與單次送出。未知結果保留原鍵／body／target，reload 後只可原鍵重試；storage 失敗與晚到回應安全關閉。學生產品請求後重讀既有 `/me` 最小 `teacher_notice`，不需手動 reload，沒有 Realtime／寄信／通知歷史。
+
+### 96.3 實際驗證與失敗紀錄
+
+| 層次 | 實際結果 |
+|---|---|
+| Workspace＋tests typecheck、production build | 完整 foundations 內通過；最初 typecheck 的 transport 參數錯誤已以相容的 optional fetch injection 修正，後續兩次 typecheck 通過。 |
+| 完整 unit／contract | 14 files／174 tests、28 files／755 tests 通過；新聚焦 unit＋contract 另有 23 tests 通過。 |
+| 新庫／DB foundations | pgTAP 78／53／32 assertions；application authorization 42、projects 210、usage-worker 31、HTTP foundation 47 tests 通過；暫授權已撤回並比對。 |
+| 真 Auth integration | 完整 10 files：159 passed／1 skipped。Skip 是另行條件執行的舊 0031 upgrade 案，不算本輪已跑。新綁定 52 tests 通過，包含原鍵／異意圖、並行／失權／等鎖、回滾、直接 HTTP／RPC、RLS／grant 及 response-loss。 |
+| 真正 0031→0032 升級 | 獨立 `-Upgrade0032 -IntegrationOnly`：3/3 通過，保留原 binding、pending／approved／returned submission／decision 與 epoch；另驗 decide-first／end-first 真鎖等待及舊批准失效。 |
+| 真 Next HTTPS | 完整集合 31 案中第 1～30 案通過；外層 900 秒上限中止後，只補跑尚未完成的 workspace 1 案並通過。包含 §95 Specification、admin approval、新綁定產品 2 案、既有分類與導覽；不是一次完整 runner exit 0。 |
+
+完整 `npm run test:foundations` 本輪只啟動一次，**原 exit 1 保留**，原因為 Auth＋browser 外層上限 exit 124；不覆寫為全綠。被中止的自有 Docker／暫存資源已精確清理，之後串行補跑升級及唯一未完成的 browser 案。分類導覽逾時未重現，不擴張調查；歷史 foundations exit 1 與 §95 已通過的規格審查不重開。
+
+其他紅燈均保留證據：首次新 integration 51/52，因測試錯從 superuser session 驗證角色升權；改用真正受限 runtime 連線後 52/52。首次產品流程在最後學生讀回時關閉受保護 panel；未捕捉該次 HTTP status，**不能宣稱已證實根因**。在最後讀回前明確更新合成學生 session setup（隔離 Auth token 60 秒），不 reload、不改產品 TTL／Auth、也不替代產品操作後，2/2 通過，完整集合中亦再次通過。首次獨立升級誤與完整 runner 並行，遇隔離 Docker port collision，清理後串行重跑通過；不是產品缺陷。
+
+封裝增量防護另抓到 Next dev 自動改寫 `next-env.d.ts` 的兩個產生型別路徑；只將該兩行還原至開始時完整 before，未白名單化無關增量，並再核對 hash；workspace＋tests typecheck 再次通過。
+
+### 96.4 產品驗收、清理與交付界線
+
+真管理員／教師均從產品表單登入。建立前教師看不到學生提交；管理員經候選、核對、確認 UI 建立後可審；UI 解除後新的教師請求拒絕、學生讀回舊批准失效；UI 重綁取得新 ID，舊批准仍失效，學生重新送審及教師重新批准後才有效。建立／解除 COMMIT 後丟失回應、reload 原鍵恢復、學生下次可信操作關係提示、取消／Escape／焦點及實際 hydration 前零寫入均有產品證據。帳號／學校／membership／學生 session 僅合成 setup；主綁定建立／解除／重綁未用 fixture／SQL 代替。
+
+隔離 DB、Auth 及 HTTPS 測試資源均已清理；外層逾時殘留僅按已確認 project／container IDs、volume、network 與精確暫存目錄清除。未碰其他專案、未保留臨時權限；不封裝密碼、token、cookie、私鑰、`.env` 或憑證。Repository 外提供可直接 read／search 的 before／after／reference、完整 incremental diff、manifest、命令／exit／失敗修復／not_run／版本及清理證據，另有 CRC、安全唯一路徑、diff 回放與 after 一致的 ZIP。
+
+Not run／不宣稱：條件式舊 0031 upgrade、完整 foundations 的單次成功收尾、真實學生登入碼、完整學校／membership 管理、第二管理員、角色切換、帳號生命週期、T-3／T-4 全名冊、其他階段／AI／IDE／發布及正式環境。T077、T076、T078／T079、T008／T011／T014／T015 皆僅本輪精確子集；原任務勾選、依賴、完整 Gate、Q-AUTH 及正式啟用狀態不變。未 commit／push／merge／部署，完成後等待審閱。
+
+## 97. 2026-11-04 T077 綁定審閱修正 F-01／F-02／E-01
+
+### 97.1 範圍與基準
+
+依本輪明確授權，只修正 T077 綁定流程審閱列出的 F-01、F-02、E-01；不重開 §95、不改任務勾選／依賴，也不推進 Gate、Q-AUTH 或正式啟用。開始時 repository、origin、branch、HEAD 與授權範圍核對符合指定；HEAD 維持 `c9a05d5e6ec3a1f77900e01ba1652abcc950f9d9`。
+
+本輪 before 以開始時工作樹的 dirty-path 清單及 hash 為比較基準，而非將 HEAD 當成本輪 before。164 個既有 dirty path 的 before manifest 保存在 session 外；161 個非敏感來源另存 before 副本，排除 `reviewer.agent.md` 與兩個本機憑證檔。增量包只列出相對此基準改變的檔案，未納入既存 §90～§96 成果。不得以本紀錄解讀為完整 Gate 核准或 T077 結案。
+
+### 97.2 修正結果
+
+- **F-01 — 舊 instance 的晚到副作用**：controller 以 lifecycle generation 明確區隔 activate／deactivate；離頁後舊成功、拒絕、解析失敗及 catch 路徑均不能更新新 instance 狀態。清除 storage 前再次確認 lifecycle 有效，並以完整已解析 intent 比對目前紀錄；React cleanup 只停用本輪 lifecycle、取消訂閱並淘汰清單請求，不呼叫 `close()`，StrictMode setup→cleanup→setup 可重新 activate。未加入 `AbortController.abort()` 或 keepalive，亦未將取消解讀為交易未提交。
+- **F-02 — 101 筆合法關係**：DB 的最小投影本來回傳全部有效教師標籤；移除 `/me` server decoder 與提示 decoder 的 `.max(100)`，不新增名額、不截斷、不改 SQL／migration。學生提示明示全部有效關係及筆數，仍只回本人可見的最小標籤與 scope；保留逐請求可信身分、帳號 gate、no-store、去敏及失權隱藏。
+- **E-01 — 混合交易鎖序**：修正前真鎖測試重現 create 尚未提交時 end 直接 `not_found`。新增 `0033_admin_binding_id_lock.sql`：create 在 pair lock 前鎖定其新 binding ID；end 在讀取指定列前鎖定 ID，再沿用原 pair lock 及資格檢查。未改寫 `0032`，不改理由、receipt、epoch 或審計政策。
+- Specification binding ID／epoch、舊批准失效與重綁新 ID 契約未變。T077 原任務狀態仍未勾選。
+
+### 97.3 驗收及紅燈紀錄
+
+| 層次 | 實際結果 |
+|---|---|
+| F-01 受控 Promise unit | 修正前 18 項中 4 項失敗，重現舊 create／end 回應會刪除同 key 的新 intent。補 lifecycle／storage intent 比對後，create／end 的成功、明確拒絕、JSON／fetch 失敗、同 key A→B、reload 復原與 StrictMode 重新啟用案例通過。StrictMode 證據是同一 controller 的 activate→deactivate→activate lifecycle unit 模擬，確認只送一次；HTTPS runner 未聲稱啟用 React StrictMode，也未覆蓋 React renderer 的 effect 執行細節。 |
+| F-02 contract／DB | contract 覆蓋 0／100／101；真 Auth／DB 綁定測試 56/56 通過，包含合法建立第 101 關係後的 `/me` 投影、解除、教師失權及其他學生隔離。 |
+| E-01 真混合鎖序 | 使用隔離 PostgreSQL、獨立交易及可確認的 blocking barrier；create-first、end-first、active pair 反向順序、重綁後舊 end／原鍵 replay 與原 create-key replay 驗證通過。逐案檢查 active 數量、binding ID／state、receipt、成功 audit 次數與等待結束。 |
+| 0031→0033 真升級 | 3/3 通過；既有 binding、pending／approved／returned 原文與 epoch 保留，升級後 end 仍使舊批准失效。 |
+| HTTPS | `tests/auth-e2e/real-auth-admin-bindings.spec.ts` 4/4 通過，含既有 §95 綁定／審查回歸、hydration 零寫入、F-01 真 Next 離頁／返回及 F-02 101 關係 UI 建立／解除／失權與學生下一次產品請求提示。F-01 另以單案 1/1 通過。 |
+| workspace／tests typecheck、unit＋contract、production build | `npm run typecheck` 通過；`npm test` 42 files／941 tests 通過；`npm run build` 通過。 |
+
+F-01 HTTPS 障壁先出現 Playwright page-route `Route is already handled`，之後亦暴露導航後舊 response body 的 CDP 限制；這些是測試障壁失敗，不作產品修正已生效的證據。最終改用 context-scoped route：先對真實產品請求 `route.fetch()`，保存並核對真 upstream 201 receipt，回傳該真實 JSON，按原 request identity 等待 response／request-finished，再逐字比較 B 的 sessionStorage 紀錄及 reload 原鍵重試。最終版本不含臨時 keepalive；真 Next HTTPS 測試通過。
+
+完整 foundations、無關 signup／Mailpit、其他 DB application 層與正式環境未執行；不重跑 §95 歷史 foundations exit 1，也不將其改寫為本輪結果。各隔離 Auth／PostgreSQL／HTTPS runner 均回報本輪自有 containers、volumes、networks 為 0 並完成清理。Reviewer 增量包及解壓目錄保存 before／after、incremental diff、直接依賴、manifest、驗證命令與輸出、清理記錄；CRC、安全唯一路徑、diff replay 與 after 一致已核對。未 commit／push／merge／部署；完成後停止等待審閱。
+
+## 98. 2026-11-04 T071–T075 教師唯讀資源有界子集
+
+### 98.1 基準、授權與任務狀態
+
+依使用者本 session 明確批准，交付有效綁定學生名冊與其真實專案唯讀讀取；不是一般產品實作常設許可，不代表 Gate、Q-AUTH 或正式啟用通過。動工前核對 repository `C:\Users\geste\spec-kit\app-planet`、origin、`work/auth-cancel-authorization`、HEAD `c9a05d5e6ec3a1f77900e01ba1652abcc950f9d9`、`.specify/feature.json` 及適用指引；本輪結束 HEAD 未變。before 保存當時 165 筆 Git 狀態、163 個非敏感來源檔的 SHA-256 manifest／副本及差異；2 個本機憑證檔不讀取、不封裝。完整原始 before 保存在 session 外，Reviewer 包只收錄與本輪增量相關的必要 before／after。
+
+T071 涵蓋本輪教師有效性、錯角色、跨學生／替換 project ID、失權拒絕契約及測試；T072 涵蓋窄用途 DB reader、逐請求授權與同交易查看稽核；T073 涵蓋必要的唯讀教師名冊、專案、逐階段草稿與任務畫面；T074 僅同步 `teacher_notice` 的實際可用能力說明，沒有 Realtime；T075 僅本輪真 Auth／DB／Next HTTPS 產品流程。T071–T075 任務勾選、原文與依賴均未改，沒有宣稱整項完成。§95 與 §97 歷史問題不重開；只執行受影響回歸。
+
+### 98.2 交付與資料／授權邊界
+
+- 新增版本化 strict DTO、教師 server reader／handler、`GET /api/v1/teacher/students`、`GET /api/v1/teacher/students/{studentId}/projects`、專案詳情、逐階段草稿及分頁任務 API；教師入口為 `/teacher` → `/teacher/students` → 學生專案 → 專案詳情／階段／任務。教師無學生 owner 編輯路徑或 writer。
+- 專案詳情讀出目前 stage、正式分類與確認版本、當前保存需求版本、九階段保存／確認狀態、Specification 獨立審查狀態及首頁任務；草稿本文按階段載入、任務分頁。草稿存在不推導完成，學生確認不等同教師批准。Unicode 原文保留。
+- 授權每次以可信 Auth `/auth/v1/user` 身分及資料庫當下帳號／binding／membership／學校關係核對；只限 approved 且未停用／刪除的教師、學生，active binding、active 持久教師 school membership、approved 且有效期限未到的學生學校。停用／刪除、membership 結束、withdrawn／expired 學校、錯角色、非綁定與跨學生／錯配資源皆不釋出內容；一般不可見資源 404。未更改 `teacher_can_view_student` 全平台語意。
+- `0034_teacher_readonly_resources.sql` 建立 NOLOGIN／NOBYPASSRLS reader role、固定 search_path、欄位級授權、鎖用 `UPDATE(id)` 與 `WITH CHECK(false)` 政策；authenticated 只可執行明確 reader RPC，不能 SET ROLE reader、直接跨學生 SELECT 或執行 DML。依賴失敗回安全錯誤，不偽裝空清單。
+- 專案清單、詳情、階段草稿、任務內容回傳前均在同一 DB 交易鎖定／重驗資格、讀白名單內容並寫 `teacher_view`；audit 使用既有去識別 actor／subject、`object_type='project'`、project UUID `object_ref`、空 `meta`，不含內容；audit 失敗整筆 transaction 回滾且 API 回 503，不回內容。每次開啟可記錄，不猜 PP-12 合併窗口。教師導覽及內容連結停用 Next prefetch。
+- 依賴讀取或重新授權失敗時，教師頁面不沿用舊資料，並提供停用 prefetch 的明確重新讀取連結；無權限／不可見仍以既有隱匿行為處理。
+- 新增學生告知僅列已保存需求、階段草稿／確認狀態與任務；明確排除完整對話、附件／檔案、學習活動。T-5 管理員 audit 查詢不在本輪。
+
+### 98.3 驗證結果與紅燈修復
+
+| 層次／命令 | 最終結果 |
+|---|---|
+| `npm run typecheck` | exit 0；core、worker、works-edge、web 與 `tests/tsconfig.json` 全通過。 |
+| `npm run test:unit` | exit 0；15 files／185 tests 通過，新增教師唯讀頁面讀取失敗／重試連結合成回歸。 |
+| `npm run test:contract` | exit 0；29 files／762 tests 通過，含 strict DTO／`teacher_notice` 契約。 |
+| `& .\scripts\test-auth-local.ps1 -IntegrationOnly -IntegrationFilter tests/integration/real-auth-teacher-resources.test.ts` | exit 0；1/1 通過。涵蓋有效 Auth 身分、學生／專案／任務分頁無重複遺漏、需求與草稿改版後確認 stale、非綁定／錯角色／跨學生、直接 RPC／SELECT／DML 權限、disabled／deletion／membership／學校資格、audit 故障 fail-closed、查看先持鎖時解除等待，以及解除後新請求拒絕。 |
+| `& .\scripts\test-auth-local.ps1 -IntegrationOnly` | exit 0；11 files、164 passed、1 skipped。包含 T077／§95 相關既有真 Auth／DB regressions 與本輪 reader integration；唯一 skip 依既有環境條件。 |
+| `& .\scripts\test-auth-local.ps1 -Upgrade0032 -IntegrationOnly` | exit 0；3/3 通過。真實由 0031 起始，將 0032、0033、0034 逐一升級，核對既存 pending／approved／returned Specification 原文與世代保留、最小 reader grants／role，並重驗解除／審查鎖序。 |
+| `& .\scripts\test-auth-local.ps1 -BrowserOnly -E2EFilter tests/auth-e2e/real-auth-teacher-resources.spec.ts` | exit 0；1/1 真 Next HTTPS 流程。學生以產品 UI 保存需求／分類／Specification 草稿／確認／任務及勾選；管理員表單登入後以 T077 UI 建立、解除、重綁；教師表單登入並以 UI 唯讀查看；核對學生告知、真實 DB 版本／任務／teacher_view audit、學生 B 跨學生 404、解除後 API／直接頁面不洩漏、重綁新 ID 後恢復。 |
+| `& .\scripts\test-auth-local.ps1 -BrowserOnly -E2EFilter tests/auth-e2e/real-auth-admin-bindings.spec.ts` | exit 0；4/4 通過，含 T077 產品建綁／解除／重綁、新 ID 與舊 Specification 批准失效、hydration 零寫入、離頁生命週期與 101 位 `/me` 提示回歸。 |
+| `npm run build` | exit 0；Next production build 編譯、TypeScript、頁面資料及所有新增 API／畫面路由生成完成。 |
+| 本輪限定變更 `git diff --check` | 通過。全工作樹檢查另發現 before 已有的 `product-decisions.md` trailing whitespace（第 282、283、506、507 行），未修改無關檔案。 |
+
+修復歷程如實保留：最初 typecheck 發現 integration test 誤呼叫不存在的 project handler；改用 `productFoundationHandlers` 並修正空清單斷言。第一次隔離 Auth runner 因 `vitest.auth.config.ts` 未包含新測試而回「No test files found」；加入 include 後，真 DB 暴露 `FOR SHARE` 必需的 `UPDATE(id)` 鎖權限及 RLS lock policy，補成僅列鎖欄且拒絕實際 UPDATE。integration cleanup 又暴露 `specification_decisions`、`project_task_imports`、binding receipts 等 FK 清除順序；改為依 FK 次序精確清除並在完成時輸出 cleanup verified。第一次 HTTPS 瀏覽器驗證把 HTML 頁面當 JSON API；改用 `/api/v1/teacher/students`。後續兩次 UI selector 因實際目前 stage／學生確認標籤與假設不同而失敗，改為依專案名稱及九階段區域／實際文案定位；最終指定 HTTPS 測試通過。上述首次失敗未隱去，也未將修復前失敗當作成功證據。
+
+審閱包整理前再次執行 typecheck、unit、contract、Auth／DB integration、0031→0034 upgrade、教師唯讀 HTTPS、T077 瀏覽器回歸及 production build；除下述保留的 T077 首次重跑逾時外，均通過。T077 首次重跑 3/4，F-02 在等待教師分頁 response 時逾時；保留完整首次輸出，立即重跑同一命令後 4/4 通過。該測試 runner 兩次均確認隔離容器、volume、network 清除；不把第一次失敗略去，也不據此改動無關 T077 程式。第二次 production build 曾改寫既有 `apps/web/next-env.d.ts`；已用 before 的 SHA-256 副本逐位元還原，且還原後 typecheck exit 0，故不把此預存修改列入本輪增量。
+
+所有隔離 Auth／PostgreSQL／HTTPS run 最後均清除本輪合成帳號、DB rows、容器、volume 與 network；未連接正式服務、未使用真實學生資料。全 Gate、完整 foundations、frozen snapshot、對話／附件／檔案下載、活動總表、教師回饋、PP-12 merge、T-5 audit API、Realtime、其他階段批准與服務部署均 `not_run`／本輪未實作；不宣稱已驗收。
+
+### 98.4 增量審閱包與交付界線
+
+本輪相對動工前 before 的非敏感增量為 34 個來源檔（包含本 readiness 紀錄與新增的重試回歸測試；既有 `next-env.d.ts` 已還原且不在增量）；解壓式審閱目錄位於本 session `files/teacher-readonly-review/reviewer/`，ZIP 為 `files/teacher-readonly-review.zip`。包內含增量檔案 before／after、完整 `incremental.diff`、SHA-256／bytes manifest、唯一安全 ZIP entries 清單、驗證命令與輸出、失敗／重試記錄及隔離資源 cleanup 證據；只另列必要未修改參照，不複製無關 before 工作。已核對路徑唯一、安全、CRC，並以 before 套用 `incremental.diff` 後逐檔比對 after bytes／SHA-256；最終 ZIP bytes 與 SHA-256 於本 session 交付回報。兩個本機憑證檔不讀取、不封裝；不列出其路徑或內容。未 commit／push／merge／部署；此批完成後停止等待 Reviewer。

@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="referrer" content="no-referrer"><title>App Planet 教師申請電郵驗證</title></head>
+<body>
+<p>你好：</p>
+<p>我們收到使用這個電子郵件提出的 App Planet 教師帳號申請。若是你本人申請，請開啟下方連結並在頁面上按「確認電郵」。</p>
+<p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=signup" rel="noreferrer">確認教師申請電郵</a></p>
+<p>完成電郵驗證不代表帳號已核准；帳號仍需平台管理員審核。若不是你本人申請，請忽略本信。</p>
+<p>（隔離本機測試信件，不會寄往外部信箱。）</p>
+</body>
+</html>

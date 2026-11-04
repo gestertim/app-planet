@@ -1,13 +1,16 @@
 import type { OperationPresentation } from "./operation-presentation";
 import { LogoutAction } from "./logout-action";
 
-export function OperationNotice({ authenticated = false }: Readonly<{ authenticated?: boolean }>) {
+export function OperationNotice({
+  authenticated = false,
+  logoutRedirect = "/",
+}: Readonly<{ authenticated?: boolean; logoutRedirect?: "/" | "/login" }>) {
   if (authenticated) {
     return (
       <div className="notice" role="status">
         <strong>伺服器已驗證登入</strong>
         每次讀取與保存仍會重新檢查登入狀態、帳號資格及作品權限。
-        <LogoutAction />
+        <LogoutAction redirectTo={logoutRedirect} />
       </div>
     );
   }

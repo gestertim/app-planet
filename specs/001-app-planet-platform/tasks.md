@@ -1,5 +1,7 @@
 # Tasks：AI APP 超級創客｜App Planet 現行 MVP
 
+**2026-11-04 本輪 T051 產品接線（§93）**：既有 A/B 階段加入獨立正式需求保存與明確分類面板；具名 GET／PUT 需求、POST 分類接既有持久交易，雙版本／可信 Auth＋當下 DB owner／gate、receipt／current 分離、修改即失效與原鍵重放不復活。建立偏好仍不是正式證據；visitor 初始無選擇、偏好不同須 explicit_change；共用原離開防護，不新增 history sentinel 或本地持久草稿政策。T006（strict 傳輸 DTO／安全錯誤）、T008（必要授權接線）、T011（HTTP）、T014（學生 UI）、T015（本輪驗收）均僅涉及子項，原依賴與勾選不變。真 Auth 不是學生產品登入／登入碼 E2E；Gate／Q-AUTH／正式啟用不變。實際失敗、修復、完整回歸及清理見 [readiness §93](./readiness-review.md#93-2026-11-04-t051-正式需求保存ab-分類確認產品接線)。
+
 **2026-11-02 最新進度入口（§89）**：七頁籤正式工作區、共用專案 layout、九階段草稿／確認與手動任務匯入／P-4 已接線；建立／測試／版本／發布如實標示未就緒。T054 沿用既有 controller 與同一 guard，真實驗收含保存中續編、階段 response-loss 原鍵 replay、跨分頁真實 409、兩個編輯資源同時待處理、Navigation API 返回／前進／多步與原生 `beforeunload` 限制。T055 以「產品 logout＋測試 setup 重新驗證後恢復」驗證舊 session、跨帳號隔離及草稿／確認／任務／匯入恢復；不是產品登入／登入碼 E2E。**T053／T054／T055 原勾選與依賴均不變**：T053 子集已接通但依賴 T052 尚未結案；T054 子集已接通，但 T053／Q-DATA 原前置未結案；T055 browser 子集已驗，仍依賴 T054。精確剩餘為 T052 旅程規則決議與 Q-DATA 核定／前置；未新增本地持久草稿政策、未啟用人工批准或未就緒能力。詳見 [readiness §89](./readiness-review.md)。
 
 **2026-11-01 歷史快照（§88）**：0024→0025 既有資料升級驗收（`-Upgrade0025`）、專案頁九階段總覽（同一 DB snapshot 的保存／學生確認狀態，人工批准固定未取得）、階段頁九階段導覽，以及切階段／專案前的未保存離開防護（`requestLeave`＋`unsaved-changes-guard`）已接通並於真 Auth→HTTPS Next→隔離 PostgreSQL 驗證。T052（總覽讀取證據子項）、T053（九階段導覽／總覽，**非**七頁籤與 layout）、T054（離開前保存／放棄／409／未知結果；無持久本地草稿）、T055（兩專案總覽＋離開防護 e2e，`tests/auth-e2e/real-auth-stage-overview.spec.ts`）皆僅本批部分，**均未勾選、依賴不變**。當時精確剩餘：完成／批准規則、七頁籤與 `layout.tsx`、持久化本地草稿、登出登入完整 e2e、IDE／測試／發布頁。
@@ -144,6 +146,7 @@ PP-20～27 的候選目前是**政策維度、證據來源與 fail-closed 方案
   **〔§80：正式草稿頁使用 server `/user` 驗證、DB 能力／owner gate，真實 Next 頁完成首建／更新／競爭衝突／保留本地／失權隱藏；operation hydration 初值已固定。部分完成、不勾選；本輪以測試 setup 建立原生 Auth session 並注入 HttpOnly／Secure／SameSite cookie，未實作或驗收 A-1 互動登入／核發流程，也未驗收完整角色導覽；T011 及 Q-AUTH 仍阻擋結案。〕**
   **〔§81：T014 本批無頁面／導覽修改，剩餘驗收不變（A-1／Q-AUTH 登入流程、完整角色導覽、T011 依賴）；僅沿用 Playwright 1/1 回歸通過。〕**
   **〔§84：未知建立操作由 sessionStorage 改為可信 principal 派生雜湊 scope 的 localStorage，保存原 UUID／本文；失權立即隱藏受保護子樹但不移除未知紀錄，401／403、reload、換 session 與暫時 Auth 失敗不換鍵。同帳號重新驗證只送 recovery；別的帳號使用不同 scope；舊版／損壞／storage 讀寫失敗停止自動送出。真實 browser 驗收 4/4 通過，含 response-loss→403→同帳號重新驗證、過期 recovery、帳號切換與本機儲存失敗。使用者清除瀏覽器儲存仍會失去 key／本文；不構成永久保存或正式產品啟用。A-1／Q-AUTH、完整角色導覽及 T011 依賴仍在，不勾選。〕**
+  **〔§90：AppShell／OperationNotice 增 `logoutRedirect`（預設不變），教職員頁登出回 `/login`；`LogoutAction` hydration 前停用。teacher／admin／`/account/status` 改由可信 `/user`＋DB 本人狀態決定，導覽由 server 給。部分完成、不勾選；完整角色導覽、Tailwind／Radix 全面導入及 T011 依賴未變。〕**
 - [ ] T015 在 `supabase/tests/account_gate.test.sql`、`tests/contract/foundations.test.ts` 執行完整 gate／跨帳號／冪等／租約／費用競態與日誌白名單回歸；確認基礎測試證據，不宣稱故事或 Gate 已通過。【來源 R00；依 T008、T010、T011、T012、T013、T014】
   **〔§83：補 receipt 期限前／後語意、到期後恢復不送 POST／無第二列、舊版／損壞／不合理時間、換帳號與 clock 失敗的 Playwright／整合回歸；原依賴保留，不勾選。〕**
   **〔§82：補真 Auth／隔離 PostgreSQL 的 P-1／P-2、跨帳號／偽造 claim、角色／帳號／學校矩陣及 Auth／DB 故障；實際 Next HTTPS browser 從工作台建立專案、開詳情／草稿、首建／更新／衝突，另驗 response-loss COMMIT 後原鍵重試、reload／同帳號換 session、真 Auth 容器暫停與 DB 權限故障、清單／詳情失權隱藏。聚焦真 Auth 整合 10/10、browser 3/3；完整 foundations 與真實失敗／清理紀錄見 readiness §82，不重複累加。剩餘：完整教師／管理員資源政策、provider／各 kind／核定政策矩陣及正式跨層驗收；T008、T010～T014 原依賴未完整滿足，不勾選。〕**
@@ -153,6 +156,7 @@ PP-20～27 的候選目前是**政策維度、證據來源與 fail-closed 方案
   **〔§81：`test:foundations` 7/7 layers 通過（Authorization 42、Projects 203、Usage Worker 31、HTTP foundation 47、真 Auth 整合 7/7、Playwright 1/1、unit 34、contract 701）；新增 G-3 fail-closed、Auth body 中斷／逾時／畸形及角色／資源案例。部分完成、不勾選；完整角色／provider／kind／政策矩陣與原依賴仍未滿足。〕**
   **〔§84：新增 replay-only DB／權限／鎖等待／receipt 到期整合案例、P-1R DTO／problem 契約、Auth Route Handler 與真 Next HTTPS browser 恢復矩陣。聚焦 Projects DB 210 tests、migration compatibility 19 assertions、原生 Auth／Route Handler 11/11、browser 4/4；`test:foundations` 7/7 layers 通過（typecheck／build、unit 37、contract 703、pgTAP 78／53／19、Authorization 42、Projects 210、Worker 31、HTTP 47、真 Auth 11／11、browser 4／4）。實際初次缺函式失敗、測試 SQL／pool／browser assertion 修正及 server stream error 觀察見 readiness §84；Docker runners 均回報清理完成。此批只補列明子項；完整角色／provider／kind／政策矩陣、正式 Gate 與其餘原依賴仍未滿足，不勾選。〕**
   **〔§76：新增 usage-worker 真實 DB 整合 31 項，沿用 authorization 29／projects 203、pgTAP 78／53／15；費用契約／manifest 修復及現有 unit／contract 共 705 項通過，typecheck／build／本機 Edge 通過。僅本批子集；完整 HTTP／真 Auth／角色／UI 及未定政策分支回歸未完成，原依賴與未勾狀態保留。T004 的 Edge 入口及 T013 manifest 修正屬本批併入子集，不替代正式瀏覽器矩陣。〕**
+  **〔§90：完整 `test:foundations` 7/7 layers（unit 68、contract 719、Usage pgTAP、真 Auth 整合 43/43、Playwright 21/21）含本輪教職員登入回歸。部分完成、不勾選；原依賴保留。〕**
 
 **§76 T007 責任對照（不擴張任務）**：0001 既有學校／profile／綁定／audit／對照及 RLS 屬 T007；學校核驗文件／`school_approval_records` 與 `school_transition`、epoch 變更交易屬 T022，傳播／取消／停止作品屬 T023；管理員批准／角色狀態受控 RPC 屬 T018 及各生命週期任務，不藉 T009 新增。既有 teacher_view audit 白名單未改；本批費用追加式去敏 audit 與 worker 平台 checkpoint 屬 T009／T010。T007 尚有相應原 schema／稽核缺口，沒有完整結案；既有 0001／0002／0009～0012 原檔保持，不重新編號。
 
@@ -163,10 +167,22 @@ PP-20～27 的候選目前是**政策維度、證據來源與 fail-closed 方案
 **目標／獨立測試**：合成未登入／待審／拒絕／停用／三角色逐一直接呼叫，SC-001 全拒未授權、無自提權，畫面與資料層一致。
 
 - [ ] T016 [P] [US1] 在 `tests/contract/auth-states.test.ts` 撰寫 AUTH A-2～4／bootstrap 與狀態×角色的拒絕測試，含背景降權及無 demo 操作。【來源 R01；依 T015】
+  **〔§91：新增 bootstrap unit 2、strict 審核 contract 5、隔離 bootstrap／審核 DB＋Auth 22 項；含背景失權、並行／receipt／audit rollback。只本輪狀態與角色邊界，非完整 T016／全部 AUTH；不勾選。〕**
+  **〔§90：僅既有教職員子集——unit 25／contract 8（strict DTO、Auth 回應畸形／逾時／redirect、隔離設定、來源偽造、節流／並行、cookie／token 不入 body）及真 Auth 整合 8 項（teacher／admin、student 經 A-2 拒絕、pending／rejected／disabled／刪除／缺 profile、背景降權重判）。bootstrap、完整狀態×角色矩陣與 `auth-states.test.ts` 未做；不勾選。〕**
 - [ ] T017 [US1] 在 `apps/web/src/server/auth/staff.ts`、`apps/web/src/app/api/v1/auth/staff/login/route.ts` 實作教職員註冊／登入／登出／經核定重設、`me` 最小回應與狀態閘門。【來源 R01；依 T016；前置 Q-AUTH】
+  **〔§92.4 本輪修正：新增 `0029_teacher_signup_dispatch.sql`，持久唯一派送／既有意圖保守升級／未驗證憑證守衛、中性 HTTP 接受與內部狀態分離、UI 原操作保留、Auth 驗證格式及撤銷結果分離；真 Auth 不同密碼／DB barrier／新程序、0028 升級及 Next HTTPS 驗收見 readiness §92.4。不變更原依賴、Q-AUTH 或整項未勾選狀態。〕**
+  **〔§92：教師註冊申請子集已實作——`0028_teacher_signup.sql`（受限意圖／Auth 觸發器固定 teacher＋pending／確認轉換守衛／未驗證不具批准資格）、`server/auth/teacher-signup.ts`、`/api/v1/auth/teacher-signup{,/resend,/verify}`、`/auth/confirm`、`/signup`、`/signup/verify`；隔離 Mailpit 真實驗證信。unit 19、真 Auth 整合 8／8、browser 1／1。經核定重設、refresh、正式郵件供應商與 Q-AUTH 未解除；不勾選。〕**
+  **〔§90：已實作 A-2 既有教職員登入（隔離本機啟用、HMAC 節流、可信來源 proxy）、A-4 本人最小投影與既有登出接線；註冊、經核定重設、refresh 未做，Q-AUTH 未解除；不勾選。〕**
 - [ ] T018 [US1] 在 `apps/worker/src/admin/bootstrap.ts`、`supabase/migrations/0004_staff_approval.sql` 實作受保護一次性管理員 bootstrap、申請角色不等於權限及批准／拒絕具名 RPC／稽核。【來源 R01；依 T017】
+  **〔§91 本輪有界子集：實際新增 `0027_staff_approval.sql`（不改歷史編號）、非 HTTP bootstrap CLI／專用 executor、持久一次性紀錄、pending teacher 批准／拒絕 RPC／版本／receipt／去敏稽核，接正式 Auth→server→產品管理畫面。T016／T019／T020 與 T011／T014／T015 僅必要回歸及接線。原 T017 依賴未結案；註冊申請角色的實際建立、完整狀態×角色矩陣／故事驗收不在本輪，不提供第二 admin／通用角色管理。未勾選，不統稱只差 Gate；隔離實測結果見 readiness §91。〕**
+  **〔§92：`list_pending_teachers` 只列 Auth 已驗證電郵的待審教師並帶申請說明；`review_pending_teacher` 對未驗證目標回 `not_eligible`（server／DB 強制，非僅 UI）。仍非完整 T018；不勾選。〕**
 - [ ] T019 [US1] 在 `apps/web/src/app/(auth)/status/page.tsx`、`apps/web/src/app/(auth)/login/page.tsx` 實作待審／拒絕／停用／批准畫面及授權帳號區，不給受限者其他功能。【來源 R01；依 T018】
+  **〔§91：`/admin` 接真待審教師清單與明確確認、未知結果原鍵重試；教師沿用即時本人狀態／工作台，不取 localStorage 批准。T018／T017 原依賴、學生入口與全角色導覽仍未完整結案；不勾選。〕**
+  **〔§90：實際路徑為 `apps/web/src/app/login/page.tsx`、`apps/web/src/app/account/status/page.tsx`（不建 `(auth)` route group 以免 URL 衝突）；待審／拒絕受限畫面、停用專屬提示、teacher／admin 直接 URL 角色檢查與真 Next HTTPS browser 6/6。T018 批准流程未做、原依賴不變；不勾選。〕**
+  **〔§92：`/signup` 申請表、`/signup/verify` 驗證確認頁、登入頁「申請教師帳號」入口與未驗證提示；`/admin` 顯示申請說明。全角色入口仍未完成；不勾選。〕**
 - [ ] T020 [US1] 在 `tests/e2e/account-states.spec.ts` 執行 T016 與狀態／直接 API／RLS 回歸，保存拒絕與稽核證據。【來源 R01；依 T019】
+  **〔§91：實際 `tests/auth-e2e/real-auth-staff-approval.spec.ts` 1 項完整流程（3 個獨立 context、CLI bootstrap、全由產品表單登入、UI 批准／拒絕、原鍵 response-loss、教師 reload、DB／audit 交叉核對）；直接 RPC／RLS／競態拒絕在 22 項整合驗證。只本輪既有教師子集，  非完整 T016 或全學生／全角色故事驗收；不勾選。〕**
+**〔§92：`tests/auth-e2e/real-auth-teacher-signup.spec.ts` 1 項完整流程（產品申請→真實驗證信→未驗證阻擋→待審→§91 UI 批准／拒絕→重載／重新登入→DB／audit 交叉核對）；非完整故事驗收；不勾選。〕**
 
 ## Phase 4：US13 學校核准與學生 AI 閘門（P1；5 項）
 
@@ -227,11 +243,14 @@ PP-20～27 的候選目前是**政策維度、證據來源與 fail-closed 方案
 **目標／獨立測試**：兩專案各階段保存再登入一致；七頁籤共用脈絡，草案／確認／人工批准分離，只有 A／B 選項。
 
 - [ ] T050 [P] [US4] 在 `tests/contract/project-stages.test.ts` 撰寫 PROJ P-1～4、row_version 衝突、AI 不可批准、兩專案與 A／B 選項測試。【來源 R04；依 T015】
+  **〔§94：T052 目標選擇 strict 投影與元件契約、真 Auth／DB 三項與真 Next HTTPS 建立→缺項→A/B保存確認→讀回→修改失效已驗；九目標的先前順序與唯讀版本、舊 receipt 不復活、實際 Auth／DB 故障、跨帳號／撤權與鍵盤／離開防護包含。僅此子集，T015 原依賴及完整 US4 未結案，不勾選。〕**
+  **〔§93：正式需求／分類 strict DTO、雙版本映射、receipt／current、dirty／unknown／visitor／偏好確認，以及真 Auth＋隔離 DB／HTTP 11 個測試、真 Next HTTPS A／B 產品流程已驗；同鍵並行、保存／確認競態、回應遺失後需求修改與原鍵重試、不支援需求、歷史不可變、rollback、失權與跨帳號均包含。此為正式需求／分類子集，不是完整 US4／批准／全政策矩陣；原依賴 T015 不變，不勾選。〕**
   **〔§82：僅增加 P-1／P-2 產品接線驗收與既有 P-3 首建／更新／409／412／重放回歸；不是完整 US4 驗收。剩餘：P-2 PATCH／P-4、階段人工確認／批准與 AI 不可批准的產品路徑、完整兩專案／七頁籤情境；T015 原依賴保留，不勾選。〕**
   **〔§83：新增伺服器 DB 時間輔助端點與 receipt 期限前／後整合案例；保證範圍與限制見 readiness §83。僅此子項；T050 原依賴 T015 保留，不勾選。〕**
   **〔§84：增加 P-1R／replay-only 的 response-loss、receipt 過期／缺失／不完整、異意圖／跨帳號／失權、原 create 未提交與鎖等待、同鍵並行 recovery 案例；真實產品 HTTP／Auth browser 同步驗證失權重驗及過期不建。T050 的完整 US4／P-1～P-4、兩專案／七頁籤及其他原測試仍未完成；T015 原依賴保留，不勾選。〕**
   **〔§85：新增 strict P-4 `{ done }`／task DTO／`If-Match` 契約測試及真 Auth／DB Route Handler 測試，覆蓋非本人／跨專案／teacher／admin、非法輸入、失權重驗、CAS 並行勝者與 409；真實 Next HTTPS browser 驗證保存、reload、409 保留意圖、DB 權限失敗／response-loss 不假成功及失權隱藏。只完成本批手動 done 保存子集；完整 US4／P-1～P-4、T015 原依賴及其他原測試仍未完成，不勾選。〕**
 - [ ] T051 [US4] 在 `supabase/migrations/0009_projects_stages.sql`、`apps/web/src/server/projects.ts` 建立 project／stage_records／tasks 與獨立授權、階段修訂／確認／人工批准及真正任務保存，DB 拒絕 C。【來源 R04；依 T050、T039】
+  **〔§93：正式需求與 A／B 分類 HTTP／學生產品畫面已接通既有 0011 交易、current reader 與可信 resolver 界線；無新 migration／歷史 SQL 改寫。reload、revision／row_version、修改後清空 current、原確認 replay 不復活、共用離開防護及失權隱藏已驗。此子集完成，整項不勾選；精確剩餘為教師／管理員人工批准規則及其持久授權／產品路徑、T039 Skills 來源／授權／版本與 Q-TL，以及 T050 完整驗收依賴。既有學生階段確認、手動任務匯入／done 與本輪需求／分類保存不再列為未實作；Q-DATA 的持久草稿政策未補造，Gate／Q-AUTH 不是唯一剩餘。〕**
   **〔§82：沿用原子建立、分類／需求／草稿核心及既有 migrations；只新增使用既有完整投影／parser 的本人三態列表讀取並接產品路由／頁面，無 DB／grant 變更。既有需求／分類確認核心、P-1 建立與 P-3 未確認草稿持久化不再列為未實作。剩餘：階段內容的人工確認／批准、專案任務 P-4 真正保存與相應產品整合；T050／T039 原依賴未滿足，不勾選。〕**
   **〔§83：P-1 既有 receipt 至少 24 小時、到期後同鍵視為新建立之語意不變，本批以隔離 DB 重現並以測試固定；僅修產品恢復流程。剩餘同上，T050／T039 原依賴未滿足，不勾選。〕**
   **〔§84：增加 `0022_project_create_replay_only.sql` 與 DB replayer 權限／HTTP `POST /api/v1/projects/recovery`，只回原有效完整 receipt；missing／expired／incomplete 不建立、鎖等待同鍵序列化，保留 P-1 到期後同鍵可新建。隔離 PostgreSQL 新庫／升級／最小權限、COMMIT response-loss、鎖等待期間到期／原 create 未提交、同鍵並行與真 Auth HTTP 已驗。只完成 P-1／P-1R recovery 子集；階段確認／批准、P-4 真正任務保存等原範圍仍未完成，T050／T039 依賴不變，不勾選。〕**
@@ -239,6 +258,7 @@ PP-20～27 的候選目前是**政策維度、證據來源與 fail-closed 方案
   **〔§86：依 §86 授權新增 `0024_project_task_manual_import.sql`、`POST /api/v1/projects/{id}/tasks`（P-4I）與專案詳情「手動建立任務清單」UI：本人學生手動輸入→預覽→明確確認→服務端授權／冪等首次匯入，同交易寫任務與確認紀錄；之後以既有 P-4 勾選／reload。僅為手動首次匯入子集（非 Skills／AI 生成；無取代／刪除／重排）；T050 P-4I 契約測試與 T051 任務來源子項部分完成，階段保存確認／批准及完整原範圍未完成；原依賴與勾選不變，不勾選。〕**
   **〔§87：新增 `0025_stage_draft_confirmation.sql`、`/stages/{stage}/confirmation` 路由、確認面板與真 Auth／DB／browser 測試，僅涵蓋本人學生對已保存確切草稿版本的明確確認及修改後失效；不含教師／管理員人工批准（規則未定，保持關閉）。T050 原依賴 T015、T051 原依賴保留，不勾選。〕**
 - [ ] T052 [US4] 在 `packages/core/policy/creation-flow.ts` 定義點子到 Final Pack 全步驟及級別需求判斷，旅程摘要不能跳 Constitution／Checkpoint／同步／任務／審查。【來源 R04；依 T051】
+  **〔§94：既有總覽直接接現行 server 評估器，學生可選九階段目標、查看當下分類／私人支援範圍／先前階段順序／草稿觀察與未決事項，前往 A/B 或階段補齊後重新讀取；無固定示範結論、無 SQL／授權修改、無新端點／writer／migration。T051 人工批准仍缺可審範圍、確切證據／失效及推進關係，最多三項待裁決見 readiness §94.2；不補造批准。不改 T052→T051→T050／T039 原依賴與整項未勾選，§93／§93.4 已完成子集保留。〕**
 - [ ] T053 [US4] 在 `apps/web/src/app/(student)/projects/[id]/layout.tsx`、`apps/web/src/components/project/seven-tabs.tsx` 串接藍圖／設計／計畫／建立／測試／版本／發布共同脈絡與目前階段，不混學生作品配色與品牌。【來源 R04；依 T052】
 - [ ] T054 [US4] 在 `apps/web/src/components/project/save-controller.tsx` 實作切專案／頁籤前保存、保留草稿或放棄選擇、409 衝突與重試，不讓 toast 冒充保存。【來源 R04；依 T053；前置 Q-DATA】
 - [ ] T055 [US4] 在 `tests/e2e/project-stages.spec.ts` 執行兩專案／登出登入／七頁籤／失敗與人工批准測試；未串接的 IDE／測試／發布頁必須明示未就緒，待後續故事整合。【來源 R04；依 T054】
@@ -281,9 +301,13 @@ PP-20～27 的候選目前是**政策維度、證據來源與 fail-closed 方案
 - [ ] T074 [US8] 在 `apps/web/src/components/teacher-visibility-notice.tsx` 串接綁定變更提示與 S-12 Realtime／請求重驗，不需刷新且不將提示當授權來源。【來源 R08；依 T073、T024】
 - [ ] T075 [US8] 在 `tests/e2e/teacher-feedback.spec.ts` 執行回饋保存重讀／直接跨學生拒絕／解除立即失效／學生告知及查看稽核。【來源 R08；依 T074】
 
+**2026-11-04 §98 有界子集（T071–T075 均維持未勾選及原依賴）**：本輪只交付有效綁定學生名冊、教師專用專案唯讀 API／頁面、逐階段草稿與任務讀取、同交易 `teacher_view` 稽核、學生 `teacher_notice` 範圍同步，以及真 Auth／DB／Next HTTPS 產品流程。停用快照／frozen、完整對話／檔案／活動、教師回饋、Realtime 與 T-5 管理稽核仍未完成；不宣稱 T071–T075 整項結案。範圍、殘項與證據見 [readiness §98](./readiness-review.md#98-2026-11-04-t071t075-教師唯讀資源有界子集)。
+
 ## Phase 13：US9 管理中心與稽核（P2；4 項）
 
 **目標／獨立測試**：管理操作保存重讀且逐筆稽核；非管理員直接嘗試拒絕並有安全事件，不以任意角色切換模擬正式權限。
+
+**2026-11-04 §96 有界子項（不勾選整項）**：T077 僅既有合格師生綁定的建立／解除／新 ID 重綁；T076 僅必要 strict 契約與授權／receipt，T078 僅 `/admin`→`/admin/bindings` 候選分頁、核對確認及原鍵恢復，T079 僅真 Auth／DB／Next HTTPS 管理員→教師→學生驗收。T008／T011／T014／T015 只涵蓋必要授權、接線與回歸；學生最小 teacher_notice 依 T-1 的下次可信請求投影，不開啟 T073／T074 完整教師資源或 Realtime。不是完整角色管理、管理中心或全驗收；原依賴、Gate、Q-AUTH 及正式啟用不變，詳見 [readiness §96](./readiness-review.md#96-2026-11-04-t077-既有合格師生綁定有界子集)。
 
 - [ ] T076 [P] [US9] 在 `tests/contract/admin-operations.test.ts` 撰寫管理批准／角色／綁定／安全列表與非管理員拒絕、稽核不可改測試。【來源 R09；依 T015】
 - [ ] T077 [US9] 在 `apps/web/src/server/admin/accounts-bindings.ts` 實作具名批准／角色／綁定操作與每次即時授權、舊新值／操作者／時間稽核，停用中不給新綁定權限。【來源 R09；依 T076、T018、T022、T072】
@@ -454,3 +478,4 @@ G0（既有治理／另行階段授權，不在本次執行）
 3. Readiness 是實作前的完整 MVP **單一**治理結論；產品驗證是在另授權實作／環境後依計畫執行。缺 Gate 前實測條件時先回報未就緒，另取限縮研究批准，不造成「先實作才取得實作批准」的循環。
 4. 全部任務有可定位輸出與直接來源／依賴；結案須執行對應測試、保存證據與同步文件，**產出測試檔或品質 checklist 全勾均不算產品通過**。未知政策保持待核定，測試 not_run／needs_human 如實保留。
 5. 本次只有 Tasks 起草與 Analyze 授權；不執行上述任何任務、不安裝依賴、不建立付費資源、不讀密鑰、不 commit／push。
+**2026-11-04 本輪 D-34／§95 有界子集**：T052 專案頁最後 reader denied／not_found 隱藏先前需求、草稿、總覽；T051 Specification 保存版本送審、有效綁定教師批准／退回、學生讀回、持久世代／版本失效不復活已接通。T071／T072 僅審查理由與詳情查看稽核子集，T008／T011／T014／T015 僅本輪授權、HTTP／UI 與驗收；不是帳號申請批准或完整教師資源／綁定服務。其餘八階段不新增批准規則，不自動推進 stage，不要求學生先完成其他階段或另作學生階段確認。本輪驗證及剩餘見 [readiness §95](./readiness-review.md#95-2026-11-04-t052-失權修正與-specification-教師審查)。原 136 項勾選／依賴不變；T051 仍有 T039 Skills／任務來源及完整 T050 依賴，T052 其餘階段規則、T071／T072 完整資源矩陣與 Q-DATA、T015 全矩陣均未結案，不把已授權子集永久凍結。

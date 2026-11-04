@@ -5,6 +5,7 @@ import { OperationNotice } from "@/components/operation-state";
 export interface NavCapability {
   href: string;
   label: string;
+  prefetch?: boolean;
 }
 
 export function AppShell({
@@ -14,6 +15,7 @@ export function AppShell({
   capabilities = [],
   authenticated = false,
   preview = true,
+  logoutRedirect = "/",
 }: Readonly<{
   children: React.ReactNode;
   heading: string;
@@ -21,6 +23,7 @@ export function AppShell({
   capabilities?: readonly NavCapability[];
   authenticated?: boolean;
   preview?: boolean;
+  logoutRedirect?: "/" | "/login";
 }>) {
   return (
     <div className="page-shell">
@@ -36,7 +39,7 @@ export function AppShell({
             <span className="muted">尚無可信身分，功能導覽未開放。</span>
           ) : (
             capabilities.map((item) => (
-              <Link className="nav-link" href={item.href} key={item.href}>
+              <Link className="nav-link" href={item.href} key={item.href} prefetch={item.prefetch}>
                 {item.label}
               </Link>
             ))
@@ -45,7 +48,7 @@ export function AppShell({
         <p className="eyebrow">Chat. Create. Launch.</p>
         <h1>{heading}</h1>
         <p className="muted">{subtitle}</p>
-        <OperationNotice authenticated={authenticated} />
+        <OperationNotice authenticated={authenticated} logoutRedirect={logoutRedirect} />
         {children}
         {!authenticated && preview && (
           <p className="footer-note">

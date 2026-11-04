@@ -26,6 +26,8 @@
 
 ## 3. 師生綁定與教師查看
 
+**2026-11-04 D-34 有界實作**：Specification 的待審／詳情／決策沿 [專案契約的單階段審查](./projects-agent-sandbox.md#specification-單階段提交與教師審查d-3495)，必須同時有效帳號、學生學校、持久教師學校歸屬與師生綁定；不使用帳號批准 RPC，也不擴充 T-1／T-2 綁定管理入口。profiles／school／binding／membership 的審查專用世代保證資格恢復不復活舊批准，不代表完整帳號生命週期服務。新增 audit action 僅 specification_submitted／specification_approved／specification_returned，object_type=project、meta={}；詳情沿 teacher_view。理由與本文不進稽核。
+
 | # | 端點 | 授權 | 輸入 | 回應／行為 | 錯誤 | 冪等／稽核 |
 | --- | --- | --- | --- | --- | --- | --- |
 | T-1 | `POST /api/v1/admin/bindings` | 管理員 | `{ teacher_id, student_id }` | `201`；學生端提示同步更新（不需重新整理；以 Realtime 或下次請求回傳 `teacher_notice`） | `409`（已存在）；`409 student_not_approved`（學生停用／刪除中不可綁定，〔工程假設〕） | `Idempotency-Key`；稽核 |
@@ -33,6 +35,29 @@
 | T-3 | `GET /api/v1/teacher/students` | 教師 | — | **僅**回傳已綁定且允許的學生；**停用當時已綁定且帳號仍停用**者以 `{ id, display_label, frozen: true }` 出現（不含任何專案資料），其餘學生不出現 | — | — |
 | T-4 | `GET /api/v1/teacher/students/{id}/projects｜conversations｜files｜activity` | 教師＋`teacher_can_view_student` | 分頁參數 | 資料；每次開啟寫 `audit_events(action='teacher_view')`（PP-12 合併窗口；**不含內容**） | **無權限一律 `404`**（不洩漏學生是否存在）；停用凍結→`403 view_frozen`（僅對停用當時已綁定教師顯示凍結說明） | 稽核 |
 | T-5 | `GET /api/v1/admin/audit/teacher-views?student_id&teacher_id` | 管理員 | 篩選 | 教師、學生代號（內部 id 顯示為 display_label）、時間；**不含對話全文** | — | — |
+
+### T-1／T-2 有界產品實作補充（§96）
+
+- 正式路徑與 body 不變。T-1 首次建立回 `201`；T-2 首次解除回 `200`。兩者皆需 UUID `Idempotency-Key`，同管理員共用鍵空間；相同鍵及完整原意圖 replay 回 `200`＋`Idempotent-Replay: true`。不同 teacher／student、不同 binding ID、不同解除理由或不同操作種類回 `422 idempotency_key_reuse`。未知結果只能用原鍵／本文／對象重試，不自動換鍵。
+- 成功 DTO 為 `{ outcome: "created"|"ended"|"replayed", operation: "create"|"end", binding_id, state: "active"|"ended", operated_at }`。此為**原操作 receipt**（DB 時間），不是目前關係或目前審查資格；目前狀態須另作可信讀取。原建立鍵於解除後重放仍只回原 receipt，不重新建立；明確重綁使用新鍵及新 ID。
+- 每次請求均由可信 Auth `/auth/v1/user` 確認主體，再查 DB 當下管理員 role／approved／deletion_state。T-1 鎖定必要 profiles（UUID 排序）、學生學校、教師有效持久 membership、師生關係，再重驗。教師與學生必須分別為當下有效、已批准、未停用且未刪除的 teacher／student；學生學校須 approved 且 valid_until 未到期，教師須有該校 active membership，不接受自報 school 或角色。未核准資格不自動變更。
+- T-1 同對師生最多一個 active；不同鍵競爭只有一筆成功，另一筆 `409 binding_exists`。建立不合資格分別為 `409 teacher_not_eligible`、`student_not_approved`、`school_not_eligible`、`teacher_school_mismatch`、自綁 `invalid_binding_pair`；只有有效管理員可取得此原因，非管理員 `403`、不回候選／目標資料。
+- T-2 是指定 ID 的 active→ended，保存 ended_by_aid／ended_at／end_reason，不 DELETE、不把 ended 改回 active。不同新鍵解除已 ended 的指定 ID 回 `409 binding_ended`；不存在 `404`。此子集不引入關係版本欄位：鎖後 active 狀態是單向 CAS 前置，舊 ID 絕不指向重綁的新 ID。解除仍要求有效管理員，但不因目標後來停用、學校或 membership 失效而阻擋收權。
+- 原因驗證沿 `specificationReasonSchema`／`specification_reason_valid` 的固定 Unicode 空白與 C0／C1 控制字元拒絕、合法 scalar／原文保存。2000 Unicode 字元是**工程輸入防護上限，不是正式產品配額**。不改 0030／0031。理由只在業務資料／原意圖 receipt 保存；audit meta 不含理由。
+- 狹用途 writer、FORCE RLS、最小 grants、固定 search_path 與受限 EXECUTE；一般 actor 不能寫 binding／receipt／audit 或執行 internal helper。receipt、關係異動、去識別 audit 同交易，audit 失敗整筆回滾。新增 audit 僅 binding_created／binding_ended，object_type=binding、object_ref=關聯 ID、actor_aid／subject_aid、DB 時間；meta 僅 `{from_state,to_state,teacher_aid}`。非管理員 HTTP 拒絕沿共用白名單 diagnostic（request_id／route／status／duration／error_code），不記本文或身分輸入。
+- 最小候選與關係讀取用 `GET /api/v1/admin/bindings?kind=teachers|students|bindings&after?`；students 必須另提供 teacher_id、school_id。每頁固定最多 20 筆、next_cursor 為最後一筆 UUID，teachers 按 membership ID，其餘按 account／binding ID；穩定 keyset，不宣稱跨請求 snapshot。只回候選顯示標籤、必要 ID、角色／qualified、學校標籤與 ID，關係另回 teacher／student 最小標籤及 state；不回 email／handle／Auth／聯絡資訊。歷史關係清單保留 ended，供明確核對指定關聯；不是 T-3／T-4 完整名冊。
+- 管理入口 `/admin`→`/admin/bindings`，先選教師學校歸屬、同校學生、核對並明確確認；解除需理由、影響說明與可取消確認。SSR／hydration 前停用；未知操作以 sessionStorage 綁可信工作階段 scope、保存原意圖，reload 只提供原鍵重試。失權隱藏資料，晚到本文不得清除未決紀錄；storage 寫入失敗不送出。
+- 解除交易提交前教師可能仍可審；提交後新請求不能取得該關係的審查授權。鎖序與既有 Specification 決策一致，關係 epoch 自動遞增；舊批准永久失效，重綁新 ID 後須學生重新提交及教師重新明確審查。已送達內容不承諾收回，也不證明所有在途請求撤銷上界。
+- 學生最小 A-4 `teacher_notice` 只投影目前有效 binding／教師／學生學校／持久 membership。產品資料請求回應後重新可信讀取 A-4，畫面不需手動 reload；事件僅要求重讀、不作授權證據。無 Realtime、郵件、通知保存或已讀追蹤；提示不等於完整資源權限或審查批准。
+- **§97 數量與交易鎖補充**：A-4 完整投影所有當下有效教師標籤，不設 100 筆名額或靜默截斷；解除 RPC 在讀取指定 binding 前先取得該 ID 的交易 advisory lock，建立亦先鎖其新 ID，再依既有師生 pair 鎖序序列化，讓已取得新 ID 的重疊解除等待建立交易提交後再判斷。
+
+### T-3／T-4 教師唯讀資源有界產品子集（2026-11-04 §98）
+
+- 本輪只接通正常有效關係：教師／學生目前均為已批准、未停用且未刪除；binding active；教師對學生學校有 active 持久 membership；學生學校 approved 且 `valid_until` 未到期。每次讀取均由可信 Auth `/auth/v1/user` 確認主體，再於同一 DB 交易鎖定關係、重驗資格、讀取白名單資料並寫稽核；不改 `teacher_can_view_student` 的全平台語意。
+- `GET /api/v1/teacher/students`、`GET /api/v1/teacher/students/{id}/projects`、教師專用專案詳情、逐階段草稿及分頁任務讀取，僅回最小 strict DTO。學生／專案以 UUID 穩定排序及 `after` 游標分頁，每頁 1–50；不靜默截斷、不宣稱跨請求 snapshot。九階段摘要不推導完成；詳細草稿分階段讀取；學生確認不是教師批准。
+- 每次專案清單資源、專案詳情、階段草稿或任務開啟，在同一交易寫 `teacher_view`，`object_type='project'`、`object_ref=project_id`、actor／subject 為既有去識別代號、`meta={}`。不包含內容，也不實作 PP-12 合併窗口；稽核失敗整筆讀取回滾。教師敏感頁面連結停用 Next prefetch。
+- 任一不符資格、錯角色、非本人有效綁定、跨學生 project ID 或關係解除後的新請求皆以 404 隱匿；資格／依賴故障不回空清單冒充無資料。新 reader 僅公開必要 RPC 給 `authenticated`，reader role 為 NOLOGIN／NOBYPASSRLS，不授予一般跨學生 SELECT 或 DML。
+- 此為 T071–T075 的本輪有界子集，不改整項勾選、依賴或 Gate：停用當下綁定快照與 frozen／`view_frozen`、完整對話、附件／檔案下載、活動總表、教師回饋、T-5 管理稽核查詢、Realtime、其他階段批准，以及完整帳號生命週期仍未實作。學校 withdrawn／expired 等本輪未涵蓋狀態仍拒絕；不藉本輪改寫既有政策。細節及驗證記錄見 [readiness §98](../readiness-review.md#98-2026-11-04-t071t075-教師唯讀資源有界子集)。
 
 ## 4. 帳號生命週期（僅管理員）
 
