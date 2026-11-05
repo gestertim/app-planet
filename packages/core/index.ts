@@ -17,3 +17,8 @@ export * from "./usage/ledger.ts";
 export * from "./contracts/specification-review.ts";
 export * from "./contracts/admin-bindings.ts";
 export * from "./contracts/teacher-resources.ts";
+export * from "./contracts/teacher-view-audit.ts";
+export * from "./contracts/project-rename.ts";
+export * from "./contracts/agent-runs.ts";
+export * from "./contracts/admin-memberships.ts";
+export * from "./contracts/project-export.ts";

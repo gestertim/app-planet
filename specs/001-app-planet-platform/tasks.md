@@ -1,5 +1,7 @@
 # Tasks：AI APP 超級創客｜App Planet 現行 MVP
 
+**2026-11-05 本輪有界下載子項（§104）**：T025 原文含「四狀態／撤回恢復／下載自有成果及直接／背景拒絕」，本輪只交付其中**本人已保存專案資料下載**驗收子項；原依 T024／前置 Q-SCHOOL 保留，不稱完整 T025、不新增任務 ID。T011 僅本人下載 GET 的 COMMON problem／快取／敏感標頭與可信 Auth＋DB 即時 gate；T014 僅既有工作區下載按鈕、未保存／未知操作提示及可重試失敗；T015 僅本輪 strict DTO、最小權限、等鎖失權、snapshot／資料不變、Auth／DB／HTTPS 實際下載及增量升級回歸。0039 窄 reader 是上述必要授權接線，不代表 T008 整項完成。全部原任務正文／依賴／未勾選及 Gate、Q-AUTH／Q-DATA／Q-SCHOOL、正式啟用不變；保留 §98、T-5、P-2、0037／0038 等既有成果。契約見 [本人下載](./contracts/projects-agent-sandbox.md#本人已保存專案-json-下載2026-11-05t025-驗收子項)，實測結果、失敗與限制見 [readiness §104](./readiness-review.md#104-2026-11-05-t025-本人已保存專案資料下載有界實作)。
+
 **2026-11-04 本輪 T051 產品接線（§93）**：既有 A/B 階段加入獨立正式需求保存與明確分類面板；具名 GET／PUT 需求、POST 分類接既有持久交易，雙版本／可信 Auth＋當下 DB owner／gate、receipt／current 分離、修改即失效與原鍵重放不復活。建立偏好仍不是正式證據；visitor 初始無選擇、偏好不同須 explicit_change；共用原離開防護，不新增 history sentinel 或本地持久草稿政策。T006（strict 傳輸 DTO／安全錯誤）、T008（必要授權接線）、T011（HTTP）、T014（學生 UI）、T015（本輪驗收）均僅涉及子項，原依賴與勾選不變。真 Auth 不是學生產品登入／登入碼 E2E；Gate／Q-AUTH／正式啟用不變。實際失敗、修復、完整回歸及清理見 [readiness §93](./readiness-review.md#93-2026-11-04-t051-正式需求保存ab-分類確認產品接線)。
 
 **2026-11-02 最新進度入口（§89）**：七頁籤正式工作區、共用專案 layout、九階段草稿／確認與手動任務匯入／P-4 已接線；建立／測試／版本／發布如實標示未就緒。T054 沿用既有 controller 與同一 guard，真實驗收含保存中續編、階段 response-loss 原鍵 replay、跨分頁真實 409、兩個編輯資源同時待處理、Navigation API 返回／前進／多步與原生 `beforeunload` 限制。T055 以「產品 logout＋測試 setup 重新驗證後恢復」驗證舊 session、跨帳號隔離及草稿／確認／任務／匯入恢復；不是產品登入／登入碼 E2E。**T053／T054／T055 原勾選與依賴均不變**：T053 子集已接通但依賴 T052 尚未結案；T054 子集已接通，但 T053／Q-DATA 原前置未結案；T055 browser 子集已驗，仍依賴 T054。精確剩餘為 T052 旅程規則決議與 Q-DATA 核定／前置；未新增本地持久草稿政策、未啟用人工批准或未就緒能力。詳見 [readiness §89](./readiness-review.md)。
@@ -268,6 +270,7 @@ PP-20～27 的候選目前是**政策維度、證據來源與 fail-closed 方案
 **目標／獨立測試**：同一合成修改在 guided／auto 的確認不同；重要修改前快照，可停止；X 各階段與版本正確、失敗保舊版，A1 無效 cookie 一律拒絕。
 
 - [ ] T056 [P] [US5] 在 `tests/contract/agent-preview.test.ts` 撰寫 E-1～3／G-1～4、X 狀態機、A1 首次兌換、亂序／全階段故障與兩模式確認案例。【來源 R05；依 T015】
+  **〔§102：Run／Job 分離 DTO／branded ID、正式 state、guided／auto 不同批准 shape、unavailable 不冒充成功及 G-3 正式 200 保留契約已補；真 Auth＋隔離新庫 Run 核心 14 項、0036→0037 升級相同 14 項與既有取消路由回歸已驗。關聯／leased／done fixtures 明示為 control 合成，不是正式 Agent。G-1～G-4 HTTP 成功、完整 IDE／preview／X／A1 與兩模式正式執行未驗；整項未勾選、原依賴 T015 不變。〕**
   **〔§81 歸屬同步：G-3（`POST /api/v1/agent-runs/{id}/stop`）正式契約維持 **200**，不再列為待選 200／202；其契約測試與驗收案例（200／冪等／`cancel_requested`、已完成與 Run／Job 錯配案例）由本任務承接，可依既有 G-3 契約先行撰寫，不因尚無實作而降低契約要求（不得改以 202、安全關閉的 403 或其他放寬結果代替）；涉及真實 Run→Job 持久關聯的整合驗收，待 T064 提供實作後才執行。目前路由保持安全關閉，未實作；未勾選，依賴不變。〕**
 - [ ] T057 [US5] 在 `apps/web/src/components/ide/workspace.tsx`、`apps/web/src/server/project-files.ts` 實作 Monaco／檔案樹／If-Match 保存、路徑及大小檢查，區分草稿／保存／預覽版本並保護 IME。【來源 R05；依 T056、T055、T068；前置 Q-DATA】
 - [ ] T058 [US5] 在 `apps/worker/src/sandbox/adapter.ts`、`apps/worker/src/sandbox/vercel.ts` 實作核定沙箱 adapter、`ports: []`／受限出站／無平台密鑰、kill/delete 逾時取消與可觀察清理，不呼叫 startPreview。【來源 R05；依 T057、T005；前置 Q-X21、Q-HOST、S-05 另授權實測條件】
@@ -277,6 +280,7 @@ PP-20～27 的候選目前是**政策維度、證據來源與 fail-closed 方案
 - [ ] T062 [US5] 在 `apps/works-edge/src/preview/serve.ts`、`apps/web/src/server/preview/authorize.ts` 實作 HTML／子資源／Worker／重載／資料每請求驗 cookie 與 live 權限／產物綁定、統一拒絕及 CSP；不支援環境明示拒絕、不回退 hostname。【來源 R05、R14；依 T061；前置 Q-BROWSER】
 - [ ] T063 [US5] 在 `apps/web/src/server/preview/revoke.ts`、`apps/works-edge/src/preview/state-cache.ts` 接入解除綁定／停用／到期／審查結束等撤銷，證明含快取上界，平台不可達拒絕；不得以沙箱 TTL／destroy 代替授權失效。【來源 R05、R14；依 T062；前置 Q-A12223】
 - [ ] T064 [US5] 在 `apps/worker/src/agent/run.ts`、`apps/worker/src/agent/tools.ts` 實作 guided 逐步確認／auto 批准任務集、pre_agent 快照、受限工具／重要步驟重驗／停止與費用 unknown，拒絕作品 AI 繞道且不可自行批准或部署。【來源 R05、R17；依 T060、T035、T051、T068；前置 Q-BUDGET、Q-SAFE】
+  **〔§102：新增 0037 的持久 Run／多 Job 歸屬／建立 receipt、複合 FK／活動唯一性／轉移／FORCE RLS 與窄用途 server／DB awaiting 建立、重放、讀回及停止解析；沿用 T010 cancel／Worker／unknown。真 Auth／DB、鎖障壁失權、錯配／同值 UUID、rollback、新庫／升級已驗。start 明確 unavailable；無 T068 pre_agent／正式 Agent 批准計畫與執行資格，Job 建立／關聯執行交易未啟用、running／completed DB 禁止，關聯正向驗證僅 control fixture。停止核心完成、G-3 HTTP 尚未驗收；無 G-1／G-2／工具／provider／產品 Agent 完成宣稱。僅子集，整項未勾選，原依賴與 Q-BUDGET／Q-SAFE 不變。〕**
   **〔§81 歸屬同步：本任務一併承接 `app.agent_runs` migration（欄位依 data-model §agent_runs；具體檔名／編號實作時另定，須避開 0010／0011 等已占用編號）、G-1／G-2 建立 Run 的 Run→Job 持久關聯與交易，以及 G-3 停止的 Run 解析；沿用 T010 既有 Worker／取消／費用核心，不重寫。尚未實作、未新增任務 ID；G-3 目前維持安全關閉（Job ID 不得冒充 Run ID）；未勾選，依賴與前置不變。〕**
 - [ ] T065 [US5] 在 `apps/web/src/components/ide/preview-panel.tsx`、`apps/web/src/components/agent/run-panel.tsx` 串接保存→建置→iframe 重載、私人版次／排隊／失敗／保舊版／無舊版／重試／放大及 Agent 已完成未完成，無 HMR。【來源 R05；依 T063、T064】
 - [ ] T066 [US5] 在 `tests/e2e/agent-preview.spec.ts` 執行雙模式／停止／保存及取回驗證保存各故障／亂序／不支援 cookie／無效會話，正式 TLS／跨區／尖峰不可由本機結果代替，交 T127～T130。【來源 R05；依 T065、T070；前置 Q-BROWSER】
@@ -305,11 +309,14 @@ PP-20～27 的候選目前是**政策維度、證據來源與 fail-closed 方案
 
 ## Phase 13：US9 管理中心與稽核（P2；4 項）
 
+**2026-11-05 §99 T-5 有界子集**：已接通正式管理員教師查看紀錄 GET、窄用途 DB reader、strict 代號／時間 DTO、雙 UUID 篩選與穩定分頁，以及 `/admin` 的真 Auth／DB／HTTPS 查詢流程；解除後歷史仍可核對，教師新讀取仍拒絕。T071 僅 T-5 契約／拒絕測試，T072 僅既有查看稽核的唯讀核對；T073 本輪沒有新增教師內容或回饋 UI，管理員畫面實際歸 T078；T075／T079 僅本批查看稽核及解除歷史驗收，T076 僅相關管理讀取／最小權限測試。T008／T011／T014／T015 僅必要授權、接線與驗證；T077 綁定操作原樣沿用，T074 未擴充。缺失身分映射的顯示政策仍未決，安全關閉不漏列；詳 [readiness §99](./readiness-review.md#99-2026-11-05-t-5-管理員教師查看紀錄有界產品流程)。原 136 項正文、依賴、未勾選、Gate、Q-AUTH 及正式啟用狀態全部不變；不因本批已批准而擴張整項。
+
 **目標／獨立測試**：管理操作保存重讀且逐筆稽核；非管理員直接嘗試拒絕並有安全事件，不以任意角色切換模擬正式權限。
 
 **2026-11-04 §96 有界子項（不勾選整項）**：T077 僅既有合格師生綁定的建立／解除／新 ID 重綁；T076 僅必要 strict 契約與授權／receipt，T078 僅 `/admin`→`/admin/bindings` 候選分頁、核對確認及原鍵恢復，T079 僅真 Auth／DB／Next HTTPS 管理員→教師→學生驗收。T008／T011／T014／T015 只涵蓋必要授權、接線與回歸；學生最小 teacher_notice 依 T-1 的下次可信請求投影，不開啟 T073／T074 完整教師資源或 Realtime。不是完整角色管理、管理中心或全驗收；原依賴、Gate、Q-AUTH 及正式啟用不變，詳見 [readiness §96](./readiness-review.md#96-2026-11-04-t077-既有合格師生綁定有界子集)。
 
 - [ ] T076 [P] [US9] 在 `tests/contract/admin-operations.test.ts` 撰寫管理批准／角色／綁定／安全列表與非管理員拒絕、稽核不可改測試。【來源 R09；依 T015】
+  **〔2026-11-05 §103 有界子項：T076 strict 歸屬 DTO／分頁／授權／receipt／錯誤；T077 管理員建立／結束既有教師學校歸屬、多校／新 ID／不可變 epoch 歷史／去敏稽核同交易；T078 `/admin` 歸屬入口、雙方核對／取消／原鍵恢復；T079 真 Auth／隔離 DB／HTTPS 管理員表單登入→歸屬 UI→既有 binding UI→教師表單登入／查看／Specification→收權／重加不復活。T006／T008／T011／T014／T015 僅直接必要子項。原 T076～T079 正文／依賴／整項未勾選、136 項任務及 Gate／Q-AUTH／正式啟用不變；未開學校／帳號管理、學生登入碼／Realtime／AI／部署。精確首次失敗、修復及驗收見 [readiness §103](./readiness-review.md#103-2026-11-05-管理員教師學校歸屬建立結束有界產品流程)。〕**
 - [ ] T077 [US9] 在 `apps/web/src/server/admin/accounts-bindings.ts` 實作具名批准／角色／綁定操作與每次即時授權、舊新值／操作者／時間稽核，停用中不給新綁定權限。【來源 R09；依 T076、T018、T022、T072】
 - [ ] T078 [US9] 在 `apps/web/src/app/(admin)/admin/page.tsx`、`apps/web/src/app/(admin)/admin/audit/page.tsx` 整合申請／角色／綁定／帳號／安全事件／用量／個資請求入口與稽核篩選，僅依真實權限顯示。【來源 R09；依 T077、T036】
 - [ ] T079 [US9] 在 `tests/e2e/admin-audit.spec.ts` 執行管理變更保存重讀／拒絕稽核，額度與生命週期後續分別由 T113／T106 完整重驗。【來源 R09；依 T078】

@@ -148,6 +148,98 @@ async function snapshot(project: string) {
       FROM app.tasks t WHERE project_id=$1) tasks`, [project])).rows[0];
 }
 
+const resourceReaders = [
+  { name: "projects", sql: "SELECT app.read_teacher_student_projects($1::uuid,nullif($2,'')::uuid,$3::integer) AS result" },
+  { name: "project", sql: "SELECT app.read_teacher_project($1::uuid,$2::uuid) AS result" },
+  { name: "stageDraft", sql: "SELECT app.read_teacher_stage_draft($1::uuid,$2::uuid,$3::text) AS result" },
+  { name: "tasks", sql: "SELECT app.read_teacher_project_tasks($1::uuid,$2::uuid,nullif($3,'')::uuid,$4::integer) AS result" },
+] as const;
+type ResourceReader = typeof resourceReaders[number]["name"];
+
+function readResource(name: ResourceReader, teacher: Actor, student: Actor, project: string) {
+  const base = `/api/v1/teacher/students/${student.id}/projects`;
+  const params = { studentId: student.id, projectId: project };
+  if (name === "projects") return productTeacherResourceHandlers.projects(
+    request(teacher, "GET", base), params,
+  );
+  if (name === "project") return productTeacherResourceHandlers.project(
+    request(teacher, "GET", `${base}/${project}`), params,
+  );
+  if (name === "stageDraft") return productTeacherResourceHandlers.stageDraft(
+    request(teacher, "GET", `${base}/${project}/stages/Specification`), { ...params, stage: "Specification" },
+  );
+  return productTeacherResourceHandlers.tasks(request(teacher, "GET", `${base}/${project}/tasks`), params);
+}
+
+async function resourceFixture(title: string) {
+  const [admin, teacher, student] = await Promise.all([actor("admin"), actor("teacher"), actor()]);
+  await control.query("UPDATE app.profiles SET school_id=$2 WHERE id=$1", [teacher.id, student.schoolId]);
+  await control.query(`INSERT INTO app.teacher_school_memberships
+    (id,teacher_id,school_id,state,created_by_aid,created_at)
+    VALUES($1,$2,$3,'active',$4,clock_timestamp())`,
+  [randomUUID(), teacher.id, student.schoolId, randomUUID()]);
+  const project = await createContent(student, title);
+  const binding = await linkTeacherStudent(admin, teacher, student);
+  return { admin, teacher, student, project, binding };
+}
+
+async function bindingSnapshot(binding: string) {
+  return (await control.query("SELECT * FROM app.teacher_student_bindings WHERE id=$1", [binding])).rows[0];
+}
+
+async function viewAudit(teacher: Actor, student: Actor, project: string) {
+  return (await control.query(`SELECT e.* FROM app.audit_events e
+    JOIN app.audit_identity_map actor ON actor.aid=e.actor_aid
+    JOIN app.audit_identity_map subject ON subject.aid=e.subject_aid
+    WHERE actor.account_id=$1 AND subject.account_id=$2 AND e.object_ref=$3
+      AND e.action='teacher_view' AND e.object_type='project' AND e.result='ok'
+    ORDER BY e.at,e.id`, [teacher.id, student.id, project])).rows;
+}
+
+async function expectResourceDenied(response: Response, student: Actor, project: string, title: string) {
+  expect(response.status).toBe(404);
+  const text = await response.text();
+  expect(JSON.parse(text)).toMatchObject({ status: 404, code: "not_found" });
+  const body: unknown = JSON.parse(text);
+  expect(isRecord(body)).toBe(true);
+  if (!isRecord(body)) throw new Error("拒絕回應不是 problem object。");
+  expect(Object.keys(body).sort()).toEqual(
+    ["type", "title", "status", "code", "instance", "request_id", "user_message_zh"].sort(),
+  );
+  // Problem instance 回顯原請求路徑；不是從受保護資料讀出的識別字或本文。
+  expect(body.instance).toMatch(new RegExp(
+    `^/api/v1/teacher/students(?:/${student.id}/projects(?:/${project}(?:/stages/Specification|/tasks)?)?)?$`,
+  ));
+  const { instance: _instance, ...problem } = body;
+  const content = JSON.stringify(problem);
+  for (const protectedValue of [student.id, project, title, "正式保存的合成需求",
+    "已保存的 Specification 草稿", "已保存任務"]) {
+    expect(content).not.toContain(protectedValue);
+  }
+  for (const field of ["items", "project", "requirements", "content", "stages", "tasks", "display_label"]) {
+    expect(body).not.toHaveProperty(field);
+  }
+}
+
+async function waitForBlockedReader(sql: string, blocker: number, since: Date) {
+  for (let attempt = 0; attempt < 150; attempt++) {
+    const readers = await control.query<{ pid: number; blockers: number[] }>(`SELECT pid,
+      pg_blocking_pids(pid) AS blockers FROM pg_stat_activity
+      WHERE application_name='app-planet-web' AND state='active' AND query=$1
+        AND query_start >= $2 AND wait_event_type='Lock'`, [sql, since]);
+    if (readers.rowCount) {
+      expect(readers.rows).toHaveLength(1);
+      const reader = readers.rows[0]!;
+      expect(reader.pid).not.toBe(blocker);
+      expect(reader.blockers).toContain(blocker);
+      console.log(`E01LockBarrier reader=${reader.pid} blocker=${blocker} sql=${sql} verified`);
+      return reader.pid;
+    }
+    await delay(20);
+  }
+  throw new Error("指定產品 reader 未被本輪解除 RPC 交易阻擋。");
+}
+
 async function removeTestData() {
   await closeServerDatabasePool();
   await control.query(`ALTER TABLE app.audit_events DROP CONSTRAINT IF EXISTS ${testConstraint}`);
@@ -211,6 +303,102 @@ afterAll(async () => {
 });
 
 describe("T071／T072 真 Auth／DB／教師唯讀資源", () => {
+  it.each(resourceReaders)("E-01 解除先持鎖：$name 等待正式 RPC 提交後拒絕且無成功稽核", async ({ name, sql }) => {
+    const title = `E-01 ${name} 受保護合成專案`;
+    const { admin, teacher, student, project, binding } = await resourceFixture(title);
+    const allowed = await readResource(name, teacher, student, project);
+    expect(allowed.status).toBe(200);
+    expect(await allowed.text()).toContain(name === "stageDraft" ? "已保存的 Specification 草稿"
+      : name === "tasks" ? "已保存任務" : title);
+    const contentBefore = await snapshot(project);
+    const auditBefore = await viewAudit(teacher, student, project);
+    expect(auditBefore).toHaveLength(1);
+    const endKey = randomUUID();
+    const endReason = `E-01 ${name} 正式解除`;
+    const ending = await control.connect();
+    let pending: Promise<Response> | undefined;
+    try {
+      await ending.query("BEGIN ISOLATION LEVEL READ COMMITTED");
+      await ending.query("SET LOCAL ROLE authenticated");
+      await ending.query(
+        "SELECT set_config('request.jwt.claim.sub',$1,true),set_config('request.jwt.claims',$2,true)",
+        [admin.id, JSON.stringify({ sub: admin.id })],
+      );
+      const blocker = (await ending.query<{ pid: number }>("SELECT pg_backend_pid() AS pid")).rows[0]!.pid;
+      const ended = await ending.query(`SELECT app.end_teacher_student_binding($1::uuid,$2::text,$3::uuid) AS result`,
+        [binding, endReason, endKey]);
+      expect(ended.rows[0].result).toMatchObject({ outcome: "ended", binding_id: binding, state: "ended" });
+      await ending.query("RESET ROLE");
+      expect((await ending.query("SELECT state FROM app.teacher_student_bindings WHERE id=$1", [binding]))
+        .rows[0].state).toBe("ended");
+      expect((await bindingSnapshot(binding)).state).toBe("active");
+      const since = (await control.query<{ at: Date }>("SELECT clock_timestamp() AS at")).rows[0]!.at;
+      pending = readResource(name, teacher, student, project);
+      const readerPid = await waitForBlockedReader(sql, blocker, since);
+      expect(await viewAudit(teacher, student, project)).toEqual(auditBefore);
+      await ending.query("COMMIT");
+      await expectResourceDenied(await pending, student, project, title);
+      const committed = await bindingSnapshot(binding);
+      expect(committed).toMatchObject({ state: "ended", end_reason: endReason });
+      expect(committed.ended_at).not.toBeNull();
+      expect(committed.ended_by_aid).not.toBeNull();
+      expect((await control.query(`SELECT result FROM app.binding_operation_receipts
+        WHERE actor_id=$1 AND operation_key=$2`, [admin.id, endKey])).rows[0].result)
+        .toMatchObject({ outcome: "ended", binding_id: binding });
+      expect(await viewAudit(teacher, student, project)).toEqual(auditBefore);
+      expect(await snapshot(project)).toEqual(contentBefore);
+      expect((await control.query("SELECT pg_blocking_pids($1) AS blockers", [readerPid])).rows[0].blockers)
+        .not.toContain(blocker);
+      console.log(`E01Result reader=${name} committed=ended response=404/not_found audit=unchanged content=unchanged`);
+    } finally {
+      try {
+        await ending.query("ROLLBACK");
+      } finally {
+        ending.release();
+        if (pending) await pending;
+      }
+    }
+  }, 90_000);
+
+  it("E-02 教師 marked：原合格名冊及所有既存資源拒絕，不增稽核或修改學生內容／綁定", async () => {
+    const title = "E-02 教師刪除中受保護合成專案";
+    const { teacher, student, project, binding } = await resourceFixture(title);
+    const students = await productTeacherResourceHandlers.students(
+      request(teacher, "GET", "/api/v1/teacher/students"),
+    );
+    expect(students.status).toBe(200);
+    expect((await students.json()).items).toContainEqual(expect.objectContaining({ id: student.id }));
+    for (const { name } of resourceReaders) {
+      const allowed = await readResource(name, teacher, student, project);
+      expect(allowed.status).toBe(200);
+      expect(await allowed.text()).toContain(name === "stageDraft" ? "已保存的 Specification 草稿"
+        : name === "tasks" ? "已保存任務" : title);
+    }
+    const contentBefore = await snapshot(project);
+    const bindingBefore = await bindingSnapshot(binding);
+    const auditBefore = await viewAudit(teacher, student, project);
+    expect(auditBefore).toHaveLength(resourceReaders.length);
+    await control.query("UPDATE app.profiles SET deletion_state='marked' WHERE id=$1", [teacher.id]);
+    const marked = (await control.query("SELECT deletion_state FROM app.profiles WHERE id=$1", [teacher.id])).rows[0];
+    expect(marked.deletion_state).toBe("marked");
+    await expectResourceDenied(await productTeacherResourceHandlers.students(
+      request(teacher, "GET", "/api/v1/teacher/students"),
+    ), student, project, title);
+    expect(await viewAudit(teacher, student, project)).toEqual(auditBefore);
+    expect(await snapshot(project)).toEqual(contentBefore);
+    expect(await bindingSnapshot(binding)).toEqual(bindingBefore);
+    console.log("E02Result reader=students teacher=marked response=404/not_found audit=unchanged content=unchanged binding=unchanged");
+    for (const { name } of resourceReaders) {
+      await expectResourceDenied(await readResource(name, teacher, student, project), student, project, title);
+      expect(await viewAudit(teacher, student, project)).toEqual(auditBefore);
+      expect(await snapshot(project)).toEqual(contentBefore);
+      expect(await bindingSnapshot(binding)).toEqual(bindingBefore);
+      console.log(`E02Result reader=${name} teacher=marked response=404/not_found audit=unchanged content=unchanged binding=unchanged`);
+    }
+    expect((await control.query("SELECT deletion_state FROM app.profiles WHERE id=$1", [teacher.id])).rows[0])
+      .toEqual(marked);
+  }, 90_000);
+
   it("只讀有效綁定學生及其專案，逐項稽核；解除、資格失效與 audit failure 安全拒絕", async () => {
     const [admin, teacher, student, unboundTeacher, studentB, studentC] = await Promise.all([
       actor("admin"), actor("teacher"), actor(), actor("teacher"), actor(), actor(),
@@ -412,11 +600,13 @@ describe("T071／T072 真 Auth／DB／教師唯讀資源", () => {
     expect(await failedAudit.text()).not.toContain("教師唯讀真實專案");
     await control.query(`ALTER TABLE app.audit_events DROP CONSTRAINT ${testConstraint}`);
 
-    await control.query("UPDATE app.teacher_school_memberships SET state='ended' WHERE id=$1", [membership]);
+    await control.query("UPDATE app.teacher_school_memberships SET state='ended',ended_at=clock_timestamp(),ended_by_aid=gen_random_uuid() WHERE id=$1", [membership]);
     await expectProblem(await productTeacherResourceHandlers.project(
       request(teacher, "GET", `${base}/${project}`), { studentId: student.id, projectId: project },
     ), 404, "not_found");
-    await control.query("UPDATE app.teacher_school_memberships SET state='active' WHERE id=$1", [membership]);
+    await control.query(`INSERT INTO app.teacher_school_memberships(id,teacher_id,school_id,state,created_by_aid,created_at)
+      SELECT gen_random_uuid(),teacher_id,school_id,'active',created_by_aid,clock_timestamp()
+      FROM app.teacher_school_memberships WHERE id=$1`, [membership]);
     await control.query("UPDATE app.profiles SET status='disabled' WHERE id=$1", [teacher.id]);
     await expectProblem(await productTeacherResourceHandlers.project(
       request(teacher, "GET", `${base}/${project}`), { studentId: student.id, projectId: project },

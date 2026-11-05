@@ -301,11 +301,19 @@ describe("Specification 真 Auth／HTTP／交易／持久失效", () => {
       : kind === "school" ? { table: "schools", column: "approval_state", bad: "withdrawn", good: "approved", id: actors.student.schoolId }
       : { table: kind === "binding" ? "teacher_student_bindings" : "teacher_school_memberships", column: "state",
         bad: "ended", good: "active", id: actors[kind] };
-    await control.query(`UPDATE app.${sql.table} SET ${sql.column}=$1 WHERE id=$2`, [sql.bad, sql.id]);
+    if (kind === "membership") {
+      await control.query("UPDATE app.teacher_school_memberships SET state='ended',ended_at=clock_timestamp(),ended_by_aid=gen_random_uuid() WHERE id=$1", [sql.id]);
+    } else await control.query(`UPDATE app.${sql.table} SET ${sql.column}=$1 WHERE id=$2`, [sql.bad, sql.id]);
     const denied = await review.detail(request(teacher, "GET", `/api/v1/teacher/specification-submissions/${submission}`), params(submission));
     expect([401, 403, 404]).toContain(denied.status);
     if (kind !== "student") expect((await status(id)).latest?.state).toBe("invalidated");
-    await control.query(`UPDATE app.${sql.table} SET ${sql.column}=$1 WHERE id=$2`, [sql.good, sql.id]);
+    if (kind === "membership") {
+      const nextMembership = randomUUID();
+      await control.query(`INSERT INTO app.teacher_school_memberships(id,teacher_id,school_id,state,created_by_aid,created_at)
+        SELECT $2,teacher_id,school_id,'active',created_by_aid,clock_timestamp()
+        FROM app.teacher_school_memberships WHERE id=$1`, [sql.id, nextMembership]);
+      actors.membership = nextMembership;
+    } else await control.query(`UPDATE app.${sql.table} SET ${sql.column}=$1 WHERE id=$2`, [sql.good, sql.id]);
     expect((await status(id)).latest?.state).toBe("invalidated");
     expect((await decide(submission)).status).toBe(409);
   });
@@ -445,9 +453,11 @@ describe("Specification 真 Auth／HTTP／交易／持久失效", () => {
           column: "state", bad: "ended", good: "active", id: actors[kind] };
       const locker = await control.connect();
       await locker.query("BEGIN");
-      await locker.query(`UPDATE app.${mutation.table} SET ${mutation.column}=$1 WHERE id=$2`, [mutation.bad, mutation.id]);
       let operation: Promise<Response> | undefined;
       try {
+        if (kind === "membership") {
+          await locker.query("UPDATE app.teacher_school_memberships SET state='ended',ended_at=clock_timestamp(),ended_by_aid=gen_random_uuid() WHERE id=$1", [mutation.id]);
+        } else await locker.query(`UPDATE app.${mutation.table} SET ${mutation.column}=$1 WHERE id=$2`, [mutation.bad, mutation.id]);
         operation = decide(submission);
         await waitForBlockedCall("decide_specification");
         await locker.query("COMMIT");
@@ -458,7 +468,13 @@ describe("Specification 真 Auth／HTTP／交易／持久失效", () => {
         await locker.query("ROLLBACK");
         locker.release();
         await operation;
-        await control.query(`UPDATE app.${mutation.table} SET ${mutation.column}=$1 WHERE id=$2`, [mutation.good, mutation.id]);
+        if (kind === "membership") {
+          const nextMembership = randomUUID();
+          await control.query(`INSERT INTO app.teacher_school_memberships(id,teacher_id,school_id,state,created_by_aid,created_at)
+            SELECT $2,teacher_id,school_id,'active',created_by_aid,clock_timestamp()
+            FROM app.teacher_school_memberships WHERE id=$1`, [mutation.id, nextMembership]);
+          actors.membership = nextMembership;
+        } else await control.query(`UPDATE app.${mutation.table} SET ${mutation.column}=$1 WHERE id=$2`, [mutation.good, mutation.id]);
       }
       if (kind === "student" || kind === "school") expect((await status(id)).latest?.state).toBe("invalidated");
     });

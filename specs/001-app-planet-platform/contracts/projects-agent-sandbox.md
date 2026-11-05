@@ -6,6 +6,48 @@
 
 ## 1. 專案、階段與快照
 
+### 本人已保存專案 JSON 下載（2026-11-05；T025 驗收子項）
+
+`GET /api/v1/projects/{id}/export` 是使用者主動下載，不是 snapshot、Final Pack、部署包、批准證明或可還原備份。學生工作區共用 layout 提供「下載已保存資料」按鈕；不支援匯入或恢復，不因 SSR／hydration／Next prefetch 發出下載。
+
+每次經可信 Auth `/auth/v1/user`，僅 DB 當下本人有效 student 且 `download_own_results` 成立可讀；teacher／admin 不得代下載，非本人／不存在（含有效 teacher／admin）404。未登入 401，學生待審／被拒／停用／刪除中、school unconfirmed 403；approved／withdrawn／expired 依現行能力可下載本人已保存內容，不因此放行 AI、公開或部署。0039 窄 `NOLOGIN`／`NOINHERIT`／`NOBYPASSRLS` reader 只取得必要欄位；authenticated 只可 EXECUTE，不擴充 owner RLS 或通用 SELECT／writer。
+
+reader 使用 READ COMMITTED READ WRITE 交易**僅取得鎖、不改資料**，以 profile→school→project `FOR SHARE` 保護資格及 owner；`UPDATE(id)` 列鎖必要權限配 `WITH CHECK(false)`，不能修改任何列。等鎖後重驗 `download_own_results`；VOLATILE 函式內一個新 statement snapshot 同時投影全部資源與確認有效性。這不是跨 reader 拼裝，`read_at` 是鎖後該 statement 中 DB `clock_timestamp()` 的 UTC 時間，不宣稱 HTTP 抵達時或裝置保存時仍有資格；不承諾收回已傳至裝置的資料。
+
+成功 200 `application/json; charset=utf-8`、固定 `Content-Disposition: attachment; filename="app-planet-saved-project.json"`（不含 title）、實際 UTF-8 bytes 的 Content-Length、`Cache-Control: no-store`、`X-Content-Type-Options: nosniff`、`Referrer-Policy: no-referrer` 與共用 request ID。失敗沿 COMMON `application/problem+json`，無 attachment；Auth／DB／decoder 故障 503 `dependency_unavailable`，不交付部分資料或成功空內容。
+
+strict 格式由 `packages/core/contracts/project-export.ts` 定義，未知欄位一律拒絕：
+
+| 欄位 | 本輪投影 |
+| --- | --- |
+| `format_version` | 固定 `app-planet.saved-project.v1` |
+| `project` | 目前 `{id,title,stage,row_version}` |
+| `requirements` | 目前正式保存 `{revision,content:{description,runtime_needs,runtime_ai_required}}`；沒有保存為 null |
+| `classification` | 沿公開欄位 `classification_state,requested_tier,tier,needs_visitor_identity,confirmation`；confirmation 僅 `{id,requirements_revision,confirmed_at,source}` 或 null。`confirmation_validity` 為 `not_confirmed/valid/stale/legacy_unverified`，以同 statement 的精確內容／revision／owner／偏好證據判定 |
+| `stages` | 九階段固定順序完整列出 `{stage,draft,confirmation}`。draft 為 `{row_version,state,content_source,content:{text}}` 或 null。每階段只保留最新學生確認的 `{row_version,confirmed_at,source,current}` 摘要或 null；current 依同 statement 的版本＋原文 hash，不輸出 hash、confirmed_by 或完整歷史 |
+| `tasks` | 已保存的完整公開 `{id,project_id,order,title,done,row_version}`，依 order／id 排序；無保存為 []，不以手動匯入上限截斷既有任務 |
+| `read_at,saved_data_notice` | DB UTC 讀取時間＋固定繁中「本檔只包含已保存資料」及用途限制 |
+
+不包含 Auth／profile／school 私有資料、email／credential／receipt／冪等鍵、audit_identity_map／原始 audit／教師私人資料／完整歷史、聊天／附件／Agent Job／未保存輸入／原始碼或不存在產物。JSON 保留繁中、emoji、引號與 HTML-like 原文；不直接 `to_jsonb` 整列公開。
+
+工程保護界線為 **8 MiB**，不是新產品配額：DB 在同 statement 先以 JSON escaped title／需求／草稿 bytes＋每草稿 2048、每任務 512、固定 4096 bytes 的保守組裝預算檢查，再聚合完整 JSON；HTTP／client 亦驗證實際 UTF-8 bytes。任何界線超限明確 413 `saved_export_too_large`，無截斷、漏任務／階段或省略本文；保守估算可能在實際檔案小於 8 MiB 時拒絕。已有各寫入端傳輸限制不變，超限 DB 測試僅使用隔離 fixture 插入不可變新 revision，不冒稱正常產品可寫入超限本文。
+
+按鈕不導航或觸發離開；沿共用 guard 登錄辨識未保存／保存中／未知操作，提示只含讀取時已提交資料，既有編輯與原鍵操作全部保留，不自動保存／清除。fetch 成功、媒體型別、安全檔名、strict 格式及 project ID 皆符合後才建立 Blob／object URL，使用後釋放；卸載／舊頁請求取消，失敗留在頁面可重試。不經 localStorage／sessionStorage 保存匯出本文，不建立伺服器暫存檔、Storage 物件、公開 URL、Job、額外備份或匯出保存庫。FR-043／FR-014 的教師查看稽核不等同本人下載；本輪正式規則未要求本人下載新增稽核，reader 不寫 receipt／audit。
+
+本輪僅 T025「下載自有成果」及 T011／T014／T015 必要 HTTP／授權／測試與工作區接線；原依賴、Q-SCHOOL／Q-DATA／Q-AUTH、136 項任務與 Gate／正式啟用均不變。實測、首次失敗及限制見 [readiness §104](../readiness-review.md#104-2026-11-05-t025-本人已保存專案資料下載有界實作)。
+
+### P-2 本人學生重新命名（2026-11-05 有界子集）
+
+`PATCH /api/v1/projects/{id}` 只接受 strict `{ title: string }`，沿用 P-1 正式名稱驗證及 DB constraint；原文保存，不 trim 或 Unicode 正規化，不接受 stage／tier／owner／school／row_version／批准或其他欄位。只允許當下本人學生；非本人／不存在（含 teacher／admin 對學生專案）隱匿為 404。每次經固定可信 Auth `/auth/v1/user`，DB 在鎖前及鎖等待後重驗主體、student、帳號 gate 與 owner；不以 receipt 當授權。
+
+單一 strong canonical `If-Match` 沿 COMMON；缺失／非法各為 400 `if_match_required`／`invalid_if_match`。新操作原子 CAS 並令 row_version +1；舊版 409 `version_conflict`，僅投影 `conflict: { current: { version, content: { title } }, submitted: { version, content: { title } } }`。成功 200 `{ outcome: "saved"|"replayed", operation: { id, title, row_version }, current: { id, title, row_version } }`；ETag 只描述 current，operation 為原 receipt，不可倒蓋目前名稱。
+
+本子集要求 UUID `Idempotency-Key`，主體＋`project_title_patch_v1`＋鍵隔離，完整意圖含專案、原文 title、原 If-Match；同鍵異意圖 422 `idempotency_key_reuse`。DB 異動與非秘密成功 receipt 同交易，沿既有 24 小時保存政策，不新增 TTL。原意圖重送先重新授權；有效同鍵同意圖只回原結果，不遞增版本。結果未知或 reload 後只可以原鍵／原本文／原版本加 `Idempotency-Replay-Only: true` 重試；此模式缺少／過期 receipt 回既有 `operation_outcome_unrecoverable`，絕不重新寫入或盲目換鍵。標頭只接受缺省或單一 `true`。沒有可信 receipt，不以目前名稱相同推定原交易成功。
+
+改名不是需求修改、分類確認、學生確認或批准；正式分類證據依既有精確需求／revision／分類欄位，Specification 依草稿版本／需求 revision／分類 ID 及授權世代判定。title／project row_version 不在這些失效條件內，故本次只更新 title／row_version；不推進 stage、不改 receipt、草稿、任務或不可變提交／審查歷史。
+
+學生工作區共用既有離開防護，提供明確保存／取消、雙方名稱衝突比對與再次保存或重新讀取；未知操作沿帳號／專案隔離 sessionStorage 保留原意圖，不增加持久本地草稿。未 hydration 前入口 disabled，無原生表單 POST；輸入競態、卸載／重入世代與紀錄所有權防止舊回應清除新操作。工作台與標頭經 server 重新讀取 DB，不把本地輸入冒充保存。完整本輪結果與限制見 [readiness §100](../readiness-review.md#100-2026-11-05-p-2-本人學生重新命名有界實作)；Gate／Q-AUTH／正式啟用及整項任務未變。
+
 ### Specification 單階段提交與教師審查（D-34／§95）
 
 以下只覆蓋本輪已批准的 Specification 審查，取代較早「所有批准操作未開放」在此子集的描述；其他階段、通關規則與服務仍不因此開放。
@@ -157,6 +199,16 @@ server 先以既有 current-classification parser 驗證三態與 SQL 內完整�
 1. Agent **不得**為作品（A／B）加入 AI 金鑰、前端直接呼叫生成式 AI 服務、由作品伺服器端程式呼叫生成式 AI，也**不得**以繞道方式達成（利用平台金鑰、平台 AI 代理端點、第三方 AI 外掛／SDK／腳本、以 `agent-runs` 自身的 AI 能力代作品執行）。Agent 工具白名單不含任何「讓作品於執行時呼叫生成式 AI」的工具；此限制不影響 Agent 本身作為平台 AI 的使用。
 2. **學生要求「讓我的作品自己呼叫 AI」**（於 `instruction` 或對話中）：該部分**不納入** `proposed_plan` 任務、不產生對應檔案變更；回應固定說明模板 `runtime_ai_unsupported`（學生可理解的文字：首版不支援需要作品執行時呼叫 AI 的 C 級作品，並引導改為**不依賴作品執行時 AI** 的 A／B 設計，例如預先準備的內容、規則式互動、由使用者自行輸入資料）〔草案，待教育者／專業審閱〕。其餘不涉及執行時 AI 的指示照常處理。此回應不是 `block`，也不是 `support`，**不建立安全事件**。
 3. **變更後檢查（輔助）**：Agent 完成修改後，對變更清單檢查是否出現 AI 服務套件、已知 AI 服務網域或金鑰樣式字串；命中者標示於變更清單、提示學生移除，且不得提交申請；**此為輔助檢查，不取代發布審查的人工核對**（見 publishing 契約 §7.4；掃描規則待 Plan 研究）。
+### 3.1 T064 持久操作子集（2026-11-05；非 G-1～G-4 成功接線）
+
+`apps/web/src/server/agent-runs.ts` 的 `createAgentRunOperations` 每次經既有可信 Auth resolver，再以非特權 authenticated DB session 執行窄用途交易；不接受自報 owner／角色／時間／Job 歸屬。`create` 只保存 `{project_id,mode,instruction,idempotency_key}` 的 awaiting metadata，instruction 僅作請求 digest、不落本文；沒有 proposed_plan、模型或批准，因此**不是 G-1 成功回應**。原鍵同意圖回原 `operation` 與當下 `current`，異意圖 idempotency_conflict，同專案活動 Run conflict；兩種批准形狀仍分開。
+
+`read／stop` 只收 `{run_id}`，先查 Run 的持久關聯，DB 鎖後重驗本人學生／project owner／account gate。不存在與非本人同 not_found；teacher／admin denied。只有關聯的 `queued／leased` Job 交給既有 T010 `job_cancel`；不以 Run UUID 當 Job UUID，不收 Job ID、不換綁、不啟動外部工作。無工作 awaiting→stopped；有活動 Job→stopping，僅表示 cancel_requested；終結由既有 Worker lease／fencing／重要步驟完成，之後重讀停止可將已無活動 Job 的 Run 設為 stopped。已 stopped／failed 不倒退；不把 Job done 推為 Run completed，不投影不存在的產物／恢復證據，不更改 unknown 費用。
+
+`start` 只收 `{run_id,approval,idempotency_key}`（guided `{step_seq}`；auto `{approved_task_ids}`）；鎖後確認 Run／owner 後固定 unavailable，列明 `pre_agent_snapshot／agent_approval_evidence／agent_execution_authorization`。未有正式證據前，**Job 建立／Run→Job 關聯與 running 轉移分支不啟用**；本輪不存在可呼叫的 fixture／provider／快照繞過入口。內部 stop_acknowledged DTO 僅 Run metadata 及真 Job 的白名單狀態／取消旗標，並非 COMMON Job DTO 或 G-3 HTTP 成功本文。
+
+**停止核心完成、G-3 HTTP 尚未驗收**：正式 G-3 成功契約仍為 200；HTTP 維持既有 ai_not_open 安全關閉（403 不是成功驗收）。G-1／G-2 及學生 Agent 按鈕不啟用。完整 G-3 已完成／未完成與恢復投影仍依 T068／agent_steps／保存產物證據，詳見 [readiness §102](../readiness-review.md)。
+
 ## 4. 測試結果
 
 | # | 端點 | 說明 |

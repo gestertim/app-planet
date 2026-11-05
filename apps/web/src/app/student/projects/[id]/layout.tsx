@@ -2,6 +2,7 @@ import { AppShell } from "@/components/app-shell";
 import { TeacherRelationshipNotice } from "@/components/auth/teacher-relationship-notice";
 import { ProtectedProjectView } from "@/components/project/protected-project-view";
 import { SevenTabs } from "@/components/project/seven-tabs";
+import { ProjectExportDownload } from "@/components/project/project-export-download";
 import { readWorkspacePageData } from "@/server/workspace-page-data";
 
 export const dynamic = "force-dynamic";
@@ -44,6 +45,8 @@ export default async function ProjectWorkspaceLayout({ params, children }: Layou
         <p>草稿與學生確認屬各自的階段內容；學生確認不代表階段完成或人工批准。</p>
       </section>
       <TeacherRelationshipNotice />
+      <ProjectExportDownload key={`${result.principal.operationStorageScope}:${workspace.project.id}`}
+        projectId={workspace.project.id} />
       <SevenTabs projectId={workspace.project.id} />
       {children}
     </AppShell>

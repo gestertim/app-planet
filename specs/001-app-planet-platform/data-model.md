@@ -66,11 +66,17 @@
 
 ### 1.3a 教師—學校有效歸屬（M1；D-06 (a)，教育者 2026-10-23 批准）〔僅模型與規則；**不是 migration、不建資料表、不建 RLS 或管理端點**〕
 
+**2026-11-05 §103 現行有界補充**：上標及下文「尚未建立」保留為先前批次歷史限制，不阻擋本輪明確批准的管理員建立／結束接線。既有 `0001` 表／active 部分唯一索引不重建；新增 `0038_admin_teacher_school_memberships.sql`、窄用途管理 RPC／HTTP／UI。新增只限已批准、未停用／刪除教師與 approved、按既有判定未到期學校（沿用 `valid_until IS NULL OR >clock_timestamp()`，不新增到期／恢復政策）；未確認、撤回、到期學校目前不支援新增，不將此限制定為永久全產品政策。結束不要求目標仍合格。核發、教師自行加入、學校管理、角色／Auth 變更均不在本輪。
+
 | 表（候選名稱） | 重點欄位 | 說明 |
 | --- | --- | --- |
 | `teacher_school_memberships` | `id`、`teacher_id`（教師 `profiles.id`）、`school_id`、`state`（`active`｜`ended`）、`created_by_aid`、`created_at`、`ended_at NULL`、`ended_by_aid NULL` | 教師可同時歸屬多所學校（**不假設單一學校**）；**只能由管理員建立／結束**，教師不能自行加入；結束不刪列。`UNIQUE (teacher_id, school_id) WHERE state = 'active'`（主鍵／索引屬一般工程設計，可於實作時調整，**不得順帶新增角色、管理流程或使用者政策**） |
 
 **規則**：(1) 教師的**有效歸屬集合**＝`state = 'active'` 的 `school_id`；`ended` 不計。(2) 歸屬只用於帳號準備範圍：發起核發的目標學校須在集合內（AUTH A-5）；首次領取登入碼時目標學校仍須在集合內（A-8）；歸屬**不等於**可查看學生資料（仍須 §2.2 的有效綁定與學校條件）。(3) 以下四種情況必須分開，不得互相填補：**未歸屬**（集合為空）、學校 `unconfirmed`（資料事實）、**查詢失敗**（執行期錯誤，fail-closed）、`schoolApproval: null`（呼叫端未提供，不證明任何歸屬或核准）。(4) 教師登入不依賴歸屬或學校查詢（§2.1）。(5) 真實歸屬的建立、結束、真偽與稽核由資料層與管理端點負責，**尚未建立**；真實歸屬與核發操作維持關閉。M0（單值）、M2（不開放發起）未採用。
+
+**§103 已接線規則**：歸屬亦由既有 `0030` Specification／`0034` teacher reader 逐次判斷，不以 `profiles.school_id` 代替集合。`0038` writer 只可 INSERT active／UPDATE 結束欄位，無 DELETE；UPDATE trigger 禁止 ended 復活或換綁身分，歷史保留。結束沿 `0030` trigger 遞增 `specification_review_epoch`，原 decision 的 membership ID／epoch 不改寫；重加使用新 ID，舊批准仍 invalidated，binding 不自動結束／重建。必要 reader 相依僅補 `schools.specification_review_epoch` 欄位 SELECT，無新對外投影。
+
+`membership_operation_receipts`：`actor_id`＋UUID `operation_key` 複合 PK、完整非秘密 `intent`（create 的 teacher／school 或 end 的指定 membership）、原 `result`；FORCE RLS，一般角色無讀寫，NOLOGIN／NOBYPASSRLS writer 只可 SELECT／INSERT。與 membership 異動及去敏 audit 同交易；無本輪 receipt 到期／刪除排程，未核定新保存政策。同鍵異意圖拒絕，replay 重驗 admin，只回原操作，不重新加入；current 另讀清單。audit 只追加 `membership_created`／`membership_ended`、object_type=`membership`、object_ref／school_id／actor_aid／subject_aid，meta 僅 `from_state,to_state`；無 email、標籤、本文、秘密。
 
 ### 1.4 `audit_identity_map` 與 `audit_events`
 
@@ -228,6 +234,12 @@ teacher_can_view_student(teacher, student) =
 | `agent_runs` | `id`、`project_id`、`owner_id`、`mode`（`guided`｜`auto`）、`state`（`awaiting_approval`｜`running`｜`stopping`｜`stopped`｜`completed`｜`failed`）、`base_snapshot_id`、`approved_plan jsonb` | `auto` 先呈現任務與影響，經確認才可 `running`（FR-011）；開始套用前必須有 `pre_agent` 快照 |
 | `agent_steps` | `run_id`、`seq`、`kind`、`tool`、`args_digest`、`state`、`result_ref` | 工具白名單由 `skills.tool_allowlist` 與角色決定 |
 | `jobs` | `id`、`kind`、`payload jsonb`、`state`（`queued`｜`leased`｜`done`｜`failed`｜`cancelled`）、`lease_owner`、`lease_expires_at`、`attempts`、`max_attempts`、`run_after`、`idempotency_key UNIQUE`、`subject_id`、`school_id`、`school_epoch`、`cancel_requested bool` | `SELECT … FOR UPDATE SKIP LOCKED` 領取；租約＋心跳；每個「重要步驟」前 Worker 呼叫 `account_gate`（§2.1）並比對 `school_epoch`；**〔後續決定，2026-10-21〕學生 AI 類工作另於重要步驟前呼叫 `duty_gate('student_ai')`（§6.4）；被擋時 `state` 可為 `paused_off_duty`（新增值；不自動續跑，待核定；D-14 尚未決定，不能視為 D-25 對外已採用狀態）**；`cancel_requested` 為協作式取消旗標。此資料表列為內部工作佇列，不等於 COMMON D-25 的對外 Job 快照 DTO。 |
+
+**2026-11-05 T064 有界持久子集（readiness §102）**：`0037_agent_runs.sql` 新增 `agent_runs`、`agent_run_jobs` 與 `agent_run_create_receipts`，不改 Worker／usage 狀態機。Run 自己產生 UUID；複合 FK 強制 project／owner，關聯表強制 Job 的 owner／project／`kind='agent'` 且每個 Job 僅屬一個 Run。guided 的多次逐步批准不能預先壓成永久一對一，故一個 Run 可關聯多筆 Job；目前**沒有產品可用的關聯 writer**，也不採用 caller 提供的現存 Job。
+
+同專案 `awaiting_approval／running／stopping` 部分唯一；狀態轉移、身分與關聯不可換綁由 DB 保護。模型保留完整正式 state enum，但現行庫無 T068 快照、正式 Agent approved plan／批准與執行資格來源，`base_snapshot_id／approved_plan` 強制 NULL，`running／completed` 強制不可進入；不得填 UUID／假 hash／假 JSON 冒充證據。只有 awaiting 保存與 stopping／stopped／failed 子集可合法存在，終態不能倒退，活動 Job 尚未終結不能把 Run 設為 stopped／failed。
+
+建立 receipt 的 scope 為 `agent_run_create_v1`，owner＋UUID key 複合唯一、保存至少 24 小時；只存允許請求的 SHA-256 digest、原建立 DTO 與 DB 時間，不存 instruction 本文或秘密。重放先重驗當下資格，原 receipt 的 awaiting 狀態與目前 Run 分開；到期後同鍵可新建但不能繞過同專案活動 Run。所有新表 FORCE RLS，authenticated／service_role 無一般 DML；NOLOGIN、無 BYPASSRLS executor 僅經固定 search_path 的窄用途函式工作。真庫新建／升級與隔離 fixture 的關聯測試不代表正式執行前置已完成。
 
 ### 4.3 學校狀態變更的即時性機制〔技術決定〕
 

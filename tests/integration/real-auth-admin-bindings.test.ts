@@ -515,7 +515,7 @@ describe("T077 真 Auth／HTTP／公開 RPC／持久師生綁定", () => {
       [`school ${status}`, `UPDATE app.schools SET approval_state='${status}' WHERE id=$1`, "school", "school_not_eligible"]),
     ["school deadline", "UPDATE app.schools SET valid_until=clock_timestamp()-interval '1 second' WHERE id=$1",
       "school", "school_not_eligible"],
-    ["membership ended", "UPDATE app.teacher_school_memberships SET state='ended' WHERE id=$1",
+    ["membership ended", "UPDATE app.teacher_school_memberships SET state='ended',ended_at=clock_timestamp(),ended_by_aid=gen_random_uuid() WHERE id=$1",
       "membership", "teacher_school_mismatch"],
   ])("%s：HTTP／RPC 建立拒絕且無 receipt／audit", async (_label, sql, target, outcome) => {
     const id = target === "teacher" ? teacher.id : target === "student" ? student.id :
@@ -555,7 +555,7 @@ describe("T077 真 Auth／HTTP／公開 RPC／持久師生綁定", () => {
     ["teacher", "UPDATE app.profiles SET status='disabled' WHERE id=$1", "teacher_not_eligible"],
     ["student", "UPDATE app.profiles SET status='disabled' WHERE id=$1", "student_not_approved"],
     ["school", "UPDATE app.schools SET approval_state='withdrawn' WHERE id=$1", "school_not_eligible"],
-    ["membership", "UPDATE app.teacher_school_memberships SET state='ended' WHERE id=$1", "teacher_school_mismatch"],
+    ["membership", "UPDATE app.teacher_school_memberships SET state='ended',ended_at=clock_timestamp(),ended_by_aid=gen_random_uuid() WHERE id=$1", "teacher_school_mismatch"],
   ])("等待 %s 鎖後失權：建立必須重新判斷已提交現況", async (target, sql, outcome) => {
     const id = target === "admin" ? admin.id : target === "teacher" ? teacher.id :
       target === "student" ? student.id : target === "school" ? student.schoolId : membership;
@@ -593,7 +593,7 @@ describe("T077 真 Auth／HTTP／公開 RPC／持久師生綁定", () => {
     await control.query("UPDATE app.profiles SET status='disabled',deletion_state='marked' WHERE id=ANY($1::uuid[])",
       [[teacher.id, student.id]]);
     await control.query("UPDATE app.schools SET valid_until=clock_timestamp()-interval '1 second' WHERE id=$1", [student.schoolId]);
-    await control.query("UPDATE app.teacher_school_memberships SET state='ended' WHERE id=$1", [membership]);
+    await control.query("UPDATE app.teacher_school_memberships SET state='ended',ended_at=clock_timestamp(),ended_by_aid=gen_random_uuid() WHERE id=$1", [membership]);
     const ended = await receipt(await end(first.binding_id), 200);
     expect(ended).toMatchObject({ state: "ended", binding_id: first.binding_id });
     await control.query("UPDATE app.profiles SET deletion_state='marked' WHERE id=$1", [admin.id]);
@@ -840,9 +840,9 @@ describe("T077 真 Auth／HTTP／公開 RPC／持久師生綁定", () => {
     expect((await read()).teacher_notice).toBeUndefined();
     await control.query("UPDATE app.profiles SET status='approved' WHERE id=$1", [teacher.id]);
     expect((await read()).teacher_notice?.teachers).toHaveLength(1);
-    await control.query("UPDATE app.teacher_school_memberships SET state='ended' WHERE id=$1", [membership]);
+    await control.query("UPDATE app.teacher_school_memberships SET state='ended',ended_at=clock_timestamp(),ended_by_aid=gen_random_uuid() WHERE id=$1", [membership]);
     expect((await read()).teacher_notice).toBeUndefined();
-    await control.query("UPDATE app.teacher_school_memberships SET state='active' WHERE id=$1", [membership]);
+    await member(teacher.id, student.schoolId);
     await control.query("UPDATE app.schools SET valid_until=clock_timestamp()-interval '1 second' WHERE id=$1", [student.schoolId]);
     expect((await read()).teacher_notice).toBeUndefined();
     await control.query("UPDATE app.schools SET valid_until=NULL WHERE id=$1", [student.schoolId]);

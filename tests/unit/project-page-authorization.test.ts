@@ -8,6 +8,7 @@ const { default: ProjectPage } = await vi.importActual<{
 }>("../../apps/web/src/app/student/projects/[id]/page.tsx");
 
 const readers = vi.hoisted(() => ({ workspace: vi.fn(), overview: vi.fn(), assessment: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }) }));
 vi.mock("../../apps/web/src/server/workspace-page-data.ts", () => ({ readWorkspacePageData: readers.workspace }));
 vi.mock("../../apps/web/src/server/creation-flow-assessment.ts", () => ({
   readOwnedProjectStageOverviewSubset: readers.overview,
@@ -29,9 +30,9 @@ vi.mock("../../apps/web/src/components/project/creation-flow-check.tsx", () => (
 beforeEach(() => {
   vi.clearAllMocks();
   readers.workspace.mockResolvedValue({
-    outcome: "found", principal: { session: { read: {} } },
+    outcome: "found", principal: { session: { read: {} }, operationStorageScope: "synthetic-scope" },
     workspace: {
-      project: { id: "10000000-0000-4000-8000-000000000001", stage: "點子" },
+      project: { id: "10000000-0000-4000-8000-000000000001", stage: "點子", title: "受保護專案名稱", row_version: 0 },
       requirements: { revision: 1, content: { description: "受保護需求本文" } },
       drafts: [{ stage: "Specification", content: { text: "受保護規格草稿" } }],
     },
@@ -50,7 +51,7 @@ describe("專案頁最後 reader 失權", () => {
     expect(readers.workspace).toHaveBeenCalledOnce();
     expect(readers.overview).toHaveBeenCalledOnce();
     expect(readers.assessment).toHaveBeenCalledOnce();
-    for (const content of ["受保護需求本文", "受保護規格草稿", "受保護九階段總覽", "workspace-blueprint"]) {
+    for (const content of ["受保護需求本文", "受保護規格草稿", "受保護九階段總覽", "workspace-blueprint", "重新命名"]) {
       expect(html).not.toContain(content);
     }
     expect(html).toContain("受保護內容已隱藏");
@@ -65,5 +66,7 @@ describe("專案頁最後 reader 失權", () => {
     for (const content of ["受保護需求本文", "受保護規格草稿", "受保護九階段總覽", outcome]) {
       expect(html).toContain(content);
     }
+    expect(html).toContain('disabled="" aria-expanded="false"');
+    expect(html).not.toContain("<form");
   });
 });

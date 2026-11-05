@@ -4,6 +4,7 @@ import { readOwnedProjectStageOverviewSubset } from "@/server/creation-flow-asse
 import { readWorkspacePageData } from "@/server/workspace-page-data";
 import { readCreationFlowPageData } from "@/server/creation-flow-page-data";
 import { CreationFlowCheck } from "@/components/project/creation-flow-check";
+import { ProjectRename } from "@/components/project/project-rename";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,11 @@ export default async function ProjectPage({ params, searchParams }: {
     return <p className="card" role="alert">找不到這個專案，或目前帳號沒有檢視權限；受保護內容已隱藏。</p>;
   }
   return <section className="grid gap-4" aria-label="我的藍圖" data-testid="workspace-blueprint">
+    <ProjectRename key={`${result.principal.operationStorageScope}:${result.workspace.project.id}`}
+      accountScope={result.principal.operationStorageScope} initial={{
+        id: result.workspace.project.id, title: result.workspace.project.title,
+        row_version: result.workspace.project.row_version,
+      }} />
     <div className="card">
       <h2>我的藍圖</h2>
       <p>此區呈現專案基本資料與九階段創作步驟；學生確認、階段完成判斷及人工批准彼此分開。</p>

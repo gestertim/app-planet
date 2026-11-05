@@ -244,8 +244,8 @@ export function createFoundationHandlers(options: FoundationHandlerOptions = {})
     },
   );
 
-  // G-3 以正式 Agent Run ID 為識別，目前沒有 agent_runs 或 Run→Job 持久化關聯。
-  // 不把 Run ID 當 Job ID、不查詢也不取消任何 Job；通過來源／身分檢查後一律關閉。
+  // G-3 的持久停止核心不等於完整產物／恢復回應；HTTP 仍安全關閉。
+  // 不把 Run ID 當 Job ID、不查詢也不取消任何 Job。
   const stopAgentRun = createRouteHandler(
     { route: "agent_run_stop", methods: ["POST"], resolver, log: options.log, requireSameOrigin },
     async ({ routeParams, ...context }) => {

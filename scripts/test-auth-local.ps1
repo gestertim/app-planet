@@ -5,6 +5,11 @@ param(
     [switch]$Upgrade0028,
     [switch]$Upgrade0031,
     [switch]$Upgrade0032,
+    [switch]$Upgrade0035,
+    [switch]$Upgrade0036,
+    [switch]$Upgrade0037,
+    [switch]$Upgrade0038,
+    [switch]$Upgrade0039,
     [switch]$TeacherSignup,
     [string[]]$IntegrationFilter = @(),
     [string[]]$E2EFilter = @()
@@ -285,11 +290,46 @@ enabled = false
         $env:APP_PLANET_TEST_MIGRATE_THROUGH = "0028"
     }
     if ($Upgrade0032) {
-        if ($Upgrade0025 -or $Upgrade0028 -or $Upgrade0031 -or $BrowserOnly -or -not $IntegrationOnly) {
+        if ($Upgrade0025 -or $Upgrade0028 -or $Upgrade0031 -or $Upgrade0035 -or $Upgrade0036 -or $BrowserOnly -or -not $IntegrationOnly) {
             throw "0032 升級驗收須單獨使用 -Upgrade0032 -IntegrationOnly。"
         }
         $env:APP_PLANET_TEST_MIGRATE_THROUGH = "0031"
         $IntegrationFilter = @("tests/integration/real-auth-bindings-upgrade.test.ts")
+    }
+    if ($Upgrade0035) {
+        if ($Upgrade0025 -or $Upgrade0028 -or $Upgrade0031 -or $Upgrade0032 -or $Upgrade0036 -or $BrowserOnly -or -not $IntegrationOnly) {
+            throw "0035 升級驗收須單獨使用 -Upgrade0035 -IntegrationOnly。"
+        }
+        $env:APP_PLANET_TEST_MIGRATE_THROUGH = "0034"
+        $IntegrationFilter = @("tests/integration/real-auth-teacher-view-audit.test.ts")
+    }
+    if ($Upgrade0036) {
+        if ($Upgrade0025 -or $Upgrade0028 -or $Upgrade0031 -or $Upgrade0032 -or $Upgrade0035 -or $BrowserOnly -or -not $IntegrationOnly) {
+            throw "0036 升級驗收須單獨使用 -Upgrade0036 -IntegrationOnly。"
+        }
+        $env:APP_PLANET_TEST_MIGRATE_THROUGH = "0035"
+        $IntegrationFilter = @("tests/integration/real-auth-project-rename.test.ts")
+    }
+    if ($Upgrade0037) {
+        if ($Upgrade0025 -or $Upgrade0028 -or $Upgrade0031 -or $Upgrade0032 -or $Upgrade0035 -or $Upgrade0036 -or $BrowserOnly -or -not $IntegrationOnly) {
+            throw "0037 升級驗收須單獨使用 -Upgrade0037 -IntegrationOnly。"
+        }
+        $env:APP_PLANET_TEST_MIGRATE_THROUGH = "0036"
+        $IntegrationFilter = @("tests/integration/real-auth-agent-runs.test.ts")
+    }
+    if ($Upgrade0038) {
+        if ($Upgrade0025 -or $Upgrade0028 -or $Upgrade0031 -or $Upgrade0032 -or $Upgrade0035 -or $Upgrade0036 -or $Upgrade0037 -or $BrowserOnly -or -not $IntegrationOnly) {
+            throw "0038 升級驗收須單獨使用 -Upgrade0038 -IntegrationOnly。"
+        }
+        $env:APP_PLANET_TEST_MIGRATE_THROUGH = "0037"
+        $IntegrationFilter = @("tests/integration/real-auth-admin-memberships.test.ts")
+    }
+    if ($Upgrade0039) {
+        if ($Upgrade0025 -or $Upgrade0028 -or $Upgrade0031 -or $Upgrade0032 -or $Upgrade0035 -or $Upgrade0036 -or $Upgrade0037 -or $Upgrade0038 -or $BrowserOnly -or -not $IntegrationOnly) {
+            throw "0039 升級驗收須單獨使用 -Upgrade0039 -IntegrationOnly。"
+        }
+        $env:APP_PLANET_TEST_MIGRATE_THROUGH = "0038"
+        $IntegrationFilter = @("tests/integration/real-auth-project-export.test.ts")
     }
     $roleUrlsJson = & node (Join-Path $repoRoot "scripts\prepare-real-auth-db.mjs")
     if ($LASTEXITCODE -ne 0) {

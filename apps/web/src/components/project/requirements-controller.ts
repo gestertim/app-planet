@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { readBoundedJson } from "./bounded-json.ts";
 import {
   projectClassificationBodySchema, projectClassificationCurrentSchema,
   projectClassificationResponseSchema, projectRequirementsBodySchema,
@@ -207,25 +208,6 @@ export class RequirementsController {
     });
     return true;
   }
-}
-
-async function readBoundedJson(response: Response): Promise<unknown> {
-  const reader = response.body?.getReader();
-  if (!reader) throw new Error("回應缺少內容");
-  const decoder = new TextDecoder("utf-8", { fatal: true });
-  let bytes = 0;
-  let text = "";
-  for (;;) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    bytes += value.byteLength;
-    if (bytes > 256 * 1024) {
-      await reader.cancel();
-      throw new Error("回應超過界線");
-    }
-    text += decoder.decode(value, { stream: true });
-  }
-  return JSON.parse(text + decoder.decode());
 }
 
 async function responseFailure(response: Response): Promise<Failure> {

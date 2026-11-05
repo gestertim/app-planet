@@ -37,6 +37,10 @@ type RegisteredGuard = Readonly<{
 
 const registeredGuards = new Map<object, RegisteredGuard>();
 
+export function hasGuardedWorkspaceResources(): boolean {
+  return [...registeredGuards.values()].some((guard) => guard.isGuarded());
+}
+
 function otherGuardedResourceCount(current: object): number {
   const identities = new Set<string>();
   for (const [id, guard] of registeredGuards) {

@@ -7,6 +7,8 @@
 
 ## 契約檔案
 
+**2026-11-05 §104 有界本人下載**：`GET /api/v1/projects/{id}/export`、strict `app-planet.saved-project.v1`、僅已保存資料、窄用途授權與 8 MiB 工程傳輸界線見 [PROJ 本人下載](./projects-agent-sandbox.md#本人已保存專案-json-下載2026-11-05t025-驗收子項)。這是使用者主動裝置下載，不是伺服器自管匯出／額外備份，不變更 Q-DATA 保存政策、Gate 或正式啟用。
+
 **2026-11-04 §93 有界產品接線**：T051 正式需求 GET／PUT 與明確分類 POST 的路徑、雙版本映射、strict body、receipt／current、大小與錯誤界線見 [PROJ §1.1](./projects-agent-sandbox.md#11-需求版本與分類確認)。只擴展本輪已批准的 HTTP／學生工作區子集；較早「僅本機、無 HTTP」仍是歷史紀錄，不是本輪限制。Gate／Q-AUTH／正式啟用不變。
 
 **2026-10-21 最新 MVP 適用性（現行）**：下表及較早同步註記中「β2 維持首版」已被教育者本次決定取代，保留歷史。MVP 保留平台 AI、創作流程、A／不需學生伺服器程式的合格 B（含平台 Work Data API）。β2 移至後續獨立 feature，另 spec／Gate，M／W 不實作。預覽採 X：`ports: []` 建置→平台取回／檢查／保存→平台入口提供 iframe；更新為儲存→重建→重載，須顯示失敗，不代理沙箱埠。現行細節見 [projects-agent-sandbox.md](./projects-agent-sandbox.md) E-3／§5、[publishing-and-public-runtime.md](./publishing-and-public-runtime.md) §3.6／§6。產品驗收未完成，Gate 未執行。

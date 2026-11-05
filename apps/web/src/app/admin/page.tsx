@@ -15,12 +15,12 @@ export default async function AdminPage() {
       authenticated
       logoutRedirect="/login"
       preview={false}
-      capabilities={[{ href: "/admin", label: "工作台" }, { href: "/admin/bindings", label: "師生綁定" }, { href: "/account/status", label: "我的帳號狀態" }]}
+      capabilities={[{ href: "/admin", label: "工作台", prefetch: false }, { href: "/admin/teacher-school-memberships", label: "教師學校歸屬", prefetch: false }, { href: "/admin/bindings", label: "師生綁定", prefetch: false }, { href: "/admin/audit/teacher-views", label: "教師查看紀錄", prefetch: false }, { href: "/account/status", label: "我的帳號狀態" }]}
       heading="管理員工作台"
-      subtitle="既有待審教師審核與合格師生綁定；其他管理能力尚未接通。"
+      subtitle="既有教師審核、教師學校歸屬、師生綁定與教師查看紀錄；其他管理能力尚未接通。"
     >
       <section className="card" data-testid="staff-session" data-role="admin">
-        <p>已以管理員身分登入（伺服器確認）。可使用待審教師審核與導覽中的師生綁定。</p>
+        <p>已以管理員身分登入（伺服器確認）。可使用待審教師審核、教師學校歸屬、師生綁定與教師查看紀錄。</p>
       </section>
       <TeacherReview />
       <section className="grid">
@@ -37,7 +37,7 @@ export default async function AdminPage() {
         <article className="card">
           <span className="sample-label">平台狀態</span>
           <h2>其他管理功能尚未接通</h2>
-          <p className="muted">僅待審教師審核、師生綁定與其交易稽核已接通；學校、通知、用量管理仍未開放。</p>
+          <p className="muted">僅待審教師審核、教師學校歸屬、師生綁定與教師查看紀錄查詢已接通；學校建立／批准、通知、用量管理仍未開放。</p>
           <span className="status">其他管理｜尚未接通</span>
         </article>
       </section>
