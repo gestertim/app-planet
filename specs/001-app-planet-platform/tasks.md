@@ -1,5 +1,7 @@
 # Tasks：AI APP 超級創客｜App Planet 現行 MVP
 
+**2026-11-06 本輪有界 E-1／S-1／S-3 作品檔案垂直流程**：只補本人專案檔案列舉／單檔讀寫、Monaco 編輯及 sessionStorage 同分頁草稿、manual 快照建立／列表／manifest／版本檔案唯讀；不包含預覽、Agent、submission、restore、自動快照／修剪／刪除或部署。原始碼單檔 262,144 UTF-8 bytes；新檔 `If-None-Match: *`、更新單一 strong `If-Match`（SHA-256 ETag）；server／DB 逐請求重驗可信 Auth、當下學生資格與 owner，教師只能沿既有資格與 `teacher_view` 稽核唯讀快照。檔案／snapshot 一律由 DB 持久化；本地草稿不可信、不能作保存或快照來源。只補直接相依契約／migration／測試，不改 136 項原任務正文、依賴、勾選、Gate、Q-AUTH 或其他 Q 狀態；完整實測、限制及 before／after 以本輪交付記錄為準。
+
 **2026-11-05 本輪有界下載子項（§104）**：T025 原文含「四狀態／撤回恢復／下載自有成果及直接／背景拒絕」，本輪只交付其中**本人已保存專案資料下載**驗收子項；原依 T024／前置 Q-SCHOOL 保留，不稱完整 T025、不新增任務 ID。T011 僅本人下載 GET 的 COMMON problem／快取／敏感標頭與可信 Auth＋DB 即時 gate；T014 僅既有工作區下載按鈕、未保存／未知操作提示及可重試失敗；T015 僅本輪 strict DTO、最小權限、等鎖失權、snapshot／資料不變、Auth／DB／HTTPS 實際下載及增量升級回歸。0039 窄 reader 是上述必要授權接線，不代表 T008 整項完成。全部原任務正文／依賴／未勾選及 Gate、Q-AUTH／Q-DATA／Q-SCHOOL、正式啟用不變；保留 §98、T-5、P-2、0037／0038 等既有成果。契約見 [本人下載](./contracts/projects-agent-sandbox.md#本人已保存專案-json-下載2026-11-05t025-驗收子項)，實測結果、失敗與限制見 [readiness §104](./readiness-review.md#104-2026-11-05-t025-本人已保存專案資料下載有界實作)。
 
 **2026-11-04 本輪 T051 產品接線（§93）**：既有 A/B 階段加入獨立正式需求保存與明確分類面板；具名 GET／PUT 需求、POST 分類接既有持久交易，雙版本／可信 Auth＋當下 DB owner／gate、receipt／current 分離、修改即失效與原鍵重放不復活。建立偏好仍不是正式證據；visitor 初始無選擇、偏好不同須 explicit_change；共用原離開防護，不新增 history sentinel 或本地持久草稿政策。T006（strict 傳輸 DTO／安全錯誤）、T008（必要授權接線）、T011（HTTP）、T014（學生 UI）、T015（本輪驗收）均僅涉及子項，原依賴與勾選不變。真 Auth 不是學生產品登入／登入碼 E2E；Gate／Q-AUTH／正式啟用不變。實際失敗、修復、完整回歸及清理見 [readiness §93](./readiness-review.md#93-2026-11-04-t051-正式需求保存ab-分類確認產品接線)。
@@ -191,10 +193,14 @@ PP-20～27 的候選目前是**政策維度、證據來源與 fail-closed 方案
 **目標／獨立測試**：四種合成學校狀態＋有效帳號；未確認拒登入，撤回／失效仍可讀寫保存內容，但新 AI／部署拒絕、所有公開作品停止且恢復不自動公開。
 
 - [ ] T021 [P] [US13] 在 `tests/contract/school-approval.test.ts` 撰寫 L-1～3 及 V-01～08，含教師越權、缺文件版本、人工失效與背景重要步驟；未決自動逾期不假設。【來源 R13；依 T015】
+  **〔§105：只完成 L-1 建立 unconfirmed、L-3 與必要管理員分頁列表 strict 契約／拒絕測試；L-2、完整 V-01～08、缺文件核准／人工失效與背景連動未實作，不勾選。〕**
 - [ ] T022 [US13] 在 `supabase/migrations/0005_school_approval.sql`、`apps/web/src/server/schools.ts` 實作核驗／撤回／失效／恢復交易、文件版本與 epoch，核定 D-04／06 後才啟用相應分支。【來源 R13；依 T021；前置 Q-SCHOOL】
+  **〔§105：只在下一可用 0040／實際 `apps/web/src/server/admin/schools.ts` 建立登錄／列表／詳情；可信 Auth＋鎖後 admin 重驗、窄權限 RLS、receipt／白名單 audit 原子提交。未建 approval_records／L-2、核驗或轉態，原 Q-SCHOOL／依賴保留，不勾選。〕**
 - [ ] T023 [US13] 在 `apps/worker/src/jobs/school-change.ts` 串接停止作品、取消 AI／部署重要步驟、清理會話與稽核；恢復只解除校級阻擋，不自動恢復公開。【來源 R13；依 T022、T010】
 - [ ] T024 [US13] 在 `apps/web/src/app/(admin)/admin/schools/page.tsx`、`apps/web/src/components/school-gate-notice.tsx` 建立管理員文件登錄與學生非 AI 可用說明，不設個別同意資料欄位。【來源 R13；依 T023】
+  **〔§105：實際 `/admin/schools` 與 `/{id}` 僅名稱登錄／管理員列表／讀回、明確確認與未知結果原鍵恢復；不建衝突 route group、不提供文件或核准表單。T023 仍未滿足，非完整 T024，不勾選。〕**
 - [ ] T025 [US13] 在 `tests/e2e/school-gates.spec.ts` 執行四狀態／撤回恢復／下載自有成果及直接／背景拒絕；公開入口正式時限結果留待 T090，不先判通過。【來源 R13；依 T024；前置 Q-SCHOOL】
+  **〔§105：只補真 Auth／DB／Next HTTPS 管理員登錄未確認學校、讀回 reload、列表找回、原鍵 response-loss、並行／失權／等鎖／rollback／最小權限／新庫與 0039 升級，以及既有 unconfirmed membership／學生 gate 拒絕。保留 §104 下載成果；非四狀態與 L-2 驗收、不提前判公開時限，原依賴／未勾選與 Gate／Q-AUTH／Q-SCHOOL／正式啟用不變。〕**
 
 ## Phase 5：US15 登入碼核發與重發（P1；5 項）
 

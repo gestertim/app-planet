@@ -14,6 +14,24 @@
 
 **允許的轉移**：`unconfirmed→approved`（verify）；`approved→withdrawn`；`approved→expired`（人工或依 D-04 的判定）；`withdrawn｜expired→approved`（restore，須記錄文件版本與「重新核對供應商條件」）。其他轉移 `409`。**`restore` 僅解除校級阻擋**，回應文字須如此表述，不自動恢復任何公開頁面。~~**不得暗示公開 C 級作品 AI 已恢復**。~~【已被取代・首版不適用（2026-10-21 範圍決定）；原文保留作歷史；首版無 C 級公開 AI】
 
+### L-1／L-3 與必要列表（2026-11-06 §105 有界產品子集）
+
+只接通登錄未確認學校與管理員讀回；不是 L-2。前述 L-2 的文件、轉態、epoch 連動、工作與稽核要求全部保留，不因本子集降低；無 verify／withdraw／expire／restore、文件上傳、自動到期或學生相關新增能力。
+
+| 端點 | strict 輸入 | 成功與投影 |
+| --- | --- | --- |
+| L-1 `POST /api/v1/admin/schools` | 僅 `{label:string}`、UUID `Idempotency-Key`；拒絕額外欄位、空／全空白及 NUL；16 KiB 本文傳輸界線 | 首次 `201`；同 actor＋登錄 scope＋原鍵＋完整原 label 重放 `200`、`Idempotent-Replay:true`；receipt `{outcome:"created"\|"replayed",operation:"create",school_id,label,approval_state:"unconfirmed",approval_epoch:0,valid_until:null,current_doc_version:null,operated_at}` |
+| 必要列表 `GET /api/v1/admin/schools?after?` | 可選 UUID after；拒絕未知／重複鍵 | `200 {outcome:"found",items,next_cursor}`；UUID 唯一升序，每頁最多 20，以第 21 筆判斷後續頁，next cursor 為本頁最後 ID 或 null；空頁與故障分開，不設學校名額 |
+| L-3 `GET /api/v1/admin/schools/{id}` | UUID id、不得附 query | `200 {outcome:"found",school:{id,label,approval_state,approval_epoch,valid_until,current_doc_version,verification_history:"not_available",last_change:null}}`；前五欄亦為列表的逐欄白名單投影 |
+
+- 名稱目前沒有完整正式 validator，`schools.label` 是 NOT NULL text，沒有名稱唯一性或核驗政策。本輪只加上述必要工程防護；保留原始空白／完整名稱，不自行 trim、去重、合併、截短或新增 120 字限制。不同鍵同名是不同實體；DB 決定 UUID、UTC 時間、初始狀態與 epoch；不填有效期限、不建立 membership／binding。
+- 每請求由共用可信 Auth `/auth/v1/user` 驗證，DB 以 authenticated 最小 session 綁定主體；不接受 caller role、不解碼 JWT 授權、不用 service_role。讀取同樣使用可取得資格鎖的交易；profile `FOR SHARE` 後重驗 admin＋approved＋deletion_state=none，鎖至 COMMIT。建立先取得 actor＋key advisory transaction lock，再取 profile lock／重驗；replay 不以 receipt 代替授權。
+- `0040` 專用 NOLOGIN／NOBYPASSRLS 角色、FORCE RLS、固定 `search_path=pg_catalog`、受限函式 EXECUTE；一般角色無 schools／receipt／audit 通用 INSERT／UPDATE，也無 helper EXECUTE／角色切換權。school、成功 receipt、白名單 `school_registered` audit 同交易；audit 故障全 rollback。非管理員合法 L-1 呼叫 `403`，以既有 append-only audit 管道寫固定 `school_registration_denied` 安全事件（result=denied、空 meta、無名稱／目標資料），不授予 caller 任意事件寫入權；HTTP 同時沿共用固定碼診斷日誌。
+- `401` 未登入；`403` 非當下有效管理員／來源不合法；`400` strict body／UUID／query 錯誤；`413` 傳輸過大；`415` 媒體類型；`404` 管理員查無指定學校；`422 idempotency_key_reuse` 同鍵異意圖。Auth／讀取／decoder 故障 `503 dependency_unavailable`；建立提交未確認 `503 operation_outcome_unknown`，不得換鍵重建或回空清單。所有回應 no-store；不輸出完整 DB row、帳號、學生資料或 identity map。
+- 現行 `school_approval_records` 只有正式設計、沒有實體來源，本輪不建立或偽造該表／核驗紀錄。`current_doc_version` 與 `valid_until` 僅讀真實既存值；新建均 null。UI 明示「尚無核驗紀錄可供讀取」，最後變更摘要本輪未提供；不以 created_at 冒充核驗時間，不從 audit 猜歷史。
+- 既有 membership 登錄範式（§103／0038）沒有 TTL，學校登錄尚無已核定的適用 receipt 保存／到期政策；本輪不移植專案的 24 小時期限，不新增 TTL 或過期後重建分支。**最小缺口**：仍待核定學校 receipt 的保存／清理／到期恢復語意。測試只證明 receipt 現存期間的原鍵恢復，不承諾永久 exactly-once；使用者清除 sessionStorage／分頁關閉／儲存失效可失去原鍵，不保證該情況可自動恢復。
+- `/login` 管理員登入→`/admin` 學校入口→`/admin/schools` 名稱／核對／明確建立→`/admin/schools/{id}` 重新 GET DB→reload／返回列表找回。取消不送出、SSR hydration 前停用、鍵盤／Escape／焦點返回；敏感 Link 禁 prefetch。unknown 保留帳號 scope 下 sessionStorage 完整 intent，明確原鍵重試；共用 controller 清除前核對 lifecycle 與完整 intent，晚到 response／body 不清除新操作。明示「已登錄，尚未核驗；不代表學校已批准。」不提供可操作批准／恢復或假核驗表單。
+
 ## 2. 學校狀態變更的連動（L-2 交易內；結果須可由 `jobs` 狀態查詢）
 
 | 轉移 | 同步（交易內） | 非同步（工作，冪等、可重試） |

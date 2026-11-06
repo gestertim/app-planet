@@ -22,3 +22,6 @@ export * from "./contracts/project-rename.ts";
 export * from "./contracts/agent-runs.ts";
 export * from "./contracts/admin-memberships.ts";
 export * from "./contracts/project-export.ts";
+export * from "./contracts/admin-schools.ts";
+export * from "./contracts/project-files.ts";
+export * from "./contracts/project-snapshots.ts";

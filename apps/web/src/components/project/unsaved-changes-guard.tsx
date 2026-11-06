@@ -172,7 +172,8 @@ export function UnsavedChangesGuard({
     }
     leaving.current = true;
     if (current.kind === "link") {
-        router.push(current.href);
+      window.dispatchEvent(new CustomEvent("app-planet:guarded-navigation", { detail: current.href }));
+      router.push(current.href);
       return;
     }
     const navigation = window.navigation;

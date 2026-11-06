@@ -10,6 +10,8 @@ param(
     [switch]$Upgrade0037,
     [switch]$Upgrade0038,
     [switch]$Upgrade0039,
+    [switch]$Upgrade0040,
+    [switch]$Upgrade0041,
     [switch]$TeacherSignup,
     [string[]]$IntegrationFilter = @(),
     [string[]]$E2EFilter = @()
@@ -330,6 +332,22 @@ enabled = false
         }
         $env:APP_PLANET_TEST_MIGRATE_THROUGH = "0038"
         $IntegrationFilter = @("tests/integration/real-auth-project-export.test.ts")
+    }
+    if ($Upgrade0040) {
+        if ($Upgrade0025 -or $Upgrade0028 -or $Upgrade0031 -or $Upgrade0032 -or $Upgrade0035 -or $Upgrade0036 -or $Upgrade0037 -or $Upgrade0038 -or $Upgrade0039 -or $BrowserOnly -or -not $IntegrationOnly) {
+            throw "0040 升級驗收須單獨使用 -Upgrade0040 -IntegrationOnly。"
+        }
+        $env:APP_PLANET_TEST_MIGRATE_THROUGH = "0039"
+        $IntegrationFilter = @("tests/integration/real-auth-admin-schools.test.ts")
+    }
+    if ($Upgrade0041) {
+        if ($Upgrade0025 -or $Upgrade0028 -or $Upgrade0031 -or $Upgrade0032 -or $Upgrade0035 -or
+            $Upgrade0036 -or $Upgrade0037 -or $Upgrade0038 -or $Upgrade0039 -or $Upgrade0040 -or
+            $BrowserOnly -or -not $IntegrationOnly) {
+            throw "0040→0041 升級驗收須單獨使用 -Upgrade0041 -IntegrationOnly。"
+        }
+        $env:APP_PLANET_TEST_MIGRATE_THROUGH = "0040"
+        $IntegrationFilter = @("tests/integration/real-auth-project-files.test.ts")
     }
     $roleUrlsJson = & node (Join-Path $repoRoot "scripts\prepare-real-auth-db.mjs")
     if ($LASTEXITCODE -ne 0) {

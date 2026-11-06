@@ -4,11 +4,13 @@ import { createProjectHandlers } from "./project-handlers.ts";
 import { createProjectClassificationHandlers } from "./project-classification-handlers.ts";
 import { createProjectRenameHandlers } from "./project-rename-handlers.ts";
 import { createProjectExportHandler } from "./project-export-handlers.ts";
+import { createProjectFileHandlers } from "./project-file-handlers.ts";
 import { createSpecificationReviewHandlers } from "./specification-review-handlers.ts";
 import { createBindingHandlers } from "./admin/accounts-bindings.ts";
 import { createTeacherResourceHandlers } from "./teacher-resource-handlers.ts";
 import { createTeacherViewAuditHandler } from "./admin/teacher-view-audit.ts";
 import { createMembershipHandlers } from "./admin/teacher-school-memberships.ts";
+import { createSchoolHandlers } from "./admin/schools.ts";
 
 const handlers = createFoundationHandlers({
   resolver: createAuthPrincipalResolver(),
@@ -19,6 +21,12 @@ export { handlers as productFoundationHandlers };
 
 export const productProjectExportHandler = createProjectExportHandler({
   resolver: createAuthPrincipalResolver(),
+});
+
+export const productProjectFileHandlers = createProjectFileHandlers({
+  resolver: createAuthPrincipalResolver(),
+  requireSameOrigin: true,
+  log: (event) => console.info(JSON.stringify(event)),
 });
 
 export const productProjectHandlers = createProjectHandlers({
@@ -58,6 +66,12 @@ export const productTeacherViewAuditHandler = createTeacherViewAuditHandler({
 });
 
 export const productMembershipHandlers = createMembershipHandlers({
+  resolver: createAuthPrincipalResolver(),
+  requireSameOrigin: true,
+  log: (event) => console.info(JSON.stringify(event)),
+});
+
+export const productSchoolHandlers = createSchoolHandlers({
   resolver: createAuthPrincipalResolver(),
   requireSameOrigin: true,
   log: (event) => console.info(JSON.stringify(event)),

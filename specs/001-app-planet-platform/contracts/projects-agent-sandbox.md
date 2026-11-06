@@ -112,9 +112,11 @@ GET `200` current 固定白名單 `{ id, row_version, requirements_revision, req
 | P-3 | `PUT /api/v1/projects/{id}/stages/{stage}` | 擁有者學生；當下 edit／read gate＋owner | 未確認草稿子集 strict `{ content: { text: string } }`，不接受 state／owner；確認／批准仍走各自人工 RPC，非本子集 | 首建 `201`＋DTO／Location／ETag 0；更新 `200`＋DTO；重放 `200`＋原 operation／current_draft | `400 precondition_required／invalid_precondition`；`412 draft_already_exists`；`409 version_conflict`；`422 idempotency_key_reuse`；`401／403／404` 依既定隱匿 | UUID Idempotency-Key；首建單一 `If-None-Match: *`，更新單一 strong `If-Match`；詳 COMMON D-33 |
 | P-4 | `PATCH /api/v1/projects/{id}/tasks/{tid}` | 擁有者 | `{ done }` | `200`（**真的寫入**，非僅提示） | `409` | `If-Match` |
 | P-4I | `POST /api/v1/projects/{id}/tasks` | 擁有者（本人學生） | strict `{ confirmed: true, tasks: [{ title }] }` | `201` 首次建立／`200` 同次確認重放 | `409 task_list_already_exists`、`422 idempotency_key_reuse` | `Idempotency-Key`（UUID） |
-| S-1 | `POST /api/v1/projects/{id}/snapshots` | 擁有者 | `{ kind: "manual", message? }`：以伺服器目前「已保存」檔案集建立；**不包含未保存的編輯器內容**（客戶端須先保存，見 §2） | `201`＋`{ version_no, content_hash }` | `409`；`507 storage_limit`（單專案容量上限，工程值） | `Idempotency-Key` |
+| S-1 | `POST /api/v1/projects/{id}/snapshots` | 本人有效學生 | strict `{ kind: "manual", message? }`；以 DB 一致 snapshot 的完整已保存檔案集建立，不收 manifest／blob／owner／version_no | `201`＋snapshot DTO | `409 version_conflict`／`422 idempotency_key_reuse`／`507 storage_limit` | 必帶 UUID `Idempotency-Key`；同鍵同意圖回原 receipt，不新增版本 |
 | S-2 | `POST /api/v1/projects/{id}/restore` | 擁有者；`edit_saved_content` | `{ snapshot_id }` | **先**建立 `pre_restore` 快照並確認成功，**才**套用恢復；`200`＋`{ pre_restore_snapshot_id }`（可再找回） | `409 save_failed`：保存目前版本失敗→**不覆蓋現有工作**並說明原因與下一步 | `Idempotency-Key`；稽核 |
-| S-3 | `GET /api/v1/projects/{id}/snapshots` | 擁有者／已綁定教師 | — | 版本名稱／識別碼、時間、變更摘要、`kind`、是否 `immutable` | — | — |
+| S-3 | `GET /api/v1/projects/{id}/snapshots` | 本人／沿既有資格與 binding 的教師唯讀 | 穩定游標分頁 | snapshot ID、`version_no`、時間、manifest 差異摘要、`kind`、模型 `immutable` 欄位 | 失權後新請求拒絕；教師讀取沿 `teacher_view` 稽核，稽核失敗不釋出內容 | `(version_no DESC, id DESC)` keyset；不靜默截斷 |
+| S-3 | `GET /api/v1/projects/{id}/snapshots/{sid}/manifest` | 同上 | — | 該 snapshot 的唯讀 manifest 與 `content_hash` | 未授權／不存在隱匿；教師讀取沿 `teacher_view` 稽核 | 僅由已授權 project＋snapshot 引用讀取 |
+| S-3 | `GET /api/v1/projects/{id}/snapshots/{sid}/files/{path}` | 同上 | canonical path | 該 snapshot 版本的 UTF-8 原文、SHA-256 與 byte count | 未授權／不存在隱匿；教師讀取沿 `teacher_view` 稽核 | 不接受裸 hash 查詢 |
 
 **P-4 task row（本批契約具體化）**：`{tid}` 是該專案持久化 `tasks.id`；讀取 DTO 僅含 `{ id, project_id, order, title, done, row_version }`。學生專案詳情由 server 讀取本人任務，不新增任務列表 HTTP API。PATCH body strict `{ done: boolean }`，不接受 caller 提供 owner／project／task 版本／批准狀態或其他欄位；更新帶 COMMON 的單一 strong quoted `If-Match: "<canonical row_version>"`。成功回 `200`＋更新後 task DTO 與新 ETag，`row_version` 原子遞增；合法舊版回 `409 version_conflict`，衝突只投影 `done` 欄位。不存在或 task 不屬於 URL 專案／本人時以 `404 not_found` 隱匿。這個勾選只表示使用者的任務勾選，不表示階段完成、教師批准、Agent 執行、測試通過、發布資格或 Gate 通過；本契約不定義 Skills／AI／Agent 的任務生成來源。
 
@@ -174,14 +176,24 @@ server 先以既有 current-classification parser 驗證三態與 SQL 內完整�
 
 ## 2. 檔案與編輯（IDE）
 
+**2026-11-06 E-1／S-1／S-3 有界產品垂直流程**（本輪不開啟 E-2 預覽、E-3、Agent 或提交）：
+
+- `GET /api/v1/projects/{id}/files` 列出本人專案已保存檔案；`GET /api/v1/projects/{id}/files/{path}` 讀取單一已保存檔案；`PUT` 同一路徑為新檔或 CAS 更新。每個 API 請求先由可信 Auth `/auth/v1/user` 驗證，再由 DB 在該次交易重驗角色／學校 gate／owner；僅本人有效學生可寫，教師／管理員不得寫學生檔案。S-3 教師讀取採既有 eligibility、membership、binding、school gate 與 `teacher_view` 稽核，不擴權其他 reader。
+- canonical path 是相對 POSIX 路徑，最多 512 ASCII bytes，只允許 ASCII `[A-Za-z0-9._/-]`、副檔名 `.html`／`.css`／`.js`（小寫）；拒絕空／絕對／重複斜線、`.`／`..` segment、反斜線、`%` 編碼、控制字元、尾隨點／空白、Windows 保留名稱及其他副檔名。內容只存 UTF-8 原文 bytes，不改換行／Unicode；空檔案合法。單檔上限為 **262,144 UTF-8 bytes**，client／server／DB 都以實際 bytes 驗證。無檔案系統、symlink、外部引用或二進位上傳。
+- 首建必須只有 `If-None-Match: *`，已存在回 `412`；更新必須只有單一 strong `If-Match: "<64 位小寫 SHA-256>"`，不符回 `409 version_conflict`，不覆寫。DB 自行計算 UTF-8 bytes／SHA-256；caller hash 僅用於比較，不作事實。保存、blob 引用、版本及其必要 receipt／audit 同交易。未知結果保留原鍵／原本文重試；不得換鍵或以目前同文推定成功。
+- 工作區以 Monaco（隨 lockfile 安裝，不用執行時 CDN）與 DB 檔案樹編輯 HTML／CSS／JavaScript。內容只作文字，不執行、`eval`、載入 script 或 iframe 預覽。明確新增檔案後才開始空專案；UI 清楚區分編輯中草稿、DB 已保存 hash／版本、manual 快照，並標示「預覽尚未提供」。
+- 草稿僅保存在 `sessionStorage`，鍵依可信帳號 scope／project／canonical path 隔離，只承諾同分頁 reload。資料永遠不可信、不含 token／cookie／秘密；保存失敗仍盡力保存草稿。reload 必先讀 server current 並比對，不得默默覆蓋任一方。storage 損壞／額度不足／不可用時明示恢復受限，不宣稱本機已保存；失權時隱藏受保護內容，不讀本機草稿。登出／換帳號不共用內容，只清理本功能鍵。保存中續編、切檔、切專案、離頁、IME 組字與晚到回應沿既有 controller／共用 `UnsavedChangesGuard` 處理，不新增攔截器。
+- manual 快照由 `project_id` 列 `FOR UPDATE` 與同一交易序列化檔案保存／快照，取得一份完整且不會被並行保存切開的已提交檔案集；dirty 時先要求保存，不能把草稿混入。manifest 以 canonical path UTF-8 bytes 升冪排序；每列 canonical bytes 為 `path + NUL + lowercase_sha256 + NUL + decimal_byte_count + LF`，`content_hash = SHA-256(concat(rows))`。DB 原子分配 `version_no`，所有 blobs／manifest 引用同交易。快照工程容量防護值明定為 **16 MiB**，計算 `sum(file_bytes + UTF8(path)_bytes + 64 hash bytes + 2 NUL bytes + decimal(byte_count)_bytes + 1 LF byte)`；此值只防止單次快照過大，不是已核定產品配額。超限回 `507 storage_limit` 並完整回滾，禁止部分快照、舊版本覆寫、自動修剪或刪除。後續檔案更新不改舊 snapshot。
+- 快照列表以 `(version_no DESC, id DESC)` keyset 穩定分頁；變更摘要只比較前一版與此版實際 manifest，回傳新增／修改／移除路徑，不使用生成式 AI。manual `immutable` 欄位照資料模型投影，不稱為 immutable submission／批准版本。快照沒有更新、刪除或 restore API。manifest 與快照檔案 API 由 project＋snapshot 引用授權，不提供 hash 存在性查詢。
+
 **2026-10-21 最新 MVP 契約（現行，取代 E-3 及 §5 的沙箱預覽埠敘述）**：E-3 回 `202`＋建置 job；以已保存快照啟動 X（`ports: []` 建置→平台取回、檢查、保存產物），成功後才簽發／更新平台控制的預覽入口供右側 iframe 使用。job 回 `queued／building／retrieving／validating／succeeded／failed／cancelled`、目標快照、目前可見版本與失敗碼；保存成功不等於建置成功，無有效產物不得回可用預覽。60 秒一次性兌換與主機名會話仍為待定稿審閱的設計，非本次批准 X 即已驗收；會話綁產物而非沙箱，見 [publishing §3.6](./publishing-and-public-runtime.md#36-mvp-方案-x現行契約2026-10-21)、[data-model §4.4](../data-model.md)。
 
 需學生伺服器程式（β2）時，不執行／不建立其公開 runtime；回 `422 student_server_runtime_not_in_mvp` 與範圍說明，Agent 可保留設計／檔案並提出合格替代，不以靜態頁宣稱功能已完成。平台 AI 與既有安全閘門維持。
 
 | # | 端點 | 說明 |
 | --- | --- | --- |
-| E-1 | `GET／PUT /api/v1/projects/{id}/files/{path}` | `PUT` 帶 `If-Match`（檔案雜湊）；成功才回「已保存」；失敗 `409／503`，**客戶端保留草稿（本機持久化）並提供手動重試**，不顯示假成功；路徑正規化，**禁止 `..`、絕對路徑、符號連結、保留名**（路徑穿越測試）；單檔上限 PP-17；二進位檔走 Storage |
-| E-2 | 狀態區分 | 回應與 UI 必須能區分「編輯草稿（客戶端）／已保存內容（伺服器）／預覽版本（對應 `snapshot_id`）」；預覽 URL 標示「私人預覽／尚未公開」與版本 |
+| E-1 | `GET /api/v1/projects/{id}/files`、`GET／PUT /api/v1/projects/{id}/files/{path}` | 本輪只支援 `.html`／`.css`／`.js`；新檔 `If-None-Match: *`、hash CAS 更新；262,144 UTF-8 bytes；路徑規則與授權依上方 2026-11-06 契約；不含二進位 Storage |
+| E-2 | 狀態區分 | 本輪區分「編輯中草稿／DB 已保存版本／manual 快照／預覽尚未提供」；不提供 preview URL、執行或 iframe |
 | E-3 | `POST /api/v1/projects/{id}/preview` | `202`＋job：在沙箱建立預覽；回傳**預覽來源**（獨立網域，R-13）與 60 秒權杖；僅擁有者與被授權教師；**審查預覽改由 `submission` 快照建構**（見 publishing 契約）；**私人預覽不提供作品呼叫生成式 AI 的途徑**（§5 不變式；2026-10-21）；預覽頁的瀏覽器連線限制由 works-edge 預覽模式提供（publishing 契約 §3.1；〔尚未驗證〕）；**（2026-10-21；第九輪更正）預覽來源為每個預覽會話獨立主機名 `{preview_id}.{preview_domain}`（每次開啟簽發新 `preview_id`，≥128 位元隨機）；回應含 `preview_id`、`expires_at` 與 60 秒、一次性兌換權杖，右側預覽 iframe 以權杖兌換一次後，其餘請求只靠 `preview_id` 主機名，不使用 cookie（publishing 契約 §3.4；~~先前的 host-only 預覽會話 cookie~~ 已撤回，因 `preview_domain` 與平台為不同可註冊網域、內嵌屬跨站 iframe）；延長與撤銷為已登入的平台 API，不經 iframe；預覽中的作品資料一律以相對路徑 `/_work/data/v1/*` 同源呼叫，由預覽模式轉送平台、落在每會話獨立的暫存命名空間（§3.3；Agent 範本須使用此相對路徑，不寫死任何網域）** |
 
 ## 3. Agent

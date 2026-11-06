@@ -1,5 +1,19 @@
 # 快速驗證指南（Quickstart）：AI APP 超級創客｜App Planet 平台首版
 
+### §105 管理員未確認學校登錄／讀回（2026-11-06；一次性有界子集）
+
+管理員由 `/login` 產品表單登入→`/admin` 學校管理→`/admin/schools` 輸入名稱、核對、明確建立→詳情 GET／reload→列表找回。明示「已登錄，尚未核驗；不代表學校已批准。」不提供核准／恢復；unknown 原鍵／原本文重試，不換鍵。詳情既存期限與文件標籤照 DB 讀取；正式核驗歷史來源尚缺，不以建立時間或 audit 拼造。
+
+```powershell
+npm run typecheck
+npx vitest run tests\contract\school-approval.test.ts tests\unit\school-handlers.test.ts tests\unit\school-operation-controller.test.ts tests\unit\membership-operation-controller.test.ts
+.\scripts\test-auth-local.ps1 -IntegrationFilter tests/integration/real-auth-admin-schools.test.ts -E2EFilter tests/auth-e2e/real-auth-admin-schools.spec.ts
+.\scripts\test-auth-local.ps1 -IntegrationOnly -Upgrade0040
+npm run build
+```
+
+使用既有隨機隔離 runner；不部署、不用真實學校或學生資料、不執行無關 foundations／Mailpit。L-2、Gate、Q-AUTH／Q-SCHOOL、正式啟用及原任務整項未勾選保持；實測與失敗保留見 [readiness §105](./readiness-review.md#105-2026-11-06-l-1l-3-管理員未確認學校登錄與讀回有界實作)。
+
 ### §89 正式七頁籤、跨資源離開防護與重新驗證恢復（2026-11-02；一次性本機子集）
 
 正式專案工作區由共用 `apps/web/src/app/student/projects/[id]/layout.tsx` 提供脈絡與七頁籤：藍圖（專案根路徑）、設計（`/design`）、計畫（`/plan`）、建立（`/build`）、測試（`/test`）、版本（`/versions`）、發布（`/publish`）。九階段仍是創作步驟，不與七區域合併完成狀態。計畫頁接手動任務匯入與既有 P-4；尚未接通的能力明示未就緒。

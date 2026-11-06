@@ -5245,3 +5245,81 @@ HTTPS browser 由學生產品建立專案、保存需求／分類／A/B 草稿�
 ### 104.4 保留、清理與交付
 
 增量交付只含本輪 scope、changes.patch、changed before／after、必要相依、validation、去敏 logs、實際下載來源及 SHA-256 對照。包外 entries／bytes／SHA-256／CRC／安全唯一路徑／manifest／patch 回放 after 一致性以外部 verification 為準，避免 ZIP 自身 hash 循環。before／after 使用實際工作樹 bytes，既有同檔改動保留；其他動工前來源一致性另核對。各 runner 只清理本輪隨機隔離身分的資源，清理結果以 logs 的 CleanupVerified 為準。
+
+## 105. 2026-11-06 L-1／L-3 管理員未確認學校登錄與讀回有界實作
+
+### 105.1 授權、實際基準與任務
+
+教育者本 session 明確批准 L-1、L-3、必要管理員分頁列表及真產品登入／UI 接線、隔離 Auth／DB／HTTPS 驗收與增量交付；只涵蓋 T021／T022／T024／T025 本輪子項。先讀現行 T021～T025／Q-SCHOOL、學校模型／approval_records 設計、正式契約、既有可信 principal／admin／receipt／audit／HTTP／分頁／UI／membership gate；不重研 Auth／M3，不展開 L-2。T015 只記本輪必要驗證；T023 未實作、原依賴／136 項任務正文與整項未勾選、Gate、Q-AUTH／Q-SCHOOL、正式啟用全部不變。
+
+動工前實際 repository `C:\Users\geste\spec-kit\app-planet`、origin `https://github.com/gestertim/app-planet.git`、分支 `work/auth-cancel-authorization`、HEAD `e97a9e30044841b04a510ea192bf649319d9b74d`、父節點 `27f9e65a59c1fb2111aa50aedd53fcf8a4f50976`、upstream `origin/work/auth-cancel-authorization` 相符，index 空。14 個歷史保留 status entries，含既有 skill／CLI 暫存、agents、0／1、certificates、歷史 console，未覆寫或封裝；不讀密鑰／憑證內容。before 以實際工作樹 bytes 保存，不用 HEAD 代替。feature directory 由 `.specify/feature.json`／prerequisites 核對，不由分支推斷。
+
+Checklist 唯讀核對：mvp-plan 24/24、plan-finalization 0/31、requirements 22/38；有未勾選但沿本輪明確有界批准繼續，不重問、不改 markers。沒有 extensions hook 登錄。未 reset／clean／stash／commit／push／merge／部署、未修改 Reviewer 或其他批次資源。
+
+### 105.2 已接線的唯一產品範圍
+
+- 下一可用 migration 是 0040，舊 0001～0039 不改。沿 schools 建 unconfirmed，DB 控制 UUID／UTC 時間／epoch=0，valid_until／current_doc_version=null；無名稱唯一性、學校身分核驗、教師歸屬或 binding。輸入只 `{label}`，目前無完整名稱 validator，故只加型別／非空白／無 NUL／既有 DB 可表示邊界；16 KiB 是傳輸界線，不是名稱政策，不截短或 trim。
+- 共用可信 Auth `/auth/v1/user`，每請求 DB 核對 admin＋approved＋deletion_state=none；建立 key lock→profile FOR SHARE→重驗；讀取亦 profile lock→重驗，鎖至提交。不信 caller role／JWT 解碼，不用 service_role。專用 NOLOGIN／NOBYPASSRLS 角色、固定 search_path、FORCE RLS、受限 EXECUTE，一般角色無通用寫入與 helper／角色切換權。
+- school／成功 receipt／固定白名單 audit 同交易；同 actor＋登錄 scope＋key＋完整 label 原意圖 replay，不建第二筆，同鍵異意圖 422。非管理員合法建立呼叫 403，沿既有 audit 管道寫空 meta／無名稱的固定拒絕安全事件；未登入 401、依賴 503、mutation unknown 503 分開。所有回應 no-store。
+- L-3 逐欄投影識別／label／當下狀態／epoch／真實 valid_until／current_doc_version。現有 `school_approval_records` 只有設計沒有表；不建立假紀錄、不以 created_at 冒充核驗或從 audit 猜摘要，回 verification_history=not_available、last_change=null。列表唯一 UUID 升序，20＋1 cursor 分頁；故障不得回空清單。
+- `/login` 產品登入→`/admin` 學校管理→列表名稱輸入／核對／明確建立→詳情 GET／reload→列表找回。取消不送、SSR hydration 前停用、鍵盤／Escape／焦點返回、敏感 Link 禁 prefetch。明示「已登錄，尚未核驗；不代表學校已批准。」unknown sessionStorage 保存帳號 scope 完整 intent，明確原鍵原本文恢復；共用 controller 核對 lifecycle／完整 intent，晚到 response／body 不清新操作，沒有全面管理功能重構。
+
+### 105.3 實測、首次失敗與精確限制
+
+最終有界驗證使用來源 SHA-256 清單，與增量 after／必要相依逐一對照；完整命令／每次 exit／去敏 logs／來源對照見交付 `validation.json`、`validation-sources.json`、`after-sha256.json` 與包外 verification。
+
+| 驗證 | 結果／界線 |
+| --- | --- |
+| typecheck | 全工作區及 tests 通過，exit 0 |
+| unit／contract | 6 files、50 tests 通過，含本輪 strict DTO／HTTP／controller 及既有 membership；exit 0 |
+| 真 Auth／隔離 PostgreSQL 新庫 | 學校 10＋既有 membership 20＝30 tests 通過；原鍵並行、不同鍵同名、提交後原鍵重放、receipt 後失權、teacher／student 偽造 role 拒絕及固定事件、建立／列表／詳情三種真 profile lock barrier、audit rollback、跨頁不漏不重、真期限／文件投影、直接 RPC／一般 DML 拒絕、unconfirmed membership／學生 gate、既有資料保持；exit 0 |
+| 0039→0040 升級 | 10 tests 通過，升級前既存 schools／memberships／bindings／歷史表存在性 snapshot 不變，重跑新增能力／權限／競態；exit 0 |
+| 真 Next HTTPS | 1 完整流程通過：合成 setup 只建管理員 Auth／profile，兩所主要學校均由產品表單 POST 建立；hydration 攔 script、取消／Escape／焦點、詳情 reload、列表找回、實際 route.fetch 等待 201 已提交後 abort 回應、reload 原鍵原本文重試 200、DB 只兩筆未確認且無歸屬；exit 0 |
+| production build | Next optimized production build 通過；不等於部署或 production runtime HTTPS E2E |
+
+保留所有失敗，不以重跑覆蓋：首次 typecheck 在編輯中的 vitest include 語法失敗，第二次為測試誤用不存在的 accountGate method；修正設定與測試呼叫後通過。首次 Auth／DB 9/10，測試用了非正式階段名稱 Requirements 而先得 404，改正式 Specification 後 10/10；該次 HTTPS **not_run**（runner 依失敗停止）。第一個實際 HTTPS 試次在 script 解鎖前 unroute 造成 route already handled／hydration 逾時，第二次在全文件導向後讀舊 response body 造成 protocol error，第三次在列表資料抵達前同步檢查而誤判未找到；修正為等待 route handler 完成、以提交後 DB／URL 交叉核對、等待可觀察列表結果，後續完整流程通過。以上失敗 exit 均為 1，原始安全測試輸出另去敏保留。
+
+**未執行／未宣稱**：L-2／核驗／撤回／到期／恢復、批准文件、學生核發／轉校／登入碼／真學生登入 UI、AI／發布／公開入口、完整四狀態／背景連動、無關 foundations／Mailpit／歷史 timeout 調查、正式環境與部署、Reviewer 審閱。合成學生換 school 只供既有 unconfirmed gate 拒絕驗收，不是產品轉校能力。
+
+**最小政策／資料缺口**：學校登錄 receipt 尚無核定的適用保存／清理／到期恢復政策；沿既有歸屬範式保留 receipt，不加 TTL、不套用專案 24 小時政策、不承諾永久 exactly-once。分頁關閉／清除 sessionStorage 可失去原鍵，不保證該情況可恢復。正式 approval_records 歷史／最後變更來源、valid_until 語意與其餘 Q-SCHOOL 仍待核定；不以本輪實作替代。
+
+### 105.4 保留、交付與停止點
+
+增量 ZIP 只含本輪 scope、changes.patch、實際 changed before／after、必要來源相依、validation、去敏 logs、實測來源與 after SHA-256 對照；不含憑證、秘密設定、token／cookie、歷史 console 或保留項內容。包外提供 entries、完整路徑、bytes、SHA-256 與 verification，檢查 CRC、安全唯一路徑、manifest、patch 在實際 before 上回放與 after bytes 完全一致；ZIP 自身 hash 不放入自身以免循環。
+
+各 runner 只建立／清理本輪隨機隔離身分，全部執行的 runner 有 CleanupVerified containers=0／volumes=0／networks=0 證據；不清其他環境。Next 自動生成型別路徑由最後 production build 還原為動工前模式，不納入產品差異。完成後停止，等待 Reviewer；本節不是常設授權，也不擴展 L-2 或 Gate。
+
+## 106. 2026-11-06 E-1／S-1／S-3 原始碼與 manual 快照垂直流程
+
+### 106.1 授權、實際 before 與保留界線
+
+本 session 使用者明確批准本批有界實作：E-1 本人學生原始碼列舉／單檔讀寫、Monaco／sessionStorage、S-1 manual-only snapshot、S-3 本人與既有有效綁定教師唯讀，及直接必要的測試、契約、migration、API 與產品 UI。僅限本輪列明子集；不將 manual snapshot 接成 0037 Agent 執行前置，不解鎖 preview、sandbox、pre_agent、pre_restore、submission、restore、正式部署或一般產品開發。
+
+實際 before 是本輪開始時的工作樹，含已存在 L-1／L-3 與 migration 0040 等未提交成果；不以 HEAD 代替 before。來源對照與實際 before／after 位元組清單見本批交付 `source-versions.json`、`before-sha256.json`、`after-sha256.json`。HEAD／branch／origin 以 §105.1 已核對值為基準，未建立 commit；任務正文、依賴、整項勾選、Gate、Q-AUTH／Q-SCHOOL、教育者正式審議狀態不變。未 reset／clean／stash／commit／push／merge／部署，未修改 Reviewer 或觸碰 go-anywhere；不讀取或封裝秘密／憑證。
+
+### 106.2 已接通的本批契約
+
+- Migration 0041 為下一個可用編號；不改 0010 或既有 migration。本人學生每次請求均驗可信 Auth `/auth/v1/user`，並由 DB 重新確認即時角色、school gate 與 project owner。寫入不允許 teacher／admin；教師快照 read 沿現行 eligibility、membership、binding、school gate 及 `teacher_view` 稽核，稽核失敗不釋出內容。
+- 檔案 API 提供 project file list、單檔原文讀取、未存在才建立及 hash CAS 更新。路徑採 canonical 相對 POSIX path；拒絕穿越、絕對路徑、重複斜線、反斜線、編碼歧義、保留名與不支援副檔名。內容保留 UTF-8 原文 bytes／換行，空檔案合法；client／server／DB 均以 bytes 限制單檔 262,144 bytes，hash／bytes 由 DB 計算。首建 `If-None-Match: *`，更新單一 strong `If-Match`；衝突不覆寫。receipt、blob 引用、版本、audit 與檔案資料同交易。
+- 工作區從明確新增檔案開始，Monaco 0.57.0 與語言貢獻由 lockfile 本機載入，不用 CDN。原始碼僅文字顯示，不執行學生程式、`eval`、script、iframe 或 preview。sessionStorage 鍵以可信帳號／project／canonical path 隔離；reload 先比對 DB，不靜默覆蓋。保存未知結果以原鍵／原本文重放；sessionStorage 損壞／額度不足明示恢復限制。保存中續編保持本機新內容；共用 `UnsavedChangesGuard` 處理工作區切換。
+- manual 快照只由 DB 已保存完整檔案集建立。manifest 以 canonical path UTF-8 bytes 排序，hash 使用固定 `path + NUL + lowercase_sha256 + NUL + decimal_byte_count + LF` bytes 串接。DB 原子分配 version；讀取提供分頁、差異摘要、manifest 與快照檔案本文。16 MiB 容量只為工程防護，計算各列原始 bytes、path bytes、hash／分隔／十進位長度；超限回 507 `storage_limit` 並完整 rollback，不部分保存、不覆寫或自動刪除舊快照。manual `immutable` 沿模型欄位投影，不稱為 submission 或批准版本。
+
+### 106.3 實測結果、首次失敗與修正
+
+| 驗證 | 結果 |
+| --- | --- |
+| `npm run typecheck` | 全 workspace 與 tests 通過，exit 0 |
+| 聚焦 unit／contract | 2 files、12 tests 通過，涵蓋原鍵 replay、reload 收斂、續編保留、跨帳號草稿隔離、storage 損壞／額度不足與檔案／snapshot schema，exit 0 |
+| 真 Auth／隔離 PostgreSQL 新庫 | 1 integration file、9 tests 通過，含列舉／讀寫／UTF-8 上限、If-Match／If-None-Match、response-loss replay、student／staff gate、snapshot list／manifest／immutable file、並行 CAS／snapshot、16 MiB 精確容量與超限 507／完整 rollback、audit fault rollback、教師 binding／跨學生拒絕；exit 0 |
+| 0040→0041 隔離升級 | 1 integration file、9 tests 通過，原有 project 資料 migration 前後相同，exit 0 |
+| 真 Next HTTPS 合併 runner | integration 9/9 後接產品 UI E2E 1/1 通過：建立／保存 HTML、CSS、JavaScript、reload 讀回、manual 快照與舊版本本文、dirty 時禁止 snapshot、雙 context hash 衝突、commit 後 response abort／reload／原鍵 replay、CDN 請求為空；exit 0 |
+| `npm run build` | Next optimized production build 通過；不等於部署或 production runtime 驗收 |
+| `git diff --check` | 通過，exit 0 |
+
+保留首次失敗，不以重跑覆蓋：file receipt 的 `created_at`／`expires_at` 分別呼叫 `clock_timestamp()`，偶發 23514；改為同一交易時間值。Monaco 靜態匯入在 SSR 觸發 `window is not defined`，改為 client-only module；SSR `sessionStorage=null` 的警告引發 hydration mismatch，改為 server inert store。學生 snapshot list 未測到的 SQL 漏 `FROM visible s`，GET 回 503／42P01；補真 DB regression。response-loss replay 原回 201，修為 replay 200；reload 後相同內容仍 dirty，改以 submitted content equality 判斷並加 unit regression。Playwright 原 `fill()` 不支援 Monaco native edit context，改以鍵盤事件；補讀回完成屏障、展開衝突 details，測試通過。首次 E2E 還有編輯器互動 timeout、CAS 用例先行保存 412、衝突本文 collapsed、replay 後狀態 assertion 不符等失敗，均保留於去敏 logs；最後合併 runner exit 0。
+
+### 106.4 尚未執行／不宣稱與交付
+
+未執行真實登入碼／學生身分 E2E、教師產品登入 UI E2E、作業系統實體中文 IME、binding／membership 撤銷後已排隊請求的真正 lock barrier、部署與 production HTTPS。教師合法讀取、teacher audit、跨學生拒絕、binding 結束後新讀取拒絕已用合成 Auth／DB integration 驗證，不能等同教師產品登入流程。並行保存驗收涵蓋單一 file CAS 與 snapshot；沒有多檔批次保存交易，故不宣稱多個獨立保存跨 snapshot 為原子批次。沒有核定產品配額、保存期限或清除政策。
+
+增量 ZIP、`changes.patch`、本輪 before／after SHA-256、source version、validation 與去敏 logs 已封裝於 session artifact；manifest、CRC、唯一安全路徑、ZIP bytes／SHA-256、patch replay 與 after hash 一致性另有包外驗證紀錄。封裝排除既有 L-1／L-3／0040、歷史 console、憑證、秘密設定、token／cookie、build cache 與隔離資料。runner 均只清理自身隨機隔離身分，已驗 `CleanupVerified containers=0／volumes=0／networks=0`。本節不改 tasks markers、不表示 Gate 通過或常設授權；交付後停止，等待 Reviewer。

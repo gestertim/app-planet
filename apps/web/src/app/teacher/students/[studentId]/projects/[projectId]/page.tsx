@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { resolveTeacherPageSession } from "@/server/teacher-page-access";
 import { readTeacherProject } from "@/server/teacher-resources";
+import { ProjectSnapshotsPanel } from "@/components/project/project-snapshots-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -67,6 +68,16 @@ export default async function TeacherProjectPage({ params }: {
       {tasks.next_cursor && <Link prefetch={false} href={`${base}/tasks?after=${tasks.next_cursor}`}>
         查看下一頁任務
       </Link>}
+    </section>
+    <section className="card" aria-label="學生手動快照唯讀">
+      <ProjectSnapshotsPanel
+        key={`${studentId}:${project.id}`}
+        projectId={project.id}
+        accountScope={`teacher-read-${studentId}`}
+        dirty={false}
+        baseUrl={`/api/v1/teacher/students/${encodeURIComponent(studentId)}/projects/${encodeURIComponent(project.id)}/snapshots`}
+        readOnly
+      />
     </section>
   </AppShell>;
 }

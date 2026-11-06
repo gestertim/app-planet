@@ -42,6 +42,8 @@
 
 ### 1.2 `school_approval_records`（追加式；僅管理員可寫）
 
+**2026-11-06 §105 實際邊界**：本表目前僅為正式設計，0001～0040 未建立實體；L-3 不偽造紀錄或由 audit 推導歷史，回 `verification_history=not_available`／`last_change=null`。0040 只沿 schools 建立 unconfirmed（epoch=0、valid_until／current_doc_version=null），加獨立 `school_registration_receipts(actor_id,operation_key,intent,result)`；actor＋登錄 scope＋完整原 label 綁定，成功 audit／school／receipt 原子提交。沒有新增核驗政策、TTL、到期／轉態或其他關係；正式模型以下保留。
+
 `id`、`school_id`、`action`（`register`｜`verify`｜`withdraw`｜`expire`｜`restore`）、`from_state`、`to_state`、`doc_version_label`、`doc_date`、`reason_code`（固定碼，非自由文字）、`actor_aid`、`created_at`、`epoch_after`。
 - 不含學生或家長個人資料（FR-047）；不含證明檔（是否附證明檔未決，OD-13(3)，不預設）。
 - `restore` 必須帶 `doc_version_label`（FR-047(e)：未記錄文件版本不得恢復）——以 `CHECK (action <> 'restore' OR doc_version_label IS NOT NULL)` 與函式雙重強制。
@@ -215,11 +217,17 @@ teacher_can_view_student(teacher, student) =
 | `project_create_idempotency` | `owner_id`、`operation_scope`、`idempotency_key uuid`、本文比對資料、`project_id`、原始建立 DTO、`created_at`、`expires_at` | 僅建立操作、主體與 scope 複合唯一；expires_at 至少建立後 24 小時。過期 key 僅在同鍵重用時交易內移除，不設永久保存政策或定時清理。 |
 | `stage_records` | `(project_id, stage)` 複合 PK；`stage`（九步）、`state`（完整模型：`ai_draft`｜`user_confirmed`｜`approved`）、`content_source`、`content jsonb`、`row_version int`、`approved_by`、`approved_at`、DB `created_at`／`updated_at` | 草案／確認／批准三態分開（FR-019）；本機 §45 僅建立未確認草稿子集，state 固定 `ai_draft`、來源固定 `student_input`、批准欄位 NULL，不提供確認／批准寫入。狀態名稱不證明 AI 生成。 |
 | `stage_draft_idempotency` | `(owner_id, operation_scope, idempotency_key uuid)` 複合 PK；`project_id`、`request_payload jsonb`、`response jsonb`、`created_at`／`expires_at` | §45 草稿保存 scope `stage_draft_save_v1`；至少 24 小時、重放重新授權；原操作 receipt 與當前草稿分開，不定草稿保存期限／歷史數量或排程。 |
-| `blobs` | `hash text PK`（SHA-256）、`bytes int`、`content bytea` | 內容定址；文字原始碼去重；單檔上限〔PP-17〕 |
-| `snapshots` | `id`、`project_id`、`version_no`、`kind`（`auto`｜`manual`｜`pre_agent`｜`pre_restore`｜`submission`）、`manifest jsonb`（路徑→hash）、`content_hash`（整個 manifest 的雜湊）、`immutable bool`、`created_by` | `submission` 版本 `immutable=true`，由觸發器禁止更新／刪除（專案存續期間）；一般快照保留份數〔PP-18，PD-03 建議 30 份未批准〕 |
+| `blobs` | `hash text PK`（SHA-256）、`bytes int`、`content bytea` | 內容定址；文字原始碼去重；E-1 單檔上限 262,144 UTF-8 bytes；只透過授權 project／snapshot 引用讀取，不提供全域 hash lookup |
+| `project_files` | `(project_id, path)` PK、`blob_hash`、`bytes`、`row_version`、`created_at`／`updated_at` | E-1 僅本人有效學生可寫；path 為 canonical POSIX path；hash／bytes 由 DB 從 UTF-8 原文計算；首建／更新以 If-None-Match／If-Match CAS |
+| `project_file_receipts` | `(owner_id, project_id, operation_scope, idempotency_key uuid)`、意圖指紋、操作 response、`created_at`／`expires_at` | 保存、blob 引用與 receipt 同交易；24 小時內只允許原鍵原意圖重放，不以 current 同文推定 |
+| `snapshots` | `id`、`project_id`、`version_no`、`kind` 僅本輪 `manual`、`manifest jsonb`（path→hash／bytes）、`content_hash`、`immutable`、`message`、`created_by`、`created_at` | 只從已保存 `project_files` 建立；DB 原子分配版本；本輪不提供更新／刪除／restore／自動修剪；manual 的 immutable 欄位沿模型投影 |
+| `snapshot_files` | `(snapshot_id, path)` PK、`blob_hash`、`bytes` | 快照檔案引用不可變；FK 確保 blob 存在；後續 current file 更新不變更舊快照 |
+| `snapshot_receipts` | `(owner_id, project_id, operation_scope, idempotency_key uuid)`、意圖指紋、snapshot response、`created_at`／`expires_at` | 24 小時內同鍵同意圖回原操作、不新增版本；同鍵異意圖拒絕；快照與 receipt 同交易 |
 | `tasks` | `id uuid PK`、`project_id`、`order int`、`title`、`done bool`、`done_snapshot_id NULL`、`row_version int` | P-4 的 `{tid}` 識別持久化任務列；本人手動 `done` PATCH 僅更新 `done` 與 task row_version（新任務版本 0、成功更新遞增），不修改 project／stage／批准或 Agent 狀態。任務生成／初始載入來源（Skills／AI／Agent）仍未接通；本批只接通本人學生手動輸入並確認的首次匯入（`0024_project_task_manual_import.sql`，不得在產品頁建立假任務）。FR-023 要求任務更新真正寫入。 |
 | `project_task_imports` | `project_id uuid PK`（RESTRICT 關聯專案）、`owner_id`、`idempotency_key uuid`、`request_hash`（sha256，標題陣列正規化）、`task_ids uuid[]`（1..50）、`source = 'student_manual'`、`confirmed_at`；`UNIQUE(owner_id, idempotency_key)` | 手動首次匯入的確認／冪等紀錄，與任務同交易寫入；每專案至多一筆，不過期；FORCE RLS，只有受控 `app_project_task_importer` 可讀寫，authenticated 無直接權限。不含批准／階段／Agent 語意。 |
 | `test_runs` | `id`、`snapshot_id`、`status`（`passed`｜`failed`｜`not_run`｜`needs_human`）、`detail jsonb` | **綁定快照**；`not_run`／`needs_human` 不得以任何路徑被聚合成 `passed`（SC-006）；聚合函式以案例表測試 |
+
+**2026-11-06 E-1／S-1／S-3 有界子集**：blob 為 SHA-256 對應原始 UTF-8 bytes；canonical path 最多 512 ASCII bytes、單檔最多 262,144 UTF-8 bytes，寫入資格與交易邊界依 [projects-agent-sandbox §2](./contracts/projects-agent-sandbox.md#2-檔案與編輯ide)。manifest rows 以 path UTF-8 bytes 升冪排序，canonical row 是 `path + NUL + lowercase_sha256 + NUL + decimal_byte_count + LF`；`content_hash` 為所有 canonical rows 串接 bytes 的 SHA-256。檔案保存與 snapshot 以 `project_id` row lock 序列化，同一 snapshot 交易取得完整已提交 file set，不會混入並行更新的一部分。容量防護值為 16 MiB，計算 `sum(file_bytes + UTF8(path)_bytes + 64 hash bytes + 2 NUL bytes + decimal(byte_count)_bytes + 1 LF byte)`；只屬工程防護，不是產品配額，超限整筆 rollback。摘要只比較前後 manifest 的實際差異，不推測未保存內容或用 AI 產生。教師只可經既有教師資格與 `teacher_view` audit 讀取。
 
 **P-1 新專案初始化（2026-10-24；本輪採方案 B）**：受控流程固定 `stage="點子"`、`row_version=0`、`classification_state="unconfirmed"`；省略 tier 時 `requested_tier=NULL`，明示 A／B 精確保存為 requested_tier；可信 `tier` 與 `needs_visitor_identity` 均 NULL。caller 不可指定這些欄位、owner、id 或時間。未分類建立不授予預覽／提交／發布／部署資格。歷史 `0001`／`0002`／`0009` 不修改；`0010_projects_unclassified_create.sql` 將原資料標為 `legacy_unverified`。本輪 §43 新增的 `0011_project_requirements_classification.sql` 才提供確認資料模型／受控確認寫入，保留 0010 已驗證內容，不新增全表 row_version 非負限制；舊九階段與負／零版本維持讀取相容。
 
