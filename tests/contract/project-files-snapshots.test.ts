@@ -9,17 +9,29 @@ import {
   projectSnapshotDtoSchema,
 } from "@app-planet/core";
 import { snapshotContentHash } from "../../apps/web/src/server/project-files.ts";
+import { legacyOnlyPathCases, projectFilePathCases } from "../support/project-file-path-cases.ts";
 
 describe("專案原始碼與 manual 快照契約", () => {
   it("只接受 canonical 相對 POSIX 路徑與支援副檔名，並限制 512 ASCII bytes", () => {
     expect(projectFilePathSchema.safeParse("index.html").success).toBe(true);
     expect(projectFilePathSchema.safeParse("src/main.js").success).toBe(true);
+    expect(projectFilePathSchema.safeParse("src/CONSOLE.js").success).toBe(true);
+    expect(projectFilePathSchema.safeParse("src/Auxiliary.css").success).toBe(true);
     expect(projectFilePathSchema.safeParse(`${"a/".repeat(253)}x.html`).success).toBe(true);
     for (const path of [
       "", "/index.html", "src//main.js", "../index.html", "src/./main.css",
-      "src\\main.js", "%2e%2e/index.html", "CON.js", "folder/AUX.css",
+      "src\\main.js", "%2e%2e/index.html", "CON.js", "con.js",
+      "folder/AUX.css", "nested/folder/Aux.css", "nested/prn.html",
       "index.HTML", `${"a/".repeat(253)}xx.html`,
     ]) expect(projectFilePathSchema.safeParse(path).success, path).toBe(false);
+  });
+
+  it("§108 共用路徑案例：schema 與現行規則一致", () => {
+    for (const entry of projectFilePathCases) {
+      expect(projectFilePathSchema.safeParse(entry.path).success, `${entry.note}:${entry.path.slice(0, 40)}`)
+        .toBe(entry.current);
+    }
+    expect(legacyOnlyPathCases.map((entry) => entry.path)).toEqual(expect.arrayContaining(["con.js", "Aux.css"]));
   });
 
   it("以 UTF-8 bytes 計算 262,143／262,144／262,145 邊界，含繁中與 emoji", () => {

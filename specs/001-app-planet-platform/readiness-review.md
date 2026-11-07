@@ -5323,3 +5323,110 @@ Checklist 唯讀核對：mvp-plan 24/24、plan-finalization 0/31、requirements 
 未執行真實登入碼／學生身分 E2E、教師產品登入 UI E2E、作業系統實體中文 IME、binding／membership 撤銷後已排隊請求的真正 lock barrier、部署與 production HTTPS。教師合法讀取、teacher audit、跨學生拒絕、binding 結束後新讀取拒絕已用合成 Auth／DB integration 驗證，不能等同教師產品登入流程。並行保存驗收涵蓋單一 file CAS 與 snapshot；沒有多檔批次保存交易，故不宣稱多個獨立保存跨 snapshot 為原子批次。沒有核定產品配額、保存期限或清除政策。
 
 增量 ZIP、`changes.patch`、本輪 before／after SHA-256、source version、validation 與去敏 logs 已封裝於 session artifact；manifest、CRC、唯一安全路徑、ZIP bytes／SHA-256、patch replay 與 after hash 一致性另有包外驗證紀錄。封裝排除既有 L-1／L-3／0040、歷史 console、憑證、秘密設定、token／cookie、build cache 與隔離資料。runner 均只清理自身隨機隔離身分，已驗 `CleanupVerified containers=0／volumes=0／networks=0`。本節不改 tasks markers、不表示 Gate 通過或常設授權；交付後停止，等待 Reviewer。
+
+## 107. 2026-11-06 E-1／S-1／S-3 F-01～F-08 有界修正續記
+
+### 107.1 基準、授權及歷史限制
+
+依本 session 使用者明確授權，只處理 §106 同一 E-1／S-1／S-3 範圍內的 F-01～F-08 修正與直接驗收；指定 HEAD `95c0bbddff930af2cb73e737280b82de1f79c981`、branch、origin 經核對相符，index 保持空。原始工作樹中的 14 個歷史保留項與 `next-env.d.ts` dirty 差異已保留；production build 曾將 `next-env.d.ts` 改回一般 `.next/types` 引用，已依動工前 `preexisting-worktree.patch` 還原為 `.next/dev/types`，最終差異與原 patch 相同。未 reset／clean／stash／commit／push／merge／部署；未修改 tasks 正文、依賴、整項勾選、Gate、Q 狀態或 reviewer 指引。
+
+F-07 有界核對未找到可證明舊 `changes.patch` runner context／重複 P-4I 刪除前狀態的可靠來源；不反推或宣稱修復舊歷史。本輪以動工前實際 before bytes 建新修正證據。此新證據只證明本輪，不替代舊交付來源。
+
+### 107.2 本輪修正與新增回歸
+
+- F-01／F-02：檔案保存依正式 problem code 分類；成功 HTTP 但 body／DTO／內容摘要不可信時保留原鍵及原本文；`operation_outcome_unrecoverable` 不清鍵、不改成 conflict。草稿 CAS 基準與 server current 分離，續編／reload 不暗中採用新基準。
+- F-03：保存與 snapshot 操作在 await 後重驗 instance／generation／ownership，storage 清理先比對完整紀錄；snapshot 建立以同步 ref 防止重複送出。新增受控 Promise 的成功、確定拒絕、body 與 fetch 晚到回歸；未宣稱取消 fetch 可撤銷已提交交易。
+- F-04／F-05：snapshot 清單、manifest、檔案讀取依 resource／generation／snapshot／path 綁定；失權使受保護內容隱藏並淘汰舊請求。snapshot problem code 先分類；507 `storage_limit` 清除該筆已確認未建立的 key，未知／unrecoverable 保留原 key 並只允許 replay-only。分類 regression 首次重現 507 被通用 5xx 分支誤歸為 unknown，調整分類順序後通過。
+- F-06：新增 migration 0042，DB 保留名檢查採大小寫不敏感並先計數阻擋既有違規，不改寫 0041；handler／schema／受限 DB path cases 與 0041→0042 升級案例已加入。
+- F-08：rollback 測試明確指定 `rollbackProject`；故障前先證明同一 project 有非空檔案與 snapshot 引用，再分別斷言保存稽核及快照稽核故障沒有部分提交。
+- 直接驗收：加入真 Next HTTPS 測試案例，涵蓋 507、unrecoverable、commit 後 response loss／reload／同鍵 replay、dirty navigation、合成 composition、快照版本逆序回應，以及教師透過產品 `/login` 表單唯讀讀取學生 UI 所保存的快照。教師測試使用合成學生 session／學校／binding fixture，不是學生產品登入碼 E2E。另新增 DB 測試碼以獨立交易、正式 snapshot reader 與 `pg_blocking_pids` 驗證收權鎖等待及 teacher-view audit failure；尚未在真 DB 執行。
+
+### 107.3 已執行驗證與未執行項
+
+| 驗證 | 結果 |
+| --- | --- |
+| `npm run typecheck` | workspace 與 tests 在還原 `next-env.d.ts` 後通過，exit 0；2026-11-06 21:57:45–21:57:51 +08:00 |
+| 聚焦 unit／contract | 3 files、19 tests 通過，exit 0；含保存與 CAS、晚到 operation ownership、path case 規則及 507 分類；507 分類首次紅燈與修正後綠燈輸出均保留於審閱包 |
+| `npm run build` | 最終 production source build 通過，exit 0；2026-11-06 21:57:10–21:57:26 +08:00。build 後將 `next-env.d.ts` 還原至動工前差異 |
+| `git diff --check` | 通過，exit 0 |
+| 真 Auth／隔離 PostgreSQL、新庫／0041 升級 | 未執行。`docker info` 無法連線 `dockerDesktopLinuxEngine` named pipe，沒有 Docker daemon；不能宣稱 DB／migration／lock／cleanup 測試通過 |
+| 真 Next HTTPS／教師登入及導覽 E2E | 未執行，依賴上述隔離 Auth／PostgreSQL runner |
+| 實體中文 IME | 未執行；自動化僅送合成 CompositionEvent，不代表實體輸入法驗收 |
+
+未執行的 Auth／DB／HTTPS 驗收仍是完成定義缺口；新增測試碼與 typecheck 不替代執行結果。Checkpoint／完整 MVP Readiness Gate、正式審議／簽核、T057／T068 整項狀態及功能啟用均不變；本節不是 Gate 通過、任務結案或常設授權。
+
+## 108. 2026-11-07 E-1／S-1／S-3 §107 後續收斂與實際驗收
+
+### 108.1 基準、授權及範圍
+
+依本 session 使用者明確授權，只處理 §107 遺留的 F-05 replay-only 成功收據、F-08 非空 rollback 完整比較、F-03／F-04 指定競態、撤權先行真 DB barrier、F-06 0041→0042 非法歷史升級，以及上述各項的實際驗收。repository、origin、branch `work/auth-cancel-authorization`、HEAD `95c0bbddff930af2cb73e737280b82de1f79c981` 經核對相符，index 為空。本輪增量基準是動工前實際工作樹：既有 dirty 檔保存 before bytes／SHA-256；動工時乾淨、本輪才修改的檔案（`unsaved-changes-guard.tsx`、`vitest.auth.config.ts`）以 HEAD 經 `core.autocrlf=true` 檢出的 bytes 作 before。§107 的 F-01～F-08 未提交成果、0042、14 個歷史保留項及 `next-env.d.ts` 均保留；production build 改寫的 `next-env.d.ts` 已還原為動工前雜湊。未 reset／clean／stash／commit／push／merge／部署，未觸碰 go-anywhere；未修改 reviewer 指引、Analyze 指引、tasks 正文／依賴／整項勾選、Gate 或 Q。F-07 舊 before 不可證的限制依指示接受，不重開。
+
+Docker Desktop 原未啟動；本輪只啟動既有 Docker Desktop，確認 Linux engine 可用後執行。未重裝、未 reset／prune、未刪 volume、未操作 WSL 或其他專案容器。每次隔離 runner 結束皆輸出 `CleanupVerified=… containers=0 volumes=0 networks=0`。
+
+### 108.2 產品修正
+
+- F-05（`project-snapshots-panel.tsx`、`project-file-controller.ts`）：送出時固定本次 operation mode。replay-only 只有在收到 200、strict DTO、manual kind，且與原操作一致時，才清除原 pending；replay-only 收到 201，即使 DTO 合法，也維持未知，保留原 key／原意圖。一般請求的首次 201（檔案新建須 `If-None-Match: *`）與同鍵重放 200 照常完成。body 中斷、非法 DTO 與 unrecoverable 都保留原操作。檔案保存 controller 有同類模式判定缺陷，已在同一批修正並補測。
+- 快照操作鍵檢查（E2E 首敗揭露）：`isSnapshotOperationKey` 原 regex 與產品產生的 UUID 格式（8-4-4-4-12）不符，reload 後原鍵無法恢復；已修正，並以 unit 紅燈→綠燈固定。
+- 檔案選取競態（E2E 首敗揭露）：`createDraft` 原本未使進行中的 `open()` 失效，晚到的舊檔讀取會奪回 active path，使後續輸入寫進其他檔案。已改以 selection 世代計數判定；`initialize` 若遇選取已改變，就不再開啟初始 hash，並保留 local-only 草稿。已補 2 個 unit 紅燈→綠燈。
+- Guard 同文件 hash 導覽（E2E＋trace 揭露）：`perform()` 對 link 先 dispatch，之後晚到的非同步 `router.push` 會把網址改回舊檔，造成目前檔案與 URL 不一致，下一次點擊不再被攔截。同 origin、同 path／search 的 hash 導覽改為同步 `history.pushState`，其他導覽仍走 `router.push`。
+
+### 108.3 測試與驗收補強
+
+- F-08：保存與快照稽核故障均指向同一 `rollbackProject`。故障前先經正式 handler 建立非空檔案、manual snapshot、receipt 與 audit；故障後比較完整且穩定排序的列內容（檔案全文、hash、bytes、版本、時間、blob 與引用、snapshot 列與 manifest、`snapshot_files`、receipt、audit），確認新 blob／snapshot／receipt／成功 audit 都沒有殘留。撤除故障後，正常保存仍可成功。故障注入只用於隔離 fixture，並在 finally 撤除。
+- 撤權先行 barrier：保留原本「reader 先鎖、撤權等待」案例，另以參數化方式新增 list／manifest／file 三條反向案例。先由獨立 transaction 經正式收權操作持有鎖但不提交，再啟動合格教師 reader；以 reader PID、收權 PID 與 `pg_blocking_pids` 證明等待關係後才 COMMIT。等待中的 reader 必須拒絕，不釋出受保護內容、不新增 teacher_view，學生資料與舊快照不變。既有 teacher_view 稽核故障不釋出內容的案例也實跑。
+- F-06：新增獨立 0041 fixture。在 0041 實際規則下建立 `con.js`、`Aux.css` 等歷史路徑與 `snapshot_files` 引用；不先套用 0042，也不移除舊 constraint。執行 0042 時明確阻擋，只揭露數量，不輸出路徑或學生資料。失敗前後資料、舊函式／constraint 與 migration 狀態皆相同，沒有部分套用。合法資料的 0041→0042 升級與新庫另行驗證成功。schema、HTTP 與受限 DB 呼叫共用 `tests/support/project-file-path-cases.ts`，各層依自身正式錯誤回應驗證。
+- F-03（真 Next HTTPS）：
+  - 檔案保存中，A 的 body 停在 `response.json()`；返回導覽被 guard 攔下，dialog 顯示「正在保存」。選擇留在本頁後釋放 A，A 正常完成。
+  - 快照建立時，A 的 body 已停在 json，經產品「版本」頁籤離開再返回，同一文件 marker 不變；以原鍵 replay 得到 200。之後 B 經回應中斷成為未知；釋放 A 的舊 body 後，B 的 storage 原紀錄逐字不變。reload 後以 B 原鍵 replay 得到 200。
+  - Edge headless 的 traverse 一律可取消，且 guard 在 saving 時會攔下所有離開，因此「檔案保存中離開後晚到 body」在產品 UI 不可達。這個跨實例副作用由 controller unit 測試（受控 Promise）證明；E2E 證明的是 guard 攔截與快照路徑。
+- F-04（真 Next HTTPS）：
+  - 保留 A／B manifest 與檔案逆序案例。
+  - 第二頁 body 停住時，同一實例的建立與「載入更多」都被產品 loading gate 停用，無法在同一實例觸發；因此改走可達流程：舊實例第二頁停住 → 經頁籤卸載重入 → 新實例載入並建立 V22 → 釋放舊第二頁。結果不覆蓋、不重複、不混入。
+  - 卸載重入後的 manifest、切換專案後的 manifest，以及教師在可信失權拒絕後才釋放舊成功 body，都不會恢復保護內容，也不新增 teacher_view。
+  - 每項都核對畫面版本、manifest、path、內容與 storage。
+- 隔離 runner 的 `jwt_expiry=60`：長流程沿用既有合成 session 續期 setup，每 30 秒重新取得 session，測試結尾斷言續期無錯誤。這不是學生產品登入碼 E2E。
+- Playwright 攔截競態（測試接線）：`times:1` 路由耗盡時，Playwright 會送出未等待的空攔截模式更新，可能與緊接註冊的下一個 hold 互相競速而停用攔截。log 37 的請求因此直接放行，測試在無期限等待中逾時；log 39 的診斷版則顯示 hold handler 未被呼叫，請求 `ERR_ABORTED`。修正方式是在 page 建立後註冊不改變請求的 `fallback` 路由，使攔截保持啟用；hold 等待改為 30 秒期限並附診斷。斷言未放寬。
+
+### 108.4 首敗與判定
+
+| 首敗 | 判定 | 處置 |
+| --- | --- | --- |
+| F-05 unit 紅燈（10 failed／28） | 產品缺陷 | 修正後 28／28 |
+| 0041 非法歷史首跑：`permission denied for function canonical_project_file_path` | 測試授權接線（canonical 函式依 0041 授權不開放 authenticated） | 規則核對改走 owner 控制連線，受限呼叫改走正式 `write_project_file`；產品授權未放寬 |
+| E2E：reload 後無法以原鍵恢復快照 | 產品缺陷（UUID regex） | 先 unit 紅燈再修正 |
+| E2E：saving 中 goBack 被 guard 取消 | 測試設計（traverse 可取消） | 改驗 guard 攔截，跨實例副作用由 unit 證明 |
+| E2E：`blobs.content` 比對失敗 | 測試接線（bytea） | 改用 `convert_from` |
+| E2E：長流程逾時 | 測試環境（`jwt_expiry=60`） | 沿用既有續期 setup |
+| E2E：marker 遺失 | 測試接線（區塊內 reload） | 在快照區塊前重設 |
+| E2E：等不到 guard dialog | 產品缺陷（`createDraft` 選取競態） | unit 紅燈→綠燈 |
+| E2E：hash URL 被改回舊檔 | 產品缺陷（guard 晚到 `router.push`） | 同步 `pushState`，並以 trace URL 時序佐證 |
+| E2E：版本期望 `[2,1]` | 測試期望錯誤（V3 已提交） | 改為 `[3,2,1]` |
+| E2E：同實例第二頁載入中無法建立 | 產品 loading gate，路徑不可達 | 改為卸載重入流程 |
+| E2E：版本 1 檔案 hold 未攔截（間歇） | 測試接線（Playwright 攔截模式競速） | 改用持續 fallback 路由與有期限診斷 |
+| DB 最終重跑首次呼叫 | 執行指令接線（陣列 splat） | 測試未執行；改以具名參數重跑 |
+
+### 108.5 最終驗證（全部針對最終來源）
+
+| 驗證 | 結果 |
+| --- | --- |
+| 受影響 unit | 2 files、33 tests 通過；2026-11-07 10:06:30 +08:00 起 |
+| `npm run test:unit` | 25 files、276 tests 通過；10:06:18 起 |
+| `npm run test:contract` | 36 files、798 tests 通過；10:06:23 起 |
+| `npm run typecheck`／`typecheck:tests` | 通過；09:49:35–09:49:47 |
+| 真 Auth／PostgreSQL 新庫（project-files） | 15／15 通過；09:45:44–09:46:36 |
+| 0041→0042 合法升級（project-files） | 15／15 通過；09:46:36–09:47:29 |
+| 0041 非法歷史→0042 阻擋 | 1／1 通過；09:47:29–09:48:11 |
+| 真 Next HTTPS（project-files 3 件＋stage-draft 4 件 guard 回歸） | 7／7 通過；09:38:17–09:42:23 |
+| `npm run build` | 通過；09:49:00–09:49:21，build 後還原 `next-env.d.ts` |
+| `git diff --check` | 通過 |
+
+09:14 的 unit／contract 早於 09:16 的 guard 修改，因此不作為最終證據；上表 unit／contract 為 10:06 以最終產品與測試來源重跑。
+
+未執行項：
+- 實體中文 IME：自動化只送合成 CompositionEvent。
+- 學生產品登入碼 E2E：學生 session 與學校為既有隔離合成 setup。
+- 完整 foundations、signup／Mailpit、Agent／provider、preview／restore 與部署驗收：不在本輪要求內。
+- 其他使用 guard、但未涉及同文件 hash 導覽的 E2E spec：只以 stage-draft 作回歸。
+- `lint`：專案沒有 lint script，該命令實際無檢查。
+
+Checkpoint／完整 MVP Readiness Gate、正式審議／簽核、T057／T068 整項、任務依賴、Q 與正式啟用狀態均不變。本節不是 Gate 通過、任務結案或常設授權。

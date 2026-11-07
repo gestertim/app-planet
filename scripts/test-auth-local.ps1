@@ -12,6 +12,8 @@ param(
     [switch]$Upgrade0039,
     [switch]$Upgrade0040,
     [switch]$Upgrade0041,
+    [switch]$Upgrade0042,
+    [switch]$Upgrade0042IllegalHistory,
     [switch]$TeacherSignup,
     [string[]]$IntegrationFilter = @(),
     [string[]]$E2EFilter = @()
@@ -343,11 +345,31 @@ enabled = false
     if ($Upgrade0041) {
         if ($Upgrade0025 -or $Upgrade0028 -or $Upgrade0031 -or $Upgrade0032 -or $Upgrade0035 -or
             $Upgrade0036 -or $Upgrade0037 -or $Upgrade0038 -or $Upgrade0039 -or $Upgrade0040 -or
-            $BrowserOnly -or -not $IntegrationOnly) {
+            $Upgrade0042 -or $BrowserOnly -or -not $IntegrationOnly) {
             throw "0040→0041 升級驗收須單獨使用 -Upgrade0041 -IntegrationOnly。"
         }
         $env:APP_PLANET_TEST_MIGRATE_THROUGH = "0040"
         $IntegrationFilter = @("tests/integration/real-auth-project-files.test.ts")
+    }
+    if ($Upgrade0042) {
+        if ($Upgrade0025 -or $Upgrade0028 -or $Upgrade0031 -or $Upgrade0032 -or $Upgrade0035 -or
+            $Upgrade0036 -or $Upgrade0037 -or $Upgrade0038 -or $Upgrade0039 -or $Upgrade0040 -or
+            $Upgrade0041 -or $BrowserOnly -or -not $IntegrationOnly) {
+            throw "0041→0042 升級驗收須單獨使用 -Upgrade0042 -IntegrationOnly。"
+        }
+        $env:APP_PLANET_TEST_MIGRATE_THROUGH = "0041"
+        $IntegrationFilter = @("tests/integration/real-auth-project-files.test.ts")
+    }
+    if ($Upgrade0042IllegalHistory) {
+        # readiness §108：0041 舊規則接受、0042 新規則拒絕的歷史路徑，須明確阻擋且不部分套用。
+        if ($Upgrade0025 -or $Upgrade0028 -or $Upgrade0031 -or $Upgrade0032 -or $Upgrade0035 -or
+            $Upgrade0036 -or $Upgrade0037 -or $Upgrade0038 -or $Upgrade0039 -or $Upgrade0040 -or
+            $Upgrade0041 -or $Upgrade0042 -or $BrowserOnly -or -not $IntegrationOnly) {
+            throw "0042 非法歷史路徑阻擋驗收須單獨使用 -Upgrade0042IllegalHistory -IntegrationOnly。"
+        }
+        $env:APP_PLANET_TEST_MIGRATE_THROUGH = "0041"
+        $env:APP_PLANET_TEST_ILLEGAL_PATH_HISTORY = "1"
+        $IntegrationFilter = @("tests/integration/real-auth-project-file-path-history.test.ts")
     }
     $roleUrlsJson = & node (Join-Path $repoRoot "scripts\prepare-real-auth-db.mjs")
     if ($LASTEXITCODE -ne 0) {
@@ -393,7 +415,7 @@ enabled = false
 } finally {
     foreach ($secretName in @("APP_PLANET_BOOTSTRAP_DATABASE_URL", "APP_PLANET_STAFF_LOGIN_HMAC_SECRET", "APP_PLANET_SOURCE_PROXY_PROOF", "APP_PLANET_TEST_AUTH_ADMIN_KEY", "APP_PLANET_TEST_DB_ADMIN_URL", "APP_PLANET_DATABASE_URL", "APP_PLANET_TEST_WORKER_DATABASE_URL", "APP_PLANET_AUTH_API_KEY",
         "APP_PLANET_TEACHER_SIGNUP_MODE", "APP_PLANET_TEST_MAIL_API_URL", "APP_PLANET_TEST_MAIL_CONTAINER",
-        "APP_PLANET_TEST_AUTH_OTP_EXPIRY_SECONDS", "APP_PLANET_TEST_MIGRATE_THROUGH")) {
+        "APP_PLANET_TEST_AUTH_OTP_EXPIRY_SECONDS", "APP_PLANET_TEST_MIGRATE_THROUGH", "APP_PLANET_TEST_ILLEGAL_PATH_HISTORY")) {
         Remove-Item -LiteralPath "Env:$secretName" -ErrorAction SilentlyContinue
     }
     if ($started) {

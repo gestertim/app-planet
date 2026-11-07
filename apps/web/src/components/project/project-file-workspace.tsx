@@ -128,7 +128,7 @@ export function ProjectFileWorkspace({
   };
   const hrefFor = (path: string) => `#file=${encodeURIComponent(path)}`;
   const condition = state.status === "saving" ? "saving"
-    : state.status === "unknown" ? "unknown"
+    : state.status === "unknown" || state.status === "unrecoverable" ? "unknown"
       : state.status === "conflict" ? "conflict" : state.dirty ? "dirty" : "clean";
 
   return <section className="card grid gap-4" aria-label="App 原始碼工作區" data-testid="project-file-workspace">
@@ -175,10 +175,12 @@ export function ProjectFileWorkspace({
         {state.active_path ? <>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3>{state.active_path}</h3>
-            <button type="button" className="button" disabled={state.status === "saving" || composing ||
+            <button type="button" className="button" disabled={state.status === "saving" ||
+              state.status === "unrecoverable" || composing ||
               (!state.dirty && Boolean(state.saved_file))}
               onClick={() => void controller.save()}>
-              {state.status === "unknown" ? "使用原操作重試" : "保存到資料庫"}
+              {state.status === "unrecoverable" ? "原操作受控停止"
+                : state.status === "unknown" ? "使用原操作重試" : "保存到資料庫"}
             </button>
           </div>
           <p>

@@ -172,8 +172,14 @@ export function UnsavedChangesGuard({
     }
     leaving.current = true;
     if (current.kind === "link") {
+      const target = new URL(current.href, window.location.href);
+      const sameDocumentHash = target.hash !== "" && target.origin === window.location.origin &&
+        target.pathname === window.location.pathname &&
+        target.search === window.location.search;
+      // 同文件 hash 導覽同步更新網址；非同步 router.push 可能晚於後續操作抵達，使網址與目前資源不一致。
+      if (sameDocumentHash) window.history.pushState(null, "", current.href);
       window.dispatchEvent(new CustomEvent("app-planet:guarded-navigation", { detail: current.href }));
-      router.push(current.href);
+      if (!sameDocumentHash) router.push(current.href);
       return;
     }
     const navigation = window.navigation;
