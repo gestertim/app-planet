@@ -5526,3 +5526,40 @@ Checkpoint／完整 MVP Readiness Gate 與正式審議／簽核狀態不變。�
 去敏增量審閱目錄及 ZIP 保存在 session `files/s2-convergence/`，含相對 checkpoint 的完整 S-2 `changes.patch`、相對本輪 before 的 `incremental.patch`、§109／§110 與本次範圍區分、原始去敏執行紀錄、before／after、400 路徑受測前後雜湊、交付來源 manifest、ZIP SHA-256／CRC 及獨立 `git archive HEAD`→`git apply --check`→`git apply`→交付來源逐檔 SHA-256 比對結果。既有非 S-2 工作樹修改不納入產品 patch。
 
 index 維持空，HEAD／branch 未變；未 commit、push、merge、部署，未讀出密鑰或使用真實兒童資料。T067／T068／T070 仍僅有界子集，任務與依賴不結案；完整 Gate、正式審議／簽核與正式啟用狀態不變。交付後停止，交 Reviewer 唯讀複審；本節不是常設授權。
+
+## 112. 2026-11-07 T095 伺服器端作品範圍判斷服務（本 session 有界要求）
+
+### 範圍與基線
+
+依本 session 明確要求，僅完成 T095 伺服器端作品範圍判斷服務及其 unit／contract、隔離 Auth／PostgreSQL 驗收；不建立公開 API、預覽、Job、建置／發布／部署流程、B2／供應商接線、持久欄位或 migration。正向結果只表示「目前申報的作品需求符合首版範圍」，不代表程式碼／產物已檢查、作品版本已授權、教師已批准或呼叫者取得操作權限。
+
+動工前核對 root `C:\Users\geste\spec-kit\app-planet`、branch `work/auth-cancel-authorization`、HEAD `4ffe6c3fbefd0864570d87f8c38cd390d11484f8`、index 空及 `.specify/feature.json` 功能目錄。以先前 §111 的 after/status 作為動工前參照；原始執行核對記錄為相符，S-2 既有成果完整保留。該保存快照實際為 36 列（20 tracked modified、16 untracked），與 §111 正文所記 33 列（18／15）不一致；本節採保存快照逐列數據，未回溯改寫歷史。工作樹原有 `packages/core/policy/work-eligibility.ts` 為 CRLF，2480 bytes、SHA-256 `20b713d6431e9a3e2dd2c77b0134cb8474e540eadf2f367db2751a4d1ec7d0b5`；經 Git HEAD 文字轉 CRLF 後逐位元重建並與記錄一致，因此本批增量不是以 HEAD 代替工作樹 before。逐列快照及必要 before 檔案保留於 session `files/t095-eligibility-20261107/before/`。
+
+### 實作
+
+- 新增 `apps/web/src/server/publishing/eligibility.ts` server-only 服務入口。`createWorkEligibilityService` 僅接受服務端選定的 `a1_preview`／`public` 用途；每次 `assess` 重新驗證可信 Auth principal，並以專案 ID 呼叫既有本人專案讀取邊界。呼叫者提供的 tier、visitor、runtime、確認證據或舊 DTO 不會成為判斷輸入。
+- 沿用 `readCurrentOwnedProjectClassificationSubset` 的單一可信讀取；同次結果包括當前 revision、正式 runtime 需求、有效 A／B 確認及 visitor 需求，未增加第二次讀取或以 A／B 推導 runtime。
+- 缺需求、未確認、歷史未驗證、未登入、拒絕及依賴失敗分別回傳非正向結果。當前正式需求含 `restricted_server` 或作品 runtime AI 時回傳範圍阻擋，不偽造確認資料。只有當前有效確認進入 `evaluateWorkEligibility`；public 的合格 B／visitor 限制沿用現行規則，`a1_preview` 不套用公開限定。平台 AI 輔助製作不參與作品 runtime 判斷。
+- Reviewer 複審發現並在本批內修正 F-01：`createDatabaseSession` 對缺失／無效 DB 設定改丟具型別的 `DatabaseConfigurationUnavailableError`，服務只將此明確依賴例外映射為 `dependency_failure`；其他未知 resolver 例外仍向上拋出，不作靜默或成功形 fallback。新增回歸確認此例外不觸發 project query，且未知例外仍可見。
+- 未修改 T095、T091、T051 任務內容、依賴或勾選；T095 僅完成本節列明子集。未把任何 readiness Gate 或正式審議／簽核標記為通過。
+
+### 實際驗收
+
+所有時間為本機 `+08:00`。production build、unit／contract、真實 Auth／隔離 PostgreSQL 與 typecheck 執行前後以同一份 20 路徑 `tested-paths.txt` 比對 `path／bytes／SHA-256`，0 mismatch；before／after manifest SHA-256 均為 `7ca047575591552062fadea1c1edef16d3d708fd99e49b1e3bbb90bfbd39f5ac`。
+
+| 命令 | 起訖（2026-11-07，+08:00） | 實際結果 |
+| --- | --- | --- |
+| `$env:NEXT_TELEMETRY_DISABLED=1; npm run build` | 19:08:49～19:09:10 | exit 0；production build 通過；build 產生的 `apps/web/next-env.d.ts` 已從本輪前保存副本還原，SHA-256 回到 `b8b3a344484b959af5e4e3fc1a1609dac3cb9ece0cdeb6c145be29bc4c491000` |
+| `npm exec -- vitest run --project unit tests/unit/project-work-eligibility.test.ts --project contract tests/contract/work-eligibility.test.ts` | 19:09:11～19:09:16 | exit 0；2 files、32 tests passed |
+| `.\scripts\test-auth-local.ps1 -IntegrationOnly -IntegrationFilter @(tests/integration/real-auth-work-eligibility.test.ts,tests/integration/real-auth-project-classification.test.ts)` | 19:09:16～19:10:15 | exit 0；真實 Auth／隔離 PostgreSQL，2 files、17 tests passed；清理後 containers／volumes／networks 均為 0 |
+| `npm run typecheck` | 19:10:15～19:10:25 | exit 0；workspace 與 tests typecheck 通過 |
+
+隔離 DB 實測涵蓋 revision N 有效確認產生正向結果、保存 revision N+1 後舊確認立即失效、只有有效的新確認恢復正向結果；另涵蓋未確認、歷史未驗證、跨專案／非擁有者、角色拒絕、帳號／學校 gate 與讀取失敗，以及 service 不寫入專案、確認或工作狀態。B 的 private／public visitor 差異、A、`restricted_server`、作品 runtime AI、缺漏／未知／矛盾資料及不可信 caller claims 另由 unit／contract 驗證。學校狀態遵循現行資料政策：`unconfirmed` 拒絕讀取，`withdrawn`／`expired` 仍可唯讀；本批沒有將後兩者改成拒絕。T051 分類／revision 失效／冪等回歸與 eligibility 同批實跑，11 tests 通過。
+
+production build 後確認 `next-env.d.ts` 生成 hash 為 `1b59d4c6b83807db275d43f3cf2cc8e9323f465fab764eea091cc5becd5bad37`；以本輪前精確副本還原後重新核對為上述 before hash。未讀取或輸出 `.env`／密鑰。npm install 曾回報 1 low、1 critical audit finding；本批未執行無關依賴升級或安全修補。
+
+### 證據、交付與停止界線
+
+去敏增量審閱 ZIP 收錄本批 scope、相對於本輪實際 before 的 `changes.patch`、before／after、受測來源雜湊、去敏 stdout／stderr、完整命令／起訖時間／exit code、skip 原因、清理證據、ZIP SHA-256／CRC 及 patch replay 驗證；證據位於 session `files/t095-eligibility-20261107/`，不加入產品 Git index。patch 不含 §109～§111 S-2 或其他既有工作樹成果。
+
+本輪最終核對 HEAD／branch 未變、index 空；未 commit、push、部署或使用真實兒童資料。T095／T091／T051 任務及依賴維持原狀；Checkpoint／完整 MVP Readiness Gate、正式審議／簽核與真實產品功能啟用狀態均不變。本節為本次有界交付紀錄，不構成常設開發許可；交付後停止並交 Reviewer 唯讀複審。

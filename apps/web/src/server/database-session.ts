@@ -85,7 +85,7 @@ export function createDatabaseSession(
 ): TrustedSession {
   if (!uuidPattern.test(subject)) throw new TypeError("invalid_authenticated_subject");
   const pool = getPool(env);
-  if (!pool) throw new Error("database_configuration_unavailable");
+  if (!pool) throw new DatabaseConfigurationUnavailableError();
   const normalizedSubject = subject.toLowerCase();
   const runReadOnly: AuthorizationContext["runReadOnly"] = (operation) =>
     inTransaction(pool, normalizedSubject, "authenticated", true, (client) => operation(client));
@@ -98,6 +98,13 @@ export function createDatabaseSession(
     write: Object.freeze({ runTransaction: runWrite }),
     usage: Object.freeze({ runTransaction: runUsage }),
   });
+}
+
+export class DatabaseConfigurationUnavailableError extends Error {
+  constructor() {
+    super("database_configuration_unavailable");
+    this.name = "DatabaseConfigurationUnavailableError";
+  }
 }
 
 // readiness §92：未登入教師申請只可切換到 app_signup_intake，該角色僅能執行固定申請意圖函式；

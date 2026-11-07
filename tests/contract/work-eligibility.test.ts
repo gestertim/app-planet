@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   evaluateWorkEligibility,
+  getWorkEligibilityRequirementBlockers,
   type WorkEligibilityInput,
   type WorkEligibilityReason,
 } from "@app-planet/core";
@@ -26,6 +27,24 @@ const validB: WorkEligibilityInput = {
 const invalidInputReason: WorkEligibilityReason = "invalid_input";
 
 describe("作品範圍資格（本機純函式）", () => {
+  it("只由正式 runtime 需求辨識不可支援項目，不推定 A／B 分類", () => {
+    expect(getWorkEligibilityRequirementBlockers({
+      runtimeNeeds: "restricted_server",
+      runtimeAiRequired: true,
+    })).toEqual([
+      "student_server_runtime_not_in_mvp",
+      "work_runtime_ai_not_in_mvp",
+    ]);
+    expect(getWorkEligibilityRequirementBlockers({
+      runtimeNeeds: "work_data_api",
+      runtimeAiRequired: false,
+    })).toEqual([]);
+    expect(getWorkEligibilityRequirementBlockers({
+      runtimeNeeds: "unknown",
+      runtimeAiRequired: false,
+    })).toEqual(["invalid_input"]);
+  });
+
   it.each([
     [
       "A／public／不需訪客識別",

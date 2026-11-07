@@ -4,7 +4,13 @@ import { defineConfig } from "vitest/config";
 // vitest.authorization.config.ts／vitest.projects.config.ts 經 scripts/pgtap-local.ps1 執行；
 // 瀏覽器測試由 playwright.config.ts 負責；pgTAP 由 supabase/tests 與同一 runner 負責。
 export default defineConfig({
-  resolve: { alias: { "@": new URL("./apps/web/src", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1") } },
+  resolve: {
+    alias: {
+      "@": new URL("./apps/web/src", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1"),
+      "server-only": new URL("./node_modules/next/dist/compiled/server-only/empty.js", import.meta.url)
+        .pathname.replace(/^\/([A-Za-z]:)/, "$1"),
+    },
+  },
   test: {
     environment: "node",
     setupFiles: ["tests/support/setup-isolation.ts"],

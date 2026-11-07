@@ -12,11 +12,17 @@ const illegalPathHistory = process.env.APP_PLANET_TEST_MIGRATE_THROUGH === "0041
   ? ["tests/integration/real-auth-project-file-path-history.test.ts"] : [];
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      "server-only": new URL("./node_modules/next/dist/compiled/server-only/empty.js", import.meta.url)
+        .pathname.replace(/^\/([A-Za-z]:)/, "$1"),
+    },
+  },
   test: {
     environment: "node",
     setupFiles: ["tests/support/setup-isolation.ts"],
     reporters: ["verbose"],
-    include: ["tests/integration/real-auth-admin-schools.test.ts", "tests/integration/real-auth-project-export.test.ts", "tests/integration/real-auth-admin-memberships.test.ts", ...bindingsUpgrade, ...illegalPathHistory, "tests/integration/real-auth-agent-runs.test.ts", "tests/integration/real-auth-project-rename.test.ts", "tests/integration/real-auth-teacher-view-audit.test.ts", "tests/integration/real-auth-admin-bindings.test.ts", "tests/integration/real-auth-specification-review.test.ts", "tests/integration/real-auth-teacher-resources.test.ts", "tests/integration/real-auth-routes.test.ts", "tests/integration/real-auth-project-classification.test.ts", "tests/integration/real-auth-project-files.test.ts", "tests/integration/real-auth-creation-flow.test.ts", "tests/integration/real-auth-task-import.test.ts", "tests/integration/real-auth-stage-confirmation.test.ts", "tests/integration/real-auth-stage-overview.test.ts", "tests/integration/real-auth-staff-login.test.ts", "tests/integration/real-auth-staff-approval.test.ts", ...teacherSignup],
+    include: ["tests/integration/real-auth-admin-schools.test.ts", "tests/integration/real-auth-project-export.test.ts", "tests/integration/real-auth-admin-memberships.test.ts", ...bindingsUpgrade, ...illegalPathHistory, "tests/integration/real-auth-agent-runs.test.ts", "tests/integration/real-auth-project-rename.test.ts", "tests/integration/real-auth-teacher-view-audit.test.ts", "tests/integration/real-auth-admin-bindings.test.ts", "tests/integration/real-auth-specification-review.test.ts", "tests/integration/real-auth-teacher-resources.test.ts", "tests/integration/real-auth-routes.test.ts", "tests/integration/real-auth-project-classification.test.ts", "tests/integration/real-auth-work-eligibility.test.ts", "tests/integration/real-auth-project-files.test.ts", "tests/integration/real-auth-creation-flow.test.ts", "tests/integration/real-auth-task-import.test.ts", "tests/integration/real-auth-stage-confirmation.test.ts", "tests/integration/real-auth-stage-overview.test.ts", "tests/integration/real-auth-staff-login.test.ts", "tests/integration/real-auth-staff-approval.test.ts", ...teacherSignup],
     fileParallelism: false,
     testTimeout: 90_000,
     hookTimeout: 120_000,
