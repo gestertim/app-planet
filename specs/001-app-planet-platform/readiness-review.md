@@ -5430,3 +5430,99 @@ Docker Desktop 原未啟動；本輪只啟動既有 Docker Desktop，確認 Linu
 - `lint`：專案沒有 lint script，該命令實際無檢查。
 
 Checkpoint／完整 MVP Readiness Gate、正式審議／簽核、T057／T068 整項、任務依賴、Q 與正式啟用狀態均不變。本節不是 Gate 通過、任務結案或常設授權。
+
+## 109. 2026-11-07 S-2 有界契約準備與檔案替換邊界
+
+本 session 明確授權本人學生 S-2 的有界本機實作與驗收；起點 branch `work/auth-cancel-authorization`、HEAD `4ffe6c3fbefd0864570d87f8c38cd390d11484f8`、origin、空 index 及 checkpoint 報告列出的 15 個保留項之狀態相符。功能目錄依 `.specify/feature.json`；未讀取憑證或私鑰。此批不變更 tasks 正文、依賴、勾選、Q、Gate 或正式啟用。
+
+US6 情境 2～3、FR-025 與 PROJ S-2 明定先成功保存目前版本才能恢復，保存失敗不覆蓋；PROJ §2 與資料模型 §4.1 的 2026-11-06 有界子集僅提供 manual 快照且當時不開放 restore。這是前批授權範圍，不是本輪政策裁決。上述條文未明定當目前檔案不在目標 manifest 時是否從目前檔案集移除，也未明定空 manifest 是否清空目前檔案集，不能僅由「恢復到先前版本」推定移除政策。針對本輪隔離本機實作，教育者選擇在先成功保存完整 `pre_restore` 且同一交易可回滾的條件下，允許以目標完整檔案集取代目前檔案集，包括移除目標中缺少的路徑及空集合。此選擇不核定 Q-DATA／D-10／PP-18 的正式保存與清除政策，不將本機工程值當作核定政策。
+
+本次只新增 strict `{ snapshot_id }` 請求與 strict `{ pre_restore_snapshot_id }` 收據 schema，並測試合法 UUID 及拒絕缺欄、非法 UUID、額外欄位與 caller 本文。未開放 restore HTTP／DB／UI、未新增 migration、未建立 `pre_restore`、未宣稱完成回滾或正式 S-2。前批 S-1 仍僅接受 manual，教師可見性不變。
+
+| 驗證 | 結果 |
+| --- | --- |
+| `npm exec -- vitest run --project contract tests/contract/project-files-snapshots.test.ts` | exit 0；1 file、8 tests 通過，含本次 strict 請求／收據拒絕案例 |
+| `npm exec -- vitest run --project unit tests/unit/project-file-controller.test.ts tests/unit/project-snapshot-problem-classification.test.ts` | exit 0；2 files、33 tests 通過，為 E-1／S-1 相關 unit 回歸，不等於完整 DB／UI 回歸 |
+| `npm run typecheck` | exit 0；workspace 與 tests 通過 |
+| `npm run build` | exit 0；production build 通過，但沒有 restore route；build 後將既有 `next-env.d.ts` 的 dev 引用還原 |
+| `git diff --check` | exit 0；既有 Analyze 指引 LF／CRLF 警告，未修改該保留項 |
+| S-2 保存／套用失敗、非空 rollback、重放、授權及競態、真 Auth／DB、新庫／升級、真 Next HTTPS 與直接 E-1／S-1／S-3 完整回歸 | not_run；restore 交易與入口尚未實作，不以 schema 拒絕測試替代交易失敗驗收 |
+
+T067／T068／T070 僅上列契約測試子集，均未結案；完整 V-24 與本輪驗收未完成。不將上述本機選擇視為正式政策批准、Gate 通過或一般產品實作授權。
+
+## 110. 2026-11-07 S-2 F-01／F-02 接續實作與實跑驗收
+
+### 授權、基準與保留
+
+依本 session 教育者對完整檔案集替換（含合法空目標）的明確批准，接續 §109 契約子集，限本人學生作品版本恢復的 F-01 DB／HTTP、F-02 版本頁及其直接回歸；不延伸保存期限、份數、自動清除、Gate、正式啟用或任務結案。起點與 §109 相同：repository `C:\Users\geste\spec-kit\app-planet`、branch `work/auth-cancel-authorization`、HEAD `4ffe6c3fbefd0864570d87f8c38cd390d11484f8`、origin `https://github.com/gestertim/app-planet.git`、index 空。依 `.specify/feature.json` 核對功能目錄，未讀取憑證或私鑰。
+
+動工前實際 `git status --short` 為 7 個 tracked modified 與 12 個 untracked path（19 項）；checkpoint 報告的 15 個保留項與實際 path 數不同。完整 before status、tracked manifest、tracked patch、Git 基準另存於本 session 的 `files/s2-before/`。保留所有原有項目與 §109 schema／測試／契約／紀錄；未把差異當作刪除或覆寫許可。相對 checkpoint 的 S-2 patch 涵蓋 §109 與本節接續結果；另以範圍說明區分兩批。build 前後 `apps/web/next-env.d.ts` SHA-256 均為 `b8b3a344484b959af5e4e3fc1a1609dac3cb9ece0cdeb6c145be29bc4c491000`，保留其 before 位元內容。
+
+### F-01／F-02 接續範圍
+
+- 以 0042 為保存基準，新增 0043，不改寫 0041／0042；同一 DB 交易按專案鎖序重驗本人學生資格、owner 與目標，先讀取並驗證完整目前檔案集及 `pre_restore`，再依目標 manifest 完整替換（含移除目標未列路徑及合法空目標）。`pre_restore`、替換、receipt 與去敏 audit 原子提交；保存失敗映射 `409 save_failed`，其他錯誤依契約處理，舊快照與 blob 引用保留。
+- 接通 strict restore route 與 UUID `Idempotency-Key`；同鍵同目標只 replay 原 receipt，同鍵異目標拒絕；未知結果沿原鍵／原目標 replay-only，receipt 缺失或到期不再替換。本人可讀 `pre_restore` manifest／檔案並可再次恢復；教師清單及讀取仍限 `manual`，S-1 建立仍只接受 `manual`。
+- 版本頁顯示目標並要求明確確認完整替換；空目標明示結果。草稿、保存中及未知操作會阻擋；只有可信收據後才確認操作並重讀 server 檔案／版本。頁面切換及不同版本選取的延遲回應以資源／選取世代隔離。現行契約將舊批次「無 restore」標為歷史界線。
+
+### 實際驗證
+
+下列均為實際執行；真 Auth／PostgreSQL 使用隔離本機環境及合成帳號，不使用真實兒童資料。
+
+| 命令 | 結果 |
+| --- | --- |
+| `npm exec -- vitest run --project unit tests/unit/project-file-controller.test.ts tests/unit/project-snapshot-problem-classification.test.ts` | exit 0；2 files、35 tests 通過 |
+| `npm exec -- vitest run --project contract tests/contract/project-files-snapshots.test.ts` | exit 0；1 file、9 tests 通過 |
+| `npm run typecheck` | exit 0；workspaces 與 `tests` TypeScript 檢查通過 |
+| `npm run build` | exit 0；production build 通過，route table 含 `/api/v1/projects/[id]/restore` |
+| `.\scripts\test-auth-local.ps1 -IntegrationOnly` | exit 0；18 files、250 passed、2 skipped；含 S-2 完整替換、獨有路徑移除、空目標、`pre_restore` 找回、receipt／replay-only、角色與跨專案拒絕、兩個非空 rollback 故障點及受控鎖序／等鎖失權 |
+| `.\scripts\test-auth-local.ps1 -Upgrade0043 -IntegrationOnly` | exit 0；0042→0043 upgrade-only 的 S-2 test 1 passed、其餘 16 skipped；升級前後資料核對及 restore 驗證通過 |
+| `.\scripts\test-auth-local.ps1 -BrowserOnly -E2EFilter @('tests/auth-e2e/real-auth-project-files.spec.ts','tests/auth-e2e/real-auth-project-restore.spec.ts')` | exit 0；4 tests passed，真 Next HTTPS 產品 UI；包括 A→B→恢復 A→reload→由 `pre_restore` 找回 B、空目標、未知／原鍵重放、保存阻擋、教師唯讀／失權及專案／版本切換晚到回應 |
+| `git diff --check` | exit 0；僅保留既有 Analyze 指引 LF／CRLF 警告 |
+
+初次既有檔案 HTTPS 回歸有兩項通過，第三項因仍要求版本頁沒有工作區而失敗；修正過時斷言與 reload 後未明確選取檔案的測試前置。其後以版本頁原鍵重放，並實測返回後先選版本 21、再釋放版本 22 的延遲 manifest，結果不覆蓋新選取；最終 E-1／S-1／S-3 與 S-2 共 4 項 HTTPS 測試全數通過。實跑中另外修正 DB／權限／鎖屏障問題，見測試來源與本 session 驗收包；不將早期失敗冒稱為通過。
+
+### 最終狀態、限制與交付
+
+最終 index 維持空，HEAD／branch 未變；`tasks.md`、任務依賴與勾選未變。T067／T068 僅本節 S-2 子集、T070 僅 V-24 本機子集，不結案。沒有執行實際兒童帳號登入、外部正式服務、部署、Gate 或正式審議／簽核；自簽 TLS 瀏覽器提示不影響本機 HTTPS 測試結果，但不代表正式 HTTPS 環境驗證。去敏審閱目錄與 ZIP、範圍 patch、before／after、來源雜湊、命令結果、manifest、ZIP SHA-256／CRC 與 patch replay 結果另存於 session `files/`，不加入產品 Git index。
+
+Checkpoint／完整 MVP Readiness Gate 與正式審議／簽核狀態不變。本節及本 session 授權皆為一次性有界範圍，不構成常設開發許可、正式政策核定或正式產品啟用。
+
+## 111. 2026-11-07 S-2 驗收收斂與原始執行證據補齊
+
+### 本輪授權與實際盤點
+
+依本 session 教育者明確要求，僅接續 §109／§110 的 S-2 工作樹做驗收收斂：replay-only 失權結果判定、真 HTTPS 晚到本文及 S-3 原順序回歸、最終來源實跑與增量審閱包。其他 P3 不作為本輪完成條件，不變更 DB 交易、migration 0041／0042／0043、保存期限、份數、自動清除、正式啟用、任務正文／依賴／勾選或 Gate。
+
+實際起點 root `C:\Users\geste\spec-kit\app-planet`、branch `work/auth-cancel-authorization`、HEAD `4ffe6c3fbefd0864570d87f8c38cd390d11484f8`、origin `https://github.com/gestertim/app-planet.git`，index 空。以 `.specify/feature.json` 核對功能目錄。動工前 `git status --short --untracked-files=all` 實際為 33 列（18 tracked modified、15 untracked 路徑）；不以 §109 的歷史 15 項或 §110 動工前 19 項覆蓋本次盤點。before 基準、實際 status、tracked patch、範圍內來源與雜湊保存在 session `files/s2-convergence/before/`，既有未提交實作／文件及保留項未刪除。
+
+### 有界補正
+
+- replay-only 收到 401／403／404（包括無效本文）不代表首次恢復未提交；保留同一原鍵、原目標與未知狀態，不清除紀錄、不宣稱已保存檔案未變更、不建立新操作。沿既有失權規則隱藏受保護工作區與確認目標，並顯示目前無法確認原結果、資格恢復後只以原操作確認的提示。首次確定拒絕及 `save_failed` 等確定回滾處理維持不變。
+- 聚焦 unit 驗證 replay-only／首次模式與各 status 分界；HTTPS 在首次真提交但回應遺失後依序注入 401／403／404，核對紀錄逐字保留、內容隱藏，reload 後同鍵 replay 200 收據不變。隔離 DB 另實際停用／恢復同一帳號，拒絕期間資料／收據不變，恢復資格後原鍵仍回同一收據。
+- 將 §108 的 response hold 抽到共用測試支援，不新增產品測試入口。A 的真恢復回應 200 已抵達前端且進入 `await response.json()` 後，只暫扣本文；由產品工作台／專案連結／版本頁籤切到 B，讓 B 也有真提交後結果未知的操作，再釋放 A 本文並等待 json settle 與 microtask 排空。A／B sessionStorage 逐字不變、B 確認畫面／版本列表／原操作狀態不變，document marker 不變；回到 A 原鍵確認後仍不清除 B 紀錄。
+- S-3 恢復原順序：完成站內離開／返回、尚未選取任何版本時釋放舊 manifest，數量維持 0，再驗證新選取正常。兩頁現在都有工作區，故以實際 URL 與版本頁標題等待路由完成，不能只用「工作區可見」替代重新掛載。
+
+### 最終來源實跑
+
+執行前後以同一 `tested-paths.txt` 清單核對 400 個來源（apps／packages、runner／scripts、migration、tests 與根目錄設定），`path／bytes／SHA-256` 完全一致，0 mismatch。文件交付更新另列 delivery source manifest；`next-env.d.ts` 是 build 產物例外，另保存 before／generated／after，before 與 after 均為 `b8b3a344484b959af5e4e3fc1a1609dac3cb9ece0cdeb6c145be29bc4c491000`。production build 產生正式型別路徑後，既有 HTTPS runner 啟動 Next dev 將其復原為 before 的 dev 路徑，未覆寫原有內容。
+
+所有時間為 ISO-8601 `+08:00`，本機時區 `Taipei Standard Time`；完整實際命令、起訖時間、exit code、stdout／stderr（僅移除秘密及合成識別）存於審閱包 `logs/`，每筆 metadata 都指向同一 final source manifest SHA-256。
+
+| 命令 | 起訖（2026-11-07，+08:00） | 實際結果 |
+| --- | --- | --- |
+| `npm run build` | 18:06:56～18:07:12 | exit 0；production build 通過，含 restore route |
+| `.\scripts\test-auth-local.ps1 -BrowserOnly -E2EFilter @('tests/auth-e2e/real-auth-project-files.spec.ts','tests/auth-e2e/real-auth-project-restore.spec.ts')` | 18:07:12～18:10:58 | exit 0；4 passed，含真 HTTPS 晚到本文、A／B 隔離、replay 拒絕與 S-3 原順序 |
+| `npm exec -- vitest run --project unit tests/unit/project-file-controller.test.ts tests/unit/project-snapshot-problem-classification.test.ts --project contract tests/contract/project-files-snapshots.test.ts` | 18:11:12～18:11:20 | exit 0；3 files，52 passed（unit 43、contract 9） |
+| `npm run typecheck` | 18:11:20～18:11:31 | exit 0；workspace＋tests 通過 |
+| `.\scripts\test-auth-local.ps1 -IntegrationOnly` | 18:11:12～18:17:32 | exit 0；18 files，250 passed、2 skipped；新庫，含 S-2 回滾／鎖序／資格恢復與 E-1／S-1／S-3 回歸 |
+| `.\scripts\test-auth-local.ps1 -Upgrade0043 -IntegrationOnly` | 18:17:32～18:18:15 | exit 0；1 file，1 passed、16 skipped；0042→0043 既有資料核對及 S-2 驗收 |
+
+新庫 2 skipped 是僅限 migration-through 0030、0035 的其他歷史升級案例；本輪沒有啟動該模式。0042→0043 的 16 skipped 是既有 `testS2Only`／`it.only` 篩選，受控序列化測試已在新庫實跑，不宣稱在升級模式重跑。各 DB／HTTPS runner 均輸出 `CleanupVerified`，本次專屬 containers／volumes／networks 全為 0。
+
+本輪早期 HTTPS 原順序檢查及後續探測曾失敗；同步缺口修正前紀錄另存 `early/`，不計入最終通過。曾嘗試同時啟動 DB runner，Docker 連接埠已被 HTTPS 專屬環境占用，該次啟動失敗但專屬資源清理為 0，隨後改為序列執行並通過；沒有停止或修改其他環境。§110 更早缺失的原始 log 無法補回，仍只屬歷史摘要；本次新 logs 只證明本節最終來源，不回溯宣稱補證歷史執行。
+
+### 交付與停止界線
+
+去敏增量審閱目錄及 ZIP 保存在 session `files/s2-convergence/`，含相對 checkpoint 的完整 S-2 `changes.patch`、相對本輪 before 的 `incremental.patch`、§109／§110 與本次範圍區分、原始去敏執行紀錄、before／after、400 路徑受測前後雜湊、交付來源 manifest、ZIP SHA-256／CRC 及獨立 `git archive HEAD`→`git apply --check`→`git apply`→交付來源逐檔 SHA-256 比對結果。既有非 S-2 工作樹修改不納入產品 patch。
+
+index 維持空，HEAD／branch 未變；未 commit、push、merge、部署，未讀出密鑰或使用真實兒童資料。T067／T068／T070 仍僅有界子集，任務與依賴不結案；完整 Gate、正式審議／簽核與正式啟用狀態不變。交付後停止，交 Reviewer 唯讀複審；本節不是常設授權。

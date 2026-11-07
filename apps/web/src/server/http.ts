@@ -42,6 +42,7 @@ const registry = {
   draft_already_exists: { status: 412, title: "草稿已存在", next: "本地內容仍保留；請明確選擇重新載入並比對，不會自動覆寫。" },
   file_already_exists: { status: 412, title: "檔案已存在", next: "不會覆蓋現有檔案；請重新載入並選擇其他檔名。" },
   storage_limit: { status: 507, title: "快照超出本次工程容量防護值", next: "沒有建立部分快照；請縮減已保存檔案後再試。這不是產品配額。" },
+  save_failed: { status: 409, title: "無法先保存目前版本", next: "目前已保存檔案未變更；請重新載入核對後再試，或請老師協助。" },
   task_list_already_exists: { status: 409, title: "這個專案已有任務清單", next: "不會覆蓋既有任務；請重新載入專案查看目前任務。" },
   stage_draft_not_saved: { status: 409, title: "這個階段尚無已保存草稿", next: "請先保存草稿並核對伺服器回應，再明確確認已保存版本。" },
   stage_confirmation_version_mismatch: { status: 409, title: "已保存版本已變更", next: "你的本地編輯仍保留；請重新讀取目前已保存版本、比對後，再明確確認。不會自動確認最新版本。" },

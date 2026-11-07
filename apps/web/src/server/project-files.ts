@@ -6,7 +6,11 @@ import {
   projectSnapshotFileSchema,
   projectSnapshotListSchema,
   projectSnapshotManifestSchema,
+  restoreProjectSnapshotReceiptSchema,
   snapshotCursorSchema,
+  teacherProjectSnapshotFileSchema,
+  teacherProjectSnapshotListSchema,
+  teacherProjectSnapshotManifestSchema,
   type ProjectFileContentDto,
   type ProjectFileDto,
   type ProjectSnapshotDto,
@@ -19,7 +23,8 @@ type Query = Parameters<TrustedSession["write"]["runTransaction"]>[0] extends (q
 type ReadResult<T> =
   | { readonly outcome: "found"; readonly value: T }
   | { readonly outcome: "not_found" | "denied" | "invalid_input" | "too_large" | "already_exists"
-      | "conflict" | "idempotency_key_reuse" | "unrecoverable" | "storage_limit" | "dependency_failure" };
+      | "conflict" | "idempotency_key_reuse" | "unrecoverable" | "storage_limit" | "save_failed"
+      | "dependency_failure" };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -42,7 +47,8 @@ async function call<T>(
       if (result.outcome === "not_found" || result.outcome === "denied" ||
           result.outcome === "invalid_input" || result.outcome === "too_large" ||
           result.outcome === "already_exists" || result.outcome === "idempotency_key_reuse" ||
-          result.outcome === "unrecoverable" || result.outcome === "storage_limit") {
+          result.outcome === "unrecoverable" || result.outcome === "storage_limit" ||
+          result.outcome === "save_failed") {
         return { outcome: result.outcome };
       }
       if (result.outcome === "conflict") return { outcome: "conflict" };
@@ -115,6 +121,28 @@ export async function createOwnedManualSnapshot(
       if (!isRecord(value) || (value.outcome !== "created" && value.outcome !== "replayed")) return null;
       const parsed = projectSnapshotListSchema.shape.items.element.safeParse(value.snapshot);
       return parsed.success ? { ...parsed.data, replayed: value.outcome === "replayed" } : null;
+    });
+}
+
+export async function restoreOwnedProjectSnapshot(
+  session: TrustedSession,
+  input: Readonly<{
+    project_id: string; snapshot_id: string; idempotency_key: string; replay_only: boolean;
+  }>,
+): Promise<ReadResult<Readonly<{ pre_restore_snapshot_id: string; replayed: boolean }>>> {
+  if (!isUuid(input.project_id) || !isUuid(input.snapshot_id) ||
+      !isUuid(input.idempotency_key)) return { outcome: "invalid_input" };
+  return call(session,
+    "SELECT app.restore_project_snapshot($1::uuid,$2::uuid,$3::uuid,$4::boolean) AS result",
+    [input.project_id,input.snapshot_id,input.idempotency_key,String(input.replay_only)],
+    (value) => {
+      if (!isRecord(value) || (value.outcome !== "restored" && value.outcome !== "replayed")) return null;
+      const parsed = restoreProjectSnapshotReceiptSchema.safeParse({
+        pre_restore_snapshot_id: value.pre_restore_snapshot_id,
+      });
+      return parsed.success
+        ? { ...parsed.data, replayed: value.outcome === "replayed" }
+        : null;
     });
 }
 
@@ -205,7 +233,7 @@ function parseSnapshotPage(value: unknown): ReturnType<typeof projectSnapshotLis
   if (value.next !== null && (!next || !next.success)) return null;
   const nextCursor = value.next === null ? null
     : Buffer.from(JSON.stringify((next as { success: true; data: SnapshotCursor }).data)).toString("base64url");
-  const parsed = projectSnapshotListSchema.safeParse({ items: value.items, next_cursor: nextCursor });
+  const parsed = teacherProjectSnapshotListSchema.safeParse({ items: value.items, next_cursor: nextCursor });
   return parsed.success ? parsed.data : null;
 }
 

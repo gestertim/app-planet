@@ -11,6 +11,14 @@ export const createManualSnapshotBodySchema = z.strictObject({
   message: projectSnapshotMessageSchema.optional(),
 });
 
+export const restoreProjectSnapshotBodySchema = z.strictObject({
+  snapshot_id: z.uuid(),
+});
+
+export const restoreProjectSnapshotReceiptSchema = z.strictObject({
+  pre_restore_snapshot_id: z.uuid(),
+});
+
 export const snapshotCursorSchema = z.strictObject({
   version_no: z.number().int().positive(),
   id: z.uuid(),
@@ -32,15 +40,24 @@ export const projectSnapshotDtoSchema = z.strictObject({
   id: z.uuid(),
   version_no: z.number().int().positive(),
   created_at: z.string().regex(/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{6}Z$/),
-  kind: z.literal("manual"),
+  kind: z.enum(["manual", "pre_restore"]),
   immutable: z.boolean(),
   content_hash: z.string().regex(/^[0-9a-f]{64}$/),
   message: projectSnapshotMessageSchema.nullable(),
   changes: snapshotChangeSummarySchema,
 });
 
+export const teacherProjectSnapshotDtoSchema = projectSnapshotDtoSchema.extend({
+  kind: z.literal("manual"),
+});
+
 export const projectSnapshotListSchema = z.strictObject({
   items: z.array(projectSnapshotDtoSchema),
+  next_cursor: z.string().nullable(),
+});
+
+export const teacherProjectSnapshotListSchema = z.strictObject({
+  items: z.array(teacherProjectSnapshotDtoSchema),
   next_cursor: z.string().nullable(),
 });
 
@@ -49,11 +66,20 @@ export const projectSnapshotManifestSchema = z.strictObject({
   files: z.array(snapshotManifestEntrySchema),
 });
 
+export const teacherProjectSnapshotManifestSchema = z.strictObject({
+  snapshot: teacherProjectSnapshotDtoSchema.omit({ changes: true }),
+  files: z.array(snapshotManifestEntrySchema),
+});
+
 export const projectSnapshotFileSchema = snapshotManifestEntrySchema.extend({
   content: z.string(),
 });
 
+export const teacherProjectSnapshotFileSchema = projectSnapshotFileSchema;
+
 export type CreateManualSnapshotBody = z.infer<typeof createManualSnapshotBodySchema>;
+export type RestoreProjectSnapshotBody = z.infer<typeof restoreProjectSnapshotBodySchema>;
+export type RestoreProjectSnapshotReceipt = z.infer<typeof restoreProjectSnapshotReceiptSchema>;
 export type SnapshotCursor = z.infer<typeof snapshotCursorSchema>;
 export type SnapshotManifestEntry = z.infer<typeof snapshotManifestEntrySchema>;
 export type ProjectSnapshotDto = z.infer<typeof projectSnapshotDtoSchema>;

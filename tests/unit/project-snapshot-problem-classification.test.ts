@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   classifySnapshotProblem,
   isSnapshotOperationKey,
+  isRestoreReplayAccessDenied,
   snapshotCreateMode,
   trustedSnapshotCreateReceipt,
 } from "../../apps/web/src/components/project/project-snapshots-panel.tsx";
@@ -70,6 +71,15 @@ describe("§108 F-05：manual 快照建立的模式與成功收據", () => {
 });
 
 describe("快照 problem code 分類", () => {
+  it.each([401, 403, 404])("replay-only %i 不能證明首次交易未提交，首次拒絕維持原契約", (status) => {
+    expect(isRestoreReplayAccessDenied(true, status)).toBe(true);
+    expect(isRestoreReplayAccessDenied(false, status)).toBe(false);
+  });
+
+  it.each([200, 400, 409, 422, 503])("其他狀態 %i 維持既有收據與 problem 判定", (status) => {
+    expect(isRestoreReplayAccessDenied(true, status)).toBe(false);
+  });
+
   it("storage_limit 507 是確定拒絕，不歸入一般 5xx 未知結果", () => {
     expect(classifySnapshotProblem(507, "storage_limit")).toBe("storage_limit");
     expect(classifySnapshotProblem(503, "dependency_unavailable")).toBe("unknown");

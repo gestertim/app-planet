@@ -4,6 +4,7 @@ import {
   projectFileMaxBytes,
   projectFilePathSchema,
   projectFileWriteBodySchema,
+  restoreProjectSnapshotBodySchema,
 } from "@app-planet/core";
 import { authorizeCapability } from "./authorization.ts";
 import {
@@ -24,6 +25,7 @@ import {
   readOwnedProjectSnapshot,
   readTeacherProjectSnapshot,
   listTeacherProjectSnapshots,
+  restoreOwnedProjectSnapshot,
   writeOwnedProjectFile,
 } from "./project-files.ts";
 
@@ -39,7 +41,8 @@ function isReplayOnly(request: Request): boolean | null {
 type QueryResult<T> =
   | { outcome: "found"; value: T }
   | { outcome: "not_found" | "denied" | "invalid_input" | "too_large" | "already_exists"
-      | "conflict" | "idempotency_key_reuse" | "unrecoverable" | "storage_limit" | "dependency_failure" };
+      | "conflict" | "idempotency_key_reuse" | "unrecoverable" | "storage_limit" | "save_failed"
+      | "dependency_failure" };
 
 function sendResult<T>(result: QueryResult<T>,
   context: Parameters<typeof problemResponse>[1]) {
@@ -202,6 +205,42 @@ export function createProjectFileHandlers(options: Options) {
       }
     });
 
+  const restore = createRouteHandler({ ...options, requireSameOrigin: true, route: "project_snapshot_restore", methods: ["POST"] },
+    async ({ request, session, routeParams, ...context }) => {
+      if (!hasTrustedSameOrigin(request)) return problemResponse("forbidden", context);
+      const gate = await authorizeCapability(session.read, "edit_saved_content");
+      if (gate.outcome !== "allowed") return problemResponse(
+        gate.outcome === "denied" ? "forbidden" : "dependency_unavailable", context,
+      );
+      const key = readIdempotencyKey(request.headers);
+      if (!key.ok) return problemResponse(key.code, context);
+      const replayOnly = isReplayOnly(request);
+      if (replayOnly === null) return problemResponse("invalid_request", context);
+      const body = await readJsonBody(request, (value) => {
+        const parsed = restoreProjectSnapshotBodySchema.safeParse(value);
+        return parsed.success ? parsed.data : null;
+      }, 8 * 1024);
+      if (!body.ok) return problemResponse(body.code, context);
+      const result = await runGuarded(() => restoreOwnedProjectSnapshot(session, {
+        project_id: routeParams.id ?? "", snapshot_id: body.data.snapshot_id,
+        idempotency_key: key.key, replay_only: replayOnly,
+      }));
+      if (result.state === "unknown") return problemResponse("operation_outcome_unknown", context);
+      switch (result.value.outcome) {
+        case "found":
+          return jsonResponse(200, {
+            pre_restore_snapshot_id: result.value.value.pre_restore_snapshot_id,
+          }, context);
+        case "not_found": return problemResponse("not_found", context);
+        case "denied": return problemResponse("forbidden", context);
+        case "invalid_input": return problemResponse("invalid_request", context);
+        case "idempotency_key_reuse": return problemResponse("idempotency_key_reuse", context);
+        case "unrecoverable": return problemResponse("operation_outcome_unrecoverable", context);
+        case "save_failed": return problemResponse("save_failed", context);
+        default: return problemResponse("dependency_unavailable", context);
+      }
+    });
+
   const snapshot = createRouteHandler({ ...options, requireSameOrigin: false, route: "project_snapshot_read", methods: ["GET"] },
     async ({ request, session, routeParams, ...context }) => {
       if (new URL(request.url).search) return problemResponse("invalid_request", context);
@@ -256,6 +295,6 @@ export function createProjectFileHandlers(options: Options) {
         snapshot_id: routeParams.snapshotId ?? "", path,
       }), context);
     });
-  return { listFiles, file, snapshots, snapshot, snapshotFile,
+  return { listFiles, file, snapshots, restore, snapshot, snapshotFile,
     teacherSnapshots, teacherSnapshot, teacherSnapshotFile };
 }

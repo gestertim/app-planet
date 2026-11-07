@@ -618,74 +618,8 @@ test("真 Next HTTPS：教師由產品登入唯讀查看學生保存的 manual �
   }
 });
 
-type HoldRule = Readonly<{ method: string; pathSuffix: string; searchIncludes?: string }>;
-
-// 測試注入（非產品後門）：只在 Playwright context 內包裝 window.fetch，讓指定請求的
-// 上游回應完整收下後，以 highWaterMark:0 的 body 串流延遲交付；記錄產品確實呼叫
-// response.json() 與其 settle，作為晚到 body 抵達產品非同步處理邊界的證據。
-function installResponseHold() {
-  const w = window as unknown as Record<string, unknown>;
-  const original = window.fetch.bind(window);
-  const state: Record<string, unknown> = {
-    rule: null, matched: 0, status: 0, jsonCalled: false, jsonSettled: false, released: null, release: null,
-  };
-  w.__apHold = state;
-  w.__apArmHold = (rule: HoldRule) => {
-    let release: () => void = () => undefined;
-    const released = new Promise<void>((resolve) => { release = resolve; });
-    Object.assign(state, { rule, matched: 0, status: 0, jsonCalled: false, jsonSettled: false, released, release });
-  };
-  w.__apReleaseHold = () => (state.release as () => void)();
-  window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-    const href = input instanceof Request ? input.url : String(input);
-    const url = new URL(href, window.location.href);
-    const method = (init?.method ?? (input instanceof Request ? input.method : "GET")).toUpperCase();
-    const rule = state.rule as HoldRule | null;
-    if (!rule || method !== rule.method || !url.pathname.endsWith(rule.pathSuffix) ||
-        (rule.searchIncludes && !url.search.includes(rule.searchIncludes))) return original(input, init);
-    state.rule = null;
-    state.matched = (state.matched as number) + 1;
-    const upstream = await original(input, init);
-    const bytes = new Uint8Array(await upstream.arrayBuffer());
-    state.status = upstream.status;
-    const released = state.released as Promise<void>;
-    const body = new ReadableStream<Uint8Array>({
-      async pull(controller) {
-        await released;
-        controller.enqueue(bytes);
-        controller.close();
-      },
-    }, { highWaterMark: 0 });
-    const held = new Response(body, {
-      status: upstream.status, statusText: upstream.statusText, headers: upstream.headers,
-    });
-    const nativeJson = held.json.bind(held);
-    held.json = () => {
-      state.jsonCalled = true;
-      return nativeJson().finally(() => { state.jsonSettled = true; });
-    };
-    return held;
-  };
-}
-
 type Page = import("@playwright/test").Page;
-const armHold = (page: Page, rule: HoldRule) =>
-  page.evaluate((value) => (window as unknown as { __apArmHold(rule: unknown): void }).__apArmHold(value), rule);
-const holdState = (page: Page) =>
-  page.evaluate(() => {
-    const state = (window as unknown as { __apHold: Record<string, unknown> }).__apHold;
-    return { matched: state.matched as number, status: state.status as number,
-      jsonCalled: state.jsonCalled as boolean, jsonSettled: state.jsonSettled as boolean };
-  });
-const waitBodyAwaited = (page: Page) => page.waitForFunction(() =>
-  (window as unknown as { __apHold: { jsonCalled: boolean } }).__apHold.jsonCalled === true, null, { timeout: 20_000 });
-async function releaseHoldAndDrain(page: Page) {
-  await page.evaluate(() => (window as unknown as { __apReleaseHold(): void }).__apReleaseHold());
-  await page.waitForFunction(() =>
-    (window as unknown as { __apHold: { jsonSettled: boolean } }).__apHold.jsonSettled === true, null, { timeout: 20_000 });
-  // macrotask 邊界：產品 await response.json() 之後的 microtask 全數排空。
-  await page.evaluate(() => new Promise<void>((resolve) => { setTimeout(resolve, 0); }));
-}
+import { armHold, holdState, installResponseHold, releaseHoldAndDrain, waitBodyAwaited } from "../support/response-hold.ts";
 const sessionStorageEntries = (page: Page) => page.evaluate(() =>
   Object.keys(window.sessionStorage).sort().map((key) => [key, window.sessionStorage.getItem(key)] as const));
 const pendingFileKey = async (page: Page, projectId: string, path: string) => {
@@ -814,6 +748,7 @@ test("§108 真 Next HTTPS：replay-only 收據、導覽返回晚到 body、快�
     await expect(page.getByText(/保存結果未知/).first()).toBeVisible();
     const keyC = await pendingFileKey(page, projectA, "c.css");
     await page.reload();
+    await page.getByTestId("project-file-c.css").click();
     await expect(page.locator(".monaco-editor .view-lines")).toContainText("#0a0", { timeout: 15_000 });
     let forgedFileStatus = 0;
     await page.route(`**/api/v1/projects/${projectA}/files/c.css`, async (route) => {
@@ -853,11 +788,9 @@ test("§108 真 Next HTTPS：replay-only 收據、導覽返回晚到 body、快�
     expect(snapshotKeyA).toMatch(/^[0-9a-f-]{36}$/i);
     await tabs.getByRole("link", { name: "版本", exact: true }).click();
     await expect(page).toHaveURL(`${blueprintUrl}/versions`);
-    await expect(workspace).toHaveCount(0, { timeout: 20_000 });
-    expect(await documentMarker()).toBe(marker);
-    await tabs.getByRole("link", { name: "建立 App", exact: true }).click();
     await expect(workspace).toBeVisible({ timeout: 20_000 });
     await expect(retrySnapshot).toBeEnabled({ timeout: 15_000 });
+    expect(await documentMarker()).toBe(marker);
     const replaySnapshotA = snapshotPost();
     await retrySnapshot.click();
     const replayedSnapshotA = await replaySnapshotA;
@@ -866,6 +799,10 @@ test("§108 真 Next HTTPS：replay-only 收據、導覽返回晚到 body、快�
     expect(replayedSnapshotA.request().headers()["idempotency-replay-only"]).toBe("true");
     await expect(page.getByRole("button", { name: /^版本 1（manual）/ })).toBeVisible();
     expect(await snapshotPending()).toBeNull();
+    await tabs.getByRole("link", { name: "建立 App", exact: true }).click();
+    await expect(page).toHaveURL(`${blueprintUrl}/build`);
+    await expect(page.getByRole("heading", { name: "版本", exact: true })).toHaveCount(0);
+    await expect(workspace).toBeVisible({ timeout: 20_000 });
     let committedSnapshotB: number | null = null;
     await page.route(`**/api/v1/projects/${projectA}/snapshots`, async (route) => {
       if (route.request().method() !== "POST") return route.fallback();
@@ -963,8 +900,13 @@ test("§108 真 Next HTTPS：replay-only 收據、導覽返回晚到 body、快�
     await expect(createButton).toBeDisabled();
     await expect(page.getByRole("button", { name: "載入更多版本" })).toBeDisabled();
     await tabs.getByRole("link", { name: "版本", exact: true }).click();
-    await expect(workspace).toHaveCount(0, { timeout: 20_000 });
+    await expect(page).toHaveURL(`${blueprintUrl}/versions`);
+    await expect(page.getByRole("heading", { name: "版本", exact: true })).toBeVisible();
+    await expect(workspace).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole("button", { name: "載入更多版本" })).toBeEnabled({ timeout: 15_000 });
     await tabs.getByRole("link", { name: "建立 App", exact: true }).click();
+    await expect(page).toHaveURL(`${blueprintUrl}/build`);
+    await expect(page.getByRole("heading", { name: "版本", exact: true })).toHaveCount(0);
     await expect(workspace).toBeVisible({ timeout: 20_000 });
     await expect(page.getByRole("button", { name: "載入更多版本" })).toBeEnabled({ timeout: 15_000 });
     expect(await visibleVersions(page)).toEqual(Array.from({ length: 20 }, (_, index) => 21 - index));
@@ -985,7 +927,7 @@ test("§108 真 Next HTTPS：replay-only 收據、導覽返回晚到 body、快�
     expect(new Set(allVersions).size).toBe(22);
     await expect(page.getByRole("button", { name: "載入更多版本" })).toHaveCount(0);
 
-    // 卸載重入：舊 manifest body 停住，經產品頁籤離開 build 再回來後釋放，不得顯示。
+    // 重新掛載尚無選取時，舊 manifest body 不得重新顯示。
     const latest = await control.query(
       "SELECT id,manifest FROM app.snapshots WHERE project_id=$1 AND version_no=22", [projectA]);
     const latestId = latest.rows[0]?.id as string;
@@ -993,17 +935,26 @@ test("§108 真 Next HTTPS：replay-only 收據、導覽返回晚到 body、快�
     await page.getByRole("button", { name: /^版本 22（manual）/ }).click();
     await waitBodyAwaited(page);
     await tabs.getByRole("link", { name: "版本", exact: true }).click();
-    await expect(workspace).toHaveCount(0, { timeout: 20_000 });
+    await expect(page).toHaveURL(`${blueprintUrl}/versions`);
+    await expect(page.getByRole("heading", { name: "版本", exact: true })).toBeVisible();
+    await expect(workspace).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole("button", { name: /^版本 22（manual）/ })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("region", { name: "快照 manifest" })).toHaveCount(0);
     await tabs.getByRole("link", { name: "建立 App", exact: true }).click();
+    await expect(page).toHaveURL(`${blueprintUrl}/build`);
+    await expect(page.getByRole("heading", { name: "版本", exact: true })).toHaveCount(0);
     await expect(workspace).toBeVisible({ timeout: 20_000 });
     await expect(page.getByRole("button", { name: /^版本 22（manual）/ })).toBeVisible({ timeout: 15_000 });
     const storageBeforeManifestRelease = await sessionStorageEntries(page);
+    await expect(page.getByRole("region", { name: "快照 manifest" })).toHaveCount(0);
     await releaseHoldAndDrain(page);
     await expect(page.getByRole("region", { name: "快照 manifest" })).toHaveCount(0);
     expect(await sessionStorageEntries(page)).toEqual(storageBeforeManifestRelease);
     expect(await page.evaluate(() => (window as unknown as { __apDocument?: string }).__apDocument)).toBe(marker);
-    expect(await visibleVersions(page)).toEqual(Array.from({ length: 20 }, (_, index) => 22 - index));
-    await page.getByRole("button", { name: "載入更多版本" }).click();
+    expect((await visibleVersions(page)).slice(0, 20)).toEqual(Array.from({ length: 20 }, (_, index) => 22 - index));
+    if (!(await visibleVersions(page)).includes(1)) {
+      await page.getByRole("button", { name: "載入更多版本" }).click();
+    }
     await page.getByRole("button", { name: /^版本 1（manual）/ }).click();
     await expect(page.getByRole("heading", { name: "版本 1 manifest（唯讀）" })).toBeVisible();
     const manifestRegion = page.getByRole("region", { name: "快照 manifest" });

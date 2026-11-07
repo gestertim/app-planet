@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
-const AccessLost = createContext<() => void>(() => undefined);
+const AccessLost = createContext<(message?: string) => void>(() => undefined);
 export const useProjectAccessLost = () => useContext(AccessLost);
 
 export function ProtectedProjectView({ revision, children }: Readonly<{
@@ -13,8 +13,12 @@ export function ProtectedProjectView({ revision, children }: Readonly<{
   const router = useRouter();
   const [checking, setChecking] = useState(true);
   const [closed, setClosed] = useState(false);
+  const [closedMessage, setClosedMessage] = useState<string | null>(null);
   const [, startTransition] = useTransition();
-  const close = useCallback(() => setClosed(true), []);
+  const close = useCallback((message?: string) => {
+    setClosedMessage(message ?? null);
+    setClosed(true);
+  }, []);
   useEffect(() => { setChecking(false); }, [revision]);
   useEffect(() => {
     const refresh = () => {
@@ -38,7 +42,9 @@ export function ProtectedProjectView({ revision, children }: Readonly<{
     };
   }, [router]);
   return <AccessLost.Provider value={close}>
-    {closed ? <p role="alert" className="card">無法確認存取權限；受保護專案資料已隱藏。請重新載入確認。</p> : <>
+    {closed ? <p role="alert" className="card">無法確認存取權限；受保護專案資料已隱藏。請重新載入確認。
+      {closedMessage && <span> {closedMessage}</span>}
+    </p> : <>
       {checking && <p role="status">正在重新確認存取權限；專案資料暫時隱藏。</p>}
       <div hidden={checking}>{children}</div>
     </>}

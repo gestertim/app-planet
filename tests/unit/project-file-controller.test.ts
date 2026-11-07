@@ -159,6 +159,44 @@ describe("專案原始碼草稿控制器", () => {
     expect(reloaded.getState()).toMatchObject({ status: "ready", dirty: false, saved_content: "已提交內容" });
   });
 
+  it("恢復前檢查其他路徑草稿；將內容還原成已保存版本會安全清理本機草稿", async () => {
+    const store = new MemoryStorage();
+    const content = "伺服器版本";
+    const transport: ProjectFileTransport = {
+      async list() { return response(200, { items: [dto("index.html", content)] }); },
+      async read() { return response(200, { ...dto("index.html", content), content }); },
+      async write() { return response(500, {}); },
+    };
+    const editor = controller(store, transport);
+    await editor.initialize("index.html");
+    expect(editor.hasUnresolvedDrafts()).toBe(false);
+    editor.edit("本機未保存草稿");
+    expect(editor.hasUnresolvedDrafts()).toBe(true);
+    editor.edit(content);
+    expect(editor.getState().dirty).toBe(false);
+    expect(editor.hasUnresolvedDrafts()).toBe(false);
+  });
+
+  it("可信恢復後重新讀取完整檔案清單並清除舊選取", async () => {
+    let files = [dto("index.html", "恢復前")];
+    let listReads = 0;
+    const transport: ProjectFileTransport = {
+      async list() { listReads++; return response(200, { items: files }); },
+      async read(path) {
+        return response(200, { ...dto(path, "恢復前"), content: "恢復前" });
+      },
+      async write() { return response(500, {}); },
+    };
+    const editor = controller(new MemoryStorage(), transport);
+    await editor.initialize("index.html");
+    files = [dto("restored.css", "恢復後")];
+    expect(await editor.reloadAfterRestore()).toBe(true);
+    expect(listReads).toBe(2);
+    expect(editor.getState()).toMatchObject({
+      status: "ready", active_path: null, files: [{ path: "restored.css" }],
+    });
+  });
+
   it("reload 發現同路徑本機草稿與 server 不同時保留雙方並要求明確選擇", async () => {
     const store = new MemoryStorage();
     const localTransport: ProjectFileTransport = {

@@ -7,6 +7,9 @@ import {
   projectFileContentSchema,
   projectFilePathSchema,
   projectSnapshotDtoSchema,
+  restoreProjectSnapshotBodySchema,
+  restoreProjectSnapshotReceiptSchema,
+  teacherProjectSnapshotDtoSchema,
 } from "@app-planet/core";
 import { snapshotContentHash } from "../../apps/web/src/server/project-files.ts";
 import { legacyOnlyPathCases, projectFilePathCases } from "../support/project-file-path-cases.ts";
@@ -85,5 +88,47 @@ describe("專案原始碼與 manual 快照契約", () => {
     expect(projectSnapshotDtoSchema.omit({ changes: true }).safeParse({
       ...snapshot, kind: "submission", approved: true,
     }).success).toBe(false);
+  });
+
+  it("pre_restore 僅可由本人快照 DTO 表示，教師 DTO 僅接受 manual", () => {
+    const snapshot = {
+      id: "00000000-0000-4000-8000-000000000001",
+      version_no: 2,
+      created_at: "2026-11-06T00:00:00.000000Z",
+      kind: "pre_restore",
+      immutable: false,
+      content_hash: "a".repeat(64),
+      message: null,
+    };
+    expect(projectSnapshotDtoSchema.omit({ changes: true }).safeParse(snapshot).success).toBe(true);
+    expect(teacherProjectSnapshotDtoSchema.omit({ changes: true }).safeParse(snapshot).success).toBe(false);
+    expect(teacherProjectSnapshotDtoSchema.omit({ changes: true }).safeParse({
+      ...snapshot, kind: "manual",
+    }).success).toBe(true);
+  });
+
+  it("恢復請求只接受 snapshot_id，不接受檔案本文或其他欄位", () => {
+    const snapshot_id = "00000000-0000-4000-8000-000000000001";
+    expect(restoreProjectSnapshotBodySchema.safeParse({ snapshot_id }).success).toBe(true);
+    for (const body of [
+      {},
+      { snapshot_id: "not-a-uuid" },
+      { snapshot_id, content: "不得接收本文" },
+      { snapshot_id, files: [] },
+      { snapshot_id, kind: "pre_restore" },
+      null,
+    ]) expect(restoreProjectSnapshotBodySchema.safeParse(body).success).toBe(false);
+  });
+
+  it("恢復收據只接受 pre_restore_snapshot_id，拒絕無效或額外的資料", () => {
+    const pre_restore_snapshot_id = "00000000-0000-4000-8000-000000000002";
+    expect(restoreProjectSnapshotReceiptSchema.safeParse({ pre_restore_snapshot_id }).success).toBe(true);
+    for (const receipt of [
+      {},
+      { pre_restore_snapshot_id: "not-a-uuid" },
+      { pre_restore_snapshot_id, outcome: "success" },
+      { pre_restore_snapshot_id, files: [] },
+      null,
+    ]) expect(restoreProjectSnapshotReceiptSchema.safeParse(receipt).success).toBe(false);
   });
 });

@@ -13,6 +13,7 @@ param(
     [switch]$Upgrade0040,
     [switch]$Upgrade0041,
     [switch]$Upgrade0042,
+    [switch]$Upgrade0043,
     [switch]$Upgrade0042IllegalHistory,
     [switch]$TeacherSignup,
     [string[]]$IntegrationFilter = @(),
@@ -358,6 +359,15 @@ enabled = false
             throw "0041→0042 升級驗收須單獨使用 -Upgrade0042 -IntegrationOnly。"
         }
         $env:APP_PLANET_TEST_MIGRATE_THROUGH = "0041"
+        $IntegrationFilter = @("tests/integration/real-auth-project-files.test.ts")
+    }
+    if ($Upgrade0043) {
+        if ($Upgrade0025 -or $Upgrade0028 -or $Upgrade0031 -or $Upgrade0032 -or $Upgrade0035 -or
+            $Upgrade0036 -or $Upgrade0037 -or $Upgrade0038 -or $Upgrade0039 -or $Upgrade0040 -or
+            $Upgrade0041 -or $Upgrade0042 -or $Upgrade0042IllegalHistory -or $BrowserOnly -or -not $IntegrationOnly) {
+            throw "0042→0043 升級驗收須單獨使用 -Upgrade0043 -IntegrationOnly。"
+        }
+        $env:APP_PLANET_TEST_MIGRATE_THROUGH = "0042"
         $IntegrationFilter = @("tests/integration/real-auth-project-files.test.ts")
     }
     if ($Upgrade0042IllegalHistory) {

@@ -115,6 +115,37 @@ export class ProjectFileController {
   }
 
   getState(): ProjectFileWorkspaceState { return this.state; }
+  hasUnresolvedDrafts(): boolean {
+    if (!this.storage) return true;
+    try {
+      const raw = this.storage.getItem(`${this.prefix}index`);
+      if (raw === null) return false;
+      const parsed: unknown = JSON.parse(raw);
+      if (!Array.isArray(parsed) || parsed.length > 0) return true;
+      for (let index = 0; index < this.storage.length; index++) {
+        const key = this.storage.key(index);
+        if (key?.startsWith(this.prefix) && key !== `${this.prefix}index`) return true;
+      }
+      return false;
+    } catch {
+      return true;
+    }
+  }
+
+  async reloadAfterRestore(): Promise<boolean> {
+    if (this.state.dirty || this.state.status !== "ready" || this.pending || this.hasUnresolvedDrafts()) {
+      return false;
+    }
+    this.selection++;
+    this.pending = null;
+    this.patch({
+      files: [], active_path: null, saved_file: null, saved_content: null,
+      content: "", dirty: false, status: "loading", error: null, server_conflict: null,
+    });
+    await this.initialize(null);
+    return this.state.status === "ready";
+  }
+
   subscribe(listener: () => void): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
@@ -261,9 +292,11 @@ export class ProjectFileController {
       return;
     }
     this.editRevision++;
-    this.patch({ content, dirty: this.state.saved_content !== content || this.state.saved_file === null,
-      error: null });
-    this.persistDraft();
+    const dirty = this.state.saved_content !== content || this.state.saved_file === null;
+    this.patch({ content, dirty, error: null });
+    const path = this.state.active_path;
+    if (!dirty && path && this.state.saved_file && !this.pending) this.removeDraft(path);
+    else this.persistDraft();
   }
 
   async save(): Promise<GuardResult> {

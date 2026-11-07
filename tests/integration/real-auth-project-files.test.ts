@@ -17,6 +17,7 @@ import { projectFilePathSchema } from "../../packages/core/contracts/project-fil
 import { projectFilePathCases } from "../support/project-file-path-cases.ts";
 
 const origin = process.env.APP_PLANET_APP_ORIGIN!;
+const testS2Only = process.env.APP_PLANET_TEST_MIGRATE_THROUGH === "0042" ? it.only : it;
 let control: Pool;
 let actors: Awaited<ReturnType<typeof createReviewActors>>;
 let student: NativeAuthSession;
@@ -87,6 +88,96 @@ async function snapshot(actor: NativeAuthSession, key = randomUUID(), targetProj
   );
 }
 
+async function restore(
+  actor: NativeAuthSession,
+  targetProjectId: string,
+  snapshotId: string,
+  key = randomUUID(),
+  replayOnly = false,
+) {
+  return productProjectFileHandlers.restore(
+    request(actor, `/api/v1/projects/${targetProjectId}/restore`, "POST",
+      { snapshot_id: snapshotId }, {
+        "idempotency-key": key,
+        ...(replayOnly ? { "idempotency-replay-only": "true" } : {}),
+      }),
+    { id: targetProjectId },
+  );
+}
+
+async function restoreState(targetProjectId: string) {
+  const rows = async (sql: string) => (await control.query(sql, [targetProjectId])).rows;
+  return {
+    files: await rows(`
+      SELECT f.path,f.blob_hash,f.bytes,f.row_version,f.created_at,f.updated_at,
+        encode(b.content,'hex') AS content
+      FROM app.project_files f JOIN app.blobs b ON b.hash=f.blob_hash
+      WHERE f.project_id=$1 ORDER BY f.path COLLATE "C"
+    `),
+    snapshots: await rows(`
+      SELECT id,version_no,kind,manifest,content_hash,immutable,message,created_by,created_at
+      FROM app.snapshots WHERE project_id=$1 ORDER BY version_no,id
+    `),
+    snapshotFiles: await rows(`
+      SELECT sf.snapshot_id,sf.path,sf.blob_hash,sf.bytes,encode(b.content,'hex') AS content
+      FROM app.snapshot_files sf JOIN app.blobs b ON b.hash=sf.blob_hash
+      WHERE sf.project_id=$1 ORDER BY sf.snapshot_id,sf.path COLLATE "C"
+    `),
+    blobs: await rows(`
+      SELECT b.hash,b.bytes,encode(b.content,'hex') AS content,
+        (SELECT count(*)::int FROM app.project_files f
+          WHERE f.project_id=$1 AND f.blob_hash=b.hash) AS current_refs,
+        (SELECT count(*)::int FROM app.snapshot_files sf
+          WHERE sf.project_id=$1 AND sf.blob_hash=b.hash) AS snapshot_refs
+      FROM app.blobs b WHERE EXISTS (
+        SELECT 1 FROM app.project_files f WHERE f.project_id=$1 AND f.blob_hash=b.hash
+      ) OR EXISTS (
+        SELECT 1 FROM app.snapshot_files sf WHERE sf.project_id=$1 AND sf.blob_hash=b.hash
+      ) ORDER BY b.hash
+    `),
+    receipts: await rows(`
+      SELECT owner_id,project_id,operation_scope,idempotency_key,request_hash,target_snapshot_id,
+        response,created_at,expires_at
+      FROM app.project_restore_receipts WHERE project_id=$1 ORDER BY idempotency_key
+    `),
+    audit: await rows(`
+      SELECT a.actor_aid,a.action,a.object_ref,a.content_hash,a.at
+      FROM app.project_file_audit a WHERE a.project_id=$1 ORDER BY a.id
+    `),
+  };
+}
+
+async function waitForLockWait(queryFragment: string, blockerPid: number, label: string): Promise<number> {
+  const deadline = Date.now() + 15_000;
+  while (Date.now() < deadline) {
+    const result = await control.query(`
+      SELECT pid,wait_event_type,pg_blocking_pids(pid) AS blockers,left(query,240) AS query
+      FROM pg_stat_activity
+      WHERE datname=current_database() AND pid<>pg_backend_pid() AND state='active'
+    `);
+    const blockersByPid = new Map<number, number[]>(
+      result.rows.map((row) => [row.pid as number, row.blockers as number[]]),
+    );
+    const reachesBlocker = (pid: number, visited = new Set<number>()): boolean => {
+      if (pid === blockerPid) return true;
+      if (visited.has(pid)) return false;
+      visited.add(pid);
+      return (blockersByPid.get(pid) ?? []).some((blocker) => reachesBlocker(blocker, visited));
+    };
+    const waiting = result.rows.find((row) =>
+      row.wait_event_type === "Lock" && String(row.query).includes(queryFragment) &&
+      reachesBlocker(row.pid as number));
+    if (waiting) return waiting.pid as number;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  const active = await control.query(`
+    SELECT pid,wait_event_type,pg_blocking_pids(pid) AS blockers,left(query,240) AS query
+    FROM pg_stat_activity
+    WHERE datname=current_database() AND pid<>pg_backend_pid() AND state='active'
+  `);
+  throw new Error(`${label} 未在受控期限內確認鎖等待：${JSON.stringify(active.rows)}`);
+}
+
 beforeAll(async () => {
   if (process.env.APP_PLANET_ENV !== "isolated-local-test") throw Error("isolated runner required");
   control = openControlPool();
@@ -105,6 +196,7 @@ beforeAll(async () => {
     );
     expect(after.rows).toEqual(before.rows);
     await control.query(await readFile(new URL("../../supabase/migrations/0042_project_file_path_case.sql", import.meta.url), "utf8"));
+    await control.query(await readFile(new URL("../../supabase/migrations/0043_project_snapshot_restore.sql", import.meta.url), "utf8"));
   } else if (process.env.APP_PLANET_TEST_MIGRATE_THROUGH === "0041") {
     projectId = await createProject(student);
     const upgradeProject = await createProject(student);
@@ -139,11 +231,33 @@ beforeAll(async () => {
       JOIN app.blobs b ON b.hash=sf.blob_hash
       WHERE s.project_id=$1 ORDER BY s.version_no,sf.path COLLATE "C"
     `, [upgradeProject])).rows).toEqual(beforeSnapshots.rows);
+    await control.query(await readFile(new URL("../../supabase/migrations/0043_project_snapshot_restore.sql", import.meta.url), "utf8"));
     const restored = await productProjectFileHandlers.snapshotFile(
       request(student, `/api/v1/projects/${upgradeProject}/snapshots/${snapshotId}/files/nested/Legacy.html`),
       { id: upgradeProject, snapshotId, path: "nested/Legacy.html" },
     );
     expect(await restored.json()).toMatchObject({ path: "nested/Legacy.html", content });
+  } else if (process.env.APP_PLANET_TEST_MIGRATE_THROUGH === "0042") {
+    projectId = await createProject(student);
+    expect((await put(student, "upgrade-0042.html", "0042 現有本文", { ifNoneMatch: "*" })).status).toBe(201);
+    expect((await snapshot(student)).status).toBe(201);
+    const beforeUpgradeFiles = await control.query(
+      "SELECT path,blob_hash,bytes FROM app.project_files WHERE project_id=$1 ORDER BY path COLLATE \"C\"",
+      [projectId],
+    );
+    const beforeUpgradeSnapshots = await control.query(
+      "SELECT id,version_no,kind,manifest,content_hash FROM app.snapshots WHERE project_id=$1 ORDER BY version_no,id",
+      [projectId],
+    );
+    await control.query(await readFile(new URL("../../supabase/migrations/0043_project_snapshot_restore.sql", import.meta.url), "utf8"));
+    expect((await control.query(
+      "SELECT path,blob_hash,bytes FROM app.project_files WHERE project_id=$1 ORDER BY path COLLATE \"C\"",
+      [projectId],
+    )).rows).toEqual(beforeUpgradeFiles.rows);
+    expect((await control.query(
+      "SELECT id,version_no,kind,manifest,content_hash FROM app.snapshots WHERE project_id=$1 ORDER BY version_no,id",
+      [projectId],
+    )).rows).toEqual(beforeUpgradeSnapshots.rows);
   } else {
     projectId = await createProject(student);
   }
@@ -890,4 +1004,341 @@ describe("E-1／S-1／S-3 真 Auth、Route Handler 與隔離 PostgreSQL", () => 
     );
     expect(all.map((item) => item.version_no)).toEqual(Array.from({ length: 21 }, (_, index) => 21 - index));
   });
+
+  testS2Only("S-2 完整替換、pre_restore 找回、冪等、授權、空目標與兩階段 rollback", async () => {
+    const targetProject = await createProject(student);
+    expect((await put(student, "index.html", "版本 A", { ifNoneMatch: "*" }, randomUUID(), targetProject)).status)
+      .toBe(201);
+    expect((await put(student, "a-only.css", "只在 A", { ifNoneMatch: "*" }, randomUUID(), targetProject)).status)
+      .toBe(201);
+    const snapshotAResponse = await snapshot(student, randomUUID(), targetProject);
+    expect(snapshotAResponse.status).toBe(201);
+    const snapshotA = await snapshotAResponse.json();
+    const oldSnapshot = await control.query(
+      "SELECT id,version_no,kind,manifest,content_hash,created_at FROM app.snapshots WHERE id=$1",
+      [snapshotA.id],
+    );
+    const oldSnapshotFiles = await control.query(`
+      SELECT sf.path,sf.blob_hash,sf.bytes,encode(b.content,'hex') AS content
+      FROM app.snapshot_files sf JOIN app.blobs b ON b.hash=sf.blob_hash WHERE sf.snapshot_id=$1
+      ORDER BY sf.path COLLATE "C"
+    `, [snapshotA.id]);
+
+    const currentA = await control.query(
+      "SELECT blob_hash FROM app.project_files WHERE project_id=$1 AND path='index.html'",
+      [targetProject],
+    );
+    expect((await put(student, "index.html", "版本 B", { ifMatch: currentA.rows[0].blob_hash },
+      randomUUID(), targetProject)).status).toBe(200);
+    expect((await put(student, "b-only.css", "只在 B", { ifNoneMatch: "*" }, randomUUID(), targetProject)).status)
+      .toBe(201);
+    const snapshotBResponse = await snapshot(student, randomUUID(), targetProject);
+    expect(snapshotBResponse.status).toBe(201);
+    const snapshotB = await snapshotBResponse.json();
+    expect((await put(student, "pre-only-secret.js", "未進入 manual 版本", { ifNoneMatch: "*" },
+      randomUUID(), targetProject)).status).toBe(201);
+
+    const restoreKey = randomUUID();
+    const restored = await restore(student, targetProject, snapshotA.id, restoreKey);
+    expect(restored.status).toBe(200);
+    const receipt = await restored.json();
+    expect(receipt.pre_restore_snapshot_id).toMatch(/^[0-9a-f-]{36}$/i);
+    const preRestoreId = receipt.pre_restore_snapshot_id as string;
+    expect((await control.query(
+      "SELECT kind,manifest FROM app.snapshots WHERE id=$1 AND project_id=$2", [preRestoreId, targetProject],
+    )).rows[0]).toMatchObject({ kind: "pre_restore" });
+    const preRestoreManifest = await productProjectFileHandlers.snapshot(
+      request(student, `/api/v1/projects/${targetProject}/snapshots/${preRestoreId}/manifest`),
+      { id: targetProject, snapshotId: preRestoreId },
+    );
+    expect(preRestoreManifest.status).toBe(200);
+    expect((await preRestoreManifest.json()).snapshot.kind).toBe("pre_restore");
+    const preRestoreFile = await productProjectFileHandlers.snapshotFile(
+      request(student, `/api/v1/projects/${targetProject}/snapshots/${preRestoreId}/files/pre-only-secret.js`),
+      { id: targetProject, snapshotId: preRestoreId, path: "pre-only-secret.js" },
+    );
+    expect(preRestoreFile.status).toBe(200);
+    expect((await preRestoreFile.json()).content).toBe("未進入 manual 版本");
+    expect((await control.query(
+      "SELECT path FROM app.project_files WHERE project_id=$1 ORDER BY path COLLATE \"C\"", [targetProject],
+    )).rows.map((row) => row.path)).toEqual(["a-only.css", "index.html"]);
+    expect((await control.query(
+      "SELECT convert_from(b.content,'UTF8') AS content FROM app.project_files f JOIN app.blobs b ON b.hash=f.blob_hash WHERE f.project_id=$1 AND f.path='index.html'",
+      [targetProject],
+    )).rows[0]?.content).toBe("版本 A");
+    expect((await control.query(
+      "SELECT path FROM app.snapshot_files WHERE snapshot_id=$1 ORDER BY path COLLATE \"C\"", [preRestoreId],
+    )).rows.map((row) => row.path)).toContain("pre-only-secret.js");
+    expect((await control.query(
+      "SELECT id,version_no,kind,manifest,content_hash,created_at FROM app.snapshots WHERE id=$1",
+      [snapshotA.id],
+    )).rows).toEqual(oldSnapshot.rows);
+    expect((await control.query(`
+      SELECT sf.path,sf.blob_hash,sf.bytes,encode(b.content,'hex') AS content
+      FROM app.snapshot_files sf JOIN app.blobs b ON b.hash=sf.blob_hash WHERE sf.snapshot_id=$1
+      ORDER BY sf.path COLLATE "C"
+    `, [snapshotA.id])).rows).toEqual(oldSnapshotFiles.rows);
+
+    const afterRestore = await restoreState(targetProject);
+    const replay = await restore(student, targetProject, snapshotA.id, restoreKey, true);
+    expect(replay.status).toBe(200);
+    expect(await replay.json()).toEqual(receipt);
+    expect(await restoreState(targetProject)).toEqual(afterRestore);
+    await control.query(
+      "UPDATE app.profiles SET status='disabled',status_changed_at=clock_timestamp() WHERE id=$1",
+      [student.userId],
+    );
+    try {
+      const deniedReplay = await restore(student, targetProject, snapshotA.id, restoreKey, true);
+      expect(deniedReplay.status).toBe(403);
+      expect(await restoreState(targetProject)).toEqual(afterRestore);
+    } finally {
+      await control.query(
+        "UPDATE app.profiles SET status='approved',status_changed_at=clock_timestamp() WHERE id=$1",
+        [student.userId],
+      );
+    }
+    const confirmedReplay = await restore(student, targetProject, snapshotA.id, restoreKey, true);
+    expect(confirmedReplay.status).toBe(200);
+    expect(await confirmedReplay.json()).toEqual(receipt);
+    expect(await restoreState(targetProject)).toEqual(afterRestore);
+    const reused = await restore(student, targetProject, snapshotB.id, restoreKey, true);
+    expect(reused.status).toBe(422);
+    expect(await restoreState(targetProject)).toEqual(afterRestore);
+    const missingReplay = await restore(student, targetProject, snapshotB.id, randomUUID(), true);
+    expect(missingReplay.status).toBe(409);
+    expect((await missingReplay.json()).code).toBe("operation_outcome_unrecoverable");
+    expect(await restoreState(targetProject)).toEqual(afterRestore);
+    await control.query(`
+      WITH expiry AS (SELECT clock_timestamp()-interval '2 days' AS created_at)
+      UPDATE app.project_restore_receipts receipt
+      SET created_at=expiry.created_at,expires_at=expiry.created_at+interval '24 hours'
+      FROM expiry
+      WHERE receipt.project_id=$1 AND receipt.idempotency_key=$2
+    `, [targetProject, restoreKey]);
+    const afterExpiry = await restoreState(targetProject);
+    const expiredReplay = await restore(student, targetProject, snapshotA.id, restoreKey, true);
+    expect(expiredReplay.status).toBe(409);
+    expect((await expiredReplay.json()).code).toBe("operation_outcome_unrecoverable");
+    expect(await restoreState(targetProject)).toEqual(afterExpiry);
+
+    const foreignProject = await createProject(student);
+    const foreignSnapshot = await snapshot(student, randomUUID(), foreignProject);
+    const crossProject = await restore(student, targetProject, (await foreignSnapshot.json()).id as string);
+    expect(crossProject.status).toBe(404);
+    for (const actor of [otherStudent, teacher, admin]) {
+      const denied = await restore(actor, targetProject, snapshotA.id);
+      expect([403, 404]).toContain(denied.status);
+    }
+
+    await control.query("UPDATE app.teacher_student_bindings SET state='active' WHERE id=$1", [actors.binding]);
+    const teacherBase = `/api/v1/teacher/students/${actors.student.id}/projects/${targetProject}/snapshots`;
+    const teacherList = await productProjectFileHandlers.teacherSnapshots(
+      request(teacher, teacherBase), { studentId: actors.student.id, projectId: targetProject },
+    );
+    expect(teacherList.status).toBe(200);
+    const teacherListText = await teacherList.text();
+    expect(teacherListText).not.toContain(preRestoreId);
+    expect(teacherListText).not.toContain("pre-only-secret.js");
+    expect(JSON.parse(teacherListText).items.every((item: { kind: string }) => item.kind === "manual")).toBe(true);
+    const teacherManifest = await productProjectFileHandlers.teacherSnapshot(
+      request(teacher, `${teacherBase}/${preRestoreId}/manifest`),
+      { studentId: actors.student.id, projectId: targetProject, snapshotId: preRestoreId },
+    );
+    expect(teacherManifest.status).toBe(404);
+    expect(await teacherManifest.text()).not.toContain("pre-only-secret.js");
+    const teacherFile = await productProjectFileHandlers.teacherSnapshotFile(
+      request(teacher, `${teacherBase}/${preRestoreId}/files/pre-only-secret.js`),
+      { studentId: actors.student.id, projectId: targetProject, snapshotId: preRestoreId,
+        path: "pre-only-secret.js" },
+    );
+    expect(teacherFile.status).toBe(404);
+    expect(await teacherFile.text()).not.toContain("未進入 manual 版本");
+
+    const emptyProject = await createProject(student);
+    const emptyTargetResponse = await snapshot(student, randomUUID(), emptyProject);
+    expect(emptyTargetResponse.status).toBe(201);
+    const emptyTargetId = (await emptyTargetResponse.json()).id as string;
+    expect((await put(student, "recover.js", "B 可由救援副本找回", { ifNoneMatch: "*" },
+      randomUUID(), emptyProject)).status).toBe(201);
+    const emptyRestore = await restore(student, emptyProject, emptyTargetId);
+    expect(emptyRestore.status).toBe(200);
+    const emptyReceipt = await emptyRestore.json();
+    expect((await control.query(
+      "SELECT count(*)::int AS count FROM app.project_files WHERE project_id=$1", [emptyProject],
+    )).rows[0]?.count).toBe(0);
+    const recoverB = await restore(student, emptyProject, emptyReceipt.pre_restore_snapshot_id as string);
+    expect(recoverB.status).toBe(200);
+    expect((await control.query(
+      "SELECT f.path,convert_from(b.content,'UTF8') AS content FROM app.project_files f JOIN app.blobs b ON b.hash=f.blob_hash WHERE f.project_id=$1 ORDER BY f.path",
+      [emptyProject],
+    )).rows).toEqual([{ path: "recover.js", content: "B 可由救援副本找回" }]);
+
+    const beforeSaveFailure = await restoreState(emptyProject);
+    await control.query(`
+      CREATE FUNCTION app.test_s2_fail_pre_restore() RETURNS trigger
+      LANGUAGE plpgsql SET search_path=pg_catalog AS $$
+      BEGIN
+        IF NEW.kind='pre_restore' AND NEW.project_id='${emptyProject}'::uuid THEN
+          RAISE EXCEPTION 'synthetic pre_restore failure';
+        END IF;
+        RETURN NEW;
+      END
+      $$;
+      CREATE TRIGGER test_s2_fail_pre_restore BEFORE INSERT ON app.snapshots
+        FOR EACH ROW EXECUTE FUNCTION app.test_s2_fail_pre_restore();
+    `);
+    try {
+      const saveFailure = await restore(student, emptyProject, emptyTargetId);
+      expect(saveFailure.status).toBe(409);
+      expect((await saveFailure.json()).code).toBe("save_failed");
+      expect(await restoreState(emptyProject)).toEqual(beforeSaveFailure);
+    } finally {
+      await control.query("DROP TRIGGER test_s2_fail_pre_restore ON app.snapshots");
+      await control.query("DROP FUNCTION app.test_s2_fail_pre_restore()");
+    }
+
+    const beforeSwapFailure = await restoreState(emptyProject);
+    await control.query(`
+      CREATE FUNCTION app.test_s2_fail_after_restore_write() RETURNS trigger
+      LANGUAGE plpgsql SET search_path=pg_catalog AS $$
+      BEGIN
+        IF NEW.project_id='${emptyProject}'::uuid
+          AND current_setting('app.project_restore_in_progress',true)='1' THEN
+          RAISE EXCEPTION 'synthetic failure after replacement started';
+        END IF;
+        RETURN NEW;
+      END
+      $$;
+      CREATE TRIGGER test_s2_fail_after_restore_write AFTER INSERT OR UPDATE ON app.project_files
+        FOR EACH ROW EXECUTE FUNCTION app.test_s2_fail_after_restore_write();
+    `);
+    try {
+      const swapFailure = await restore(student, emptyProject,
+        emptyReceipt.pre_restore_snapshot_id as string);
+      expect(swapFailure.status).toBe(503);
+      expect(await restoreState(emptyProject)).toEqual(beforeSwapFailure);
+    } finally {
+      await control.query("DROP TRIGGER test_s2_fail_after_restore_write ON app.project_files");
+      await control.query("DROP FUNCTION app.test_s2_fail_after_restore_write()");
+    }
+  }, 120_000);
+
+  it("S-2 受控 project lock 序列化恢復與保存／manual，且等鎖後重驗失權", async () => {
+    const barrierProject = await createProject(student);
+    expect((await put(student, "index.html", "鎖前版本 A", { ifNoneMatch: "*" },
+      randomUUID(), barrierProject)).status).toBe(201);
+    const target = await snapshot(student, randomUUID(), barrierProject);
+    const targetId = (await target.json()).id as string;
+    const beforeHash = (await control.query(
+      "SELECT blob_hash FROM app.project_files WHERE project_id=$1 AND path='index.html'",
+      [barrierProject],
+    )).rows[0].blob_hash as string;
+    expect((await put(student, "index.html", "鎖前版本 B", { ifMatch: beforeHash },
+      randomUUID(), barrierProject)).status).toBe(200);
+
+    const lockClient = await control.connect();
+    const blockerPid = (await lockClient.query("SELECT pg_backend_pid() AS pid")).rows[0].pid as number;
+    let advisoryHeld = false;
+    let restorePromise: Promise<Response> | null = null;
+    let manualPromise: Promise<Response> | null = null;
+    let putPromise: Promise<Response> | null = null;
+    const advisoryA = 1090707;
+    const advisoryB = 42;
+    try {
+      await lockClient.query("SELECT pg_advisory_lock($1,$2)", [advisoryA, advisoryB]);
+      advisoryHeld = true;
+      await control.query(`
+        CREATE FUNCTION app.test_s2_pause_restore() RETURNS trigger
+        LANGUAGE plpgsql SET search_path=pg_catalog AS $$
+        BEGIN
+          IF NEW.kind='pre_restore' AND NEW.project_id='${barrierProject}'::uuid THEN
+            PERFORM pg_advisory_xact_lock(${advisoryA},${advisoryB});
+          END IF;
+          RETURN NEW;
+        END
+        $$;
+        CREATE TRIGGER test_s2_pause_restore BEFORE INSERT ON app.snapshots
+          FOR EACH ROW EXECUTE FUNCTION app.test_s2_pause_restore();
+      `);
+      const restoreRequest = restore(student, barrierProject, targetId);
+      restorePromise = restoreRequest;
+      const restorePid = await waitForLockWait("restore_project_snapshot", blockerPid, "restore");
+      const manualRequest = snapshot(student, randomUUID(), barrierProject);
+      manualPromise = manualRequest;
+      const putRequest = put(student, "after-restore.js", "恢復後序列化保存", { ifNoneMatch: "*" },
+        randomUUID(), barrierProject);
+      putPromise = putRequest;
+      await waitForLockWait("create_manual_project_snapshot", restorePid, "manual snapshot");
+      await waitForLockWait("write_project_file", restorePid, "file save");
+      await lockClient.query("SELECT pg_advisory_unlock($1,$2)", [advisoryA, advisoryB]);
+      advisoryHeld = false;
+      const [restoreResult, manualResult, putResult] = await Promise.all([
+        restoreRequest, manualRequest, putRequest,
+      ]);
+      expect(restoreResult.status).toBe(200);
+      expect(manualResult.status).toBe(201);
+      expect(putResult.status).toBe(201);
+      const snapshotBody = await manualResult.json();
+      const manifest = await productProjectFileHandlers.snapshot(
+        request(student, `/api/v1/projects/${barrierProject}/snapshots/${snapshotBody.id}/manifest`),
+        { id: barrierProject, snapshotId: snapshotBody.id },
+      );
+      expect(manifest.status).toBe(200);
+      const manifestPaths = (await manifest.json()).files.map((entry: { path: string }) => entry.path);
+      expect(manifestPaths).toEqual(expect.arrayContaining(["index.html"]));
+      const finalFiles = await control.query(
+        "SELECT path FROM app.project_files WHERE project_id=$1 ORDER BY path COLLATE \"C\"",
+        [barrierProject],
+      );
+      expect(finalFiles.rows.map((row) => row.path)).toEqual(["after-restore.js", "index.html"]);
+      expect(await control.query(
+        "SELECT count(*)::int AS count FROM app.snapshot_files WHERE snapshot_id=$1 AND path='after-restore.js'",
+        [snapshotBody.id],
+      ).then((result) => result.rows[0]?.count)).toBe(
+        manifestPaths.includes("after-restore.js") ? 1 : 0,
+      );
+    } finally {
+      if (advisoryHeld) await lockClient.query("SELECT pg_advisory_unlock($1,$2)", [advisoryA, advisoryB]);
+      if (restorePromise) await restorePromise;
+      await control.query("DROP TRIGGER IF EXISTS test_s2_pause_restore ON app.snapshots");
+      await control.query("DROP FUNCTION IF EXISTS app.test_s2_pause_restore()");
+      lockClient.release();
+    }
+
+    const revocationProject = await createProject(student);
+    expect((await put(student, "index.html", "撤權前來源", { ifNoneMatch: "*" },
+      randomUUID(), revocationProject)).status).toBe(201);
+    const revocationTarget = await snapshot(student, randomUUID(), revocationProject);
+    const revocationTargetId = (await revocationTarget.json()).id as string;
+    const beforeRevocation = await restoreState(revocationProject);
+    const revokeClient = await control.connect();
+    const revokePid = (await revokeClient.query("SELECT pg_backend_pid() AS pid")).rows[0].pid as number;
+    let transactionOpen = false;
+    let waitingRestore: Promise<Response> | null = null;
+    try {
+      await revokeClient.query("BEGIN");
+      transactionOpen = true;
+      await revokeClient.query("SELECT id FROM app.profiles WHERE id=$1 FOR UPDATE", [student.userId]);
+      waitingRestore = restore(student, revocationProject, revocationTargetId);
+      await waitForLockWait("restore_project_snapshot", revokePid, "account eligibility recheck");
+      await revokeClient.query(
+        "UPDATE app.profiles SET status='disabled',status_changed_at=clock_timestamp() WHERE id=$1",
+        [student.userId],
+      );
+      await revokeClient.query("COMMIT");
+      transactionOpen = false;
+      const denied = await waitingRestore;
+      expect(denied.status).toBe(403);
+      expect(await restoreState(revocationProject)).toEqual(beforeRevocation);
+    } finally {
+      if (transactionOpen) await revokeClient.query("ROLLBACK");
+      if (waitingRestore) await waitingRestore;
+      await revokeClient.release();
+      await control.query(
+        "UPDATE app.profiles SET status='approved',status_changed_at=clock_timestamp() WHERE id=$1",
+        [student.userId],
+      );
+    }
+  }, 120_000);
 });

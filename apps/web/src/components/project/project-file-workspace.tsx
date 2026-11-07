@@ -235,7 +235,8 @@ export function ProjectFileWorkspace({
       </div>
     </div>
     <ProjectSnapshotsPanel projectId={projectId} accountScope={accountScope}
-      dirty={state.dirty || state.status === "saving" || state.status === "unknown" || state.status === "conflict"}
-      onAccessLost={accessLost} />
+      dirty={state.dirty || state.status !== "ready" || controller.hasUnresolvedDrafts()}
+      onAccessLost={accessLost}
+      onRestoreConfirmed={() => controller.reloadAfterRestore()} />
   </section>;
 }
