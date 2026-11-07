@@ -247,6 +247,7 @@ enabled = false
     $env:APP_PLANET_APP_ORIGIN = "https://localhost:$webPort"
     $env:APP_PLANET_TEST_AUTH_ADMIN_KEY = $adminAuthKey
     $env:APP_PLANET_TEST_DB_ADMIN_URL = $adminDbUrl
+    $env:APP_PLANET_TEST_SCOPE_ELIGIBILITY_HOLD = "1"
     $env:APP_PLANET_E2E_PORT = "$webPort"
     $env:APP_PLANET_E2E_CHANNEL = "msedge"
     $env:APP_PLANET_TEST_AUTH_CONTAINER = "supabase_auth_$projectId"

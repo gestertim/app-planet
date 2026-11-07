@@ -5563,3 +5563,170 @@ production build 後確認 `next-env.d.ts` 生成 hash 為 `1b59d4c6b83807db275d
 去敏增量審閱 ZIP 收錄本批 scope、相對於本輪實際 before 的 `changes.patch`、before／after、受測來源雜湊、去敏 stdout／stderr、完整命令／起訖時間／exit code、skip 原因、清理證據、ZIP SHA-256／CRC 及 patch replay 驗證；證據位於 session `files/t095-eligibility-20261107/`，不加入產品 Git index。patch 不含 §109～§111 S-2 或其他既有工作樹成果。
 
 本輪最終核對 HEAD／branch 未變、index 空；未 commit、push、部署或使用真實兒童資料。T095／T091／T051 任務及依賴維持原狀；Checkpoint／完整 MVP Readiness Gate、正式審議／簽核與真實產品功能啟用狀態均不變。本節為本次有界交付紀錄，不構成常設開發許可；交付後停止並交 Reviewer 唯讀複審。
+
+## 113. 2026-11-07 T097 學生工作區作品範圍唯讀說明（本 session 有界要求）
+
+### 範圍與基線
+
+依本 session 使用者明確要求，只把 §112 已驗收的 T095 伺服器判斷接至既有學生工作區「建立 App」及「發布」頁，提供唯讀範圍說明與瀏覽器／合成驗收。固定用途分別為 `a1_preview` 與 `public`；不改 T095 服務、判斷規則、T097 任務正文／依賴／勾選、Gate 或正式啟用狀態；不接 Skills／Agent，不增公開 API、mutation、migration、Job、iframe、預覽執行、送審、部署或供應商。
+
+動工前核對 root `C:\Users\geste\spec-kit\app-planet`、`.specify/feature.json` 的 `specs/001-app-planet-platform`、branch `work/auth-cancel-authorization`、HEAD `4ffe6c3fbefd0864570d87f8c38cd390d11484f8` 及 index 空。§112 審閱包 `after/status.txt` 位於先前 T095 session review package；與本次 `git status --short --untracked-files=all` 逐列精確相符，兩者均 46 列。依該實際狀態保存本輪 `before/status.txt` 及受影響來源 before；未以 HEAD 或舊記錄列數取代 before，§109～§112 與其餘未提交修改均保留。
+
+判斷依據沿用本檔 §112、[tasks.md](./tasks.md) T095／T097／T039／T065、D-23、PROJ §1.1、PUB §1／§3.7 及 [ux-ui-design.md](./ux-ui-design.md) UX-07／UX-08；沒有把 UI 範圍說明當作資格以外的操作授權。
+
+### 實作
+
+- 新增共用 `WorkLimitations` 唯讀元件及純狀態映射；server page data 只傳白名單狀態，不傳正式需求原文、確認證據、revision、內部錯誤或跨專案資料。伺服器使用當前登入 cookie 呼叫既有 `createWorkEligibilityService`，頁面固定傳入用途，不從 URL query／瀏覽器輸入選定或重算政策。
+- 缺需求、未確認、歷史未驗證各自提示回既有藍圖／A-B 確認流程；歷史分類明示「不能當成已通過」。學生伺服器及作品 runtime AI 各顯示首版限制、保留設計／檔案並說明不會自動刪除需求或改分類。B 級訪客識別限制只在 `public` 顯示；A1 私人頁不顯示公開限制。
+- 正向文案僅為「目前的作品需求符合首版範圍」；預覽／發布功能尚未開放以獨立狀態呈現。暫時依賴故障顯示無法判斷及重新載入；未登入、失權、非本人或不存在時沿用工作區拒絕／隱匿，不顯示範圍或檔案內容。
+- 兩頁為動態 server render；沿用七頁籤 `prefetch={false}`，另以 pathname 返回時的 server refresh 更新既有路由快取。檔案 `#file=` 同路徑返回不觸發 refresh；保留 `ProjectFileWorkspace`、帳號／專案 key、保存、快照與 S-2 恢復實作。
+
+### 實際驗收
+
+所有時間為本機 `+08:00`，測試使用合成帳號／作品，不使用真實兒童資料；完整去敏 stdout／stderr 及首次失敗均收於本批 review package。
+
+| 命令 | 起訖（2026-11-07，+08:00） | 結果 |
+| --- | --- | --- |
+| `npm exec -- vitest run --project unit tests/unit/work-limitations.test.ts` | 22:02:57～22:03:02 | exit 0；1 file、5 tests passed。涵蓋正向與功能未開放的分離、public-only visitor、兩項 runtime blocker、缺需求／未確認／歷史未驗證、依賴故障與拒絕隱匿映射。 |
+| `.\scripts\test-auth-local.ps1 -BrowserOnly -E2EFilter @('tests/auth-e2e/real-auth-project-files.spec.ts','tests/auth-e2e/real-auth-project-restore.spec.ts','tests/auth-e2e/real-auth-work-limitations.spec.ts')` | 21:58:03～22:02:25 | exit 0；真實隔離 Auth／PostgreSQL、真 Next HTTPS；5 tests passed。T097 瀏覽器案例驗證 A 兩頁正向且功能仍關閉、同一 B 私人／公開差異、學生伺服器與 runtime AI blocker、修改需求後 browser back／reload 不沿用正向結果、切換作品不串用、非本人及停權拒絕隱匿；直接工作區回歸含檔案讀寫、manual snapshot、延遲結果與恢復。runner 清理後 containers／volumes／networks 均為 0。 |
+| `npm run typecheck` | 22:02:57～22:03:08 | exit 0；全部 workspace 與 tests typecheck 通過。 |
+| `$env:NEXT_TELEMETRY_DISABLED=1; npm run build` | 22:03:18～22:03:40 | exit 0；production build 通過。build 改寫的 `apps/web/next-env.d.ts` 已以本輪實際 before 副本還原，SHA-256 回到 `b8b3a344484b959af5e4e3fc1a1609dac3cb9ece0cdeb6c145be29bc4c491000`。 |
+
+驗收過程曾發現 browser back 會還原舊 RSC；實際修正並重驗 pathname 返回刷新。第一次 hash 導覽回歸也發現同路徑檔案歷史不應觸發 refresh，調整後最終直接回歸及 T097 瀏覽器案例同批全綠。首次失敗、修正重跑與資源清理證據均保留，不以後續成功覆寫。未執行正式部署／供應商／外部瀏覽器矩陣／完整 Readiness Gate；其原因是本批明確界定為本機唯讀 UI 子集，這些項目不在授權範圍。
+
+### 證據、交付與停止界線
+
+去敏增量 review package 位於本次 session `files\t097-work-scope-20261107\review-package\`，並提供 `changes.patch`、實際 before／after 狀態、受測來源前後 SHA-256、逐次命令／起訖／exit code、去敏原始 logs、skip 與清理紀錄、patch replay 結果及換行正規化記錄；ZIP 與 ZIP 校驗值於本次交付回報。patch 只含相對本輪實際 before 的 T097 增量，不含 §109～§112 或其他既有工作樹成果。
+
+本輪沒有修改 task 正文、依賴或勾選，未 commit、push、部署；最終 HEAD／branch 不變，index 空。T097 僅完成上述有界子集；Checkpoint／完整 MVP Readiness Gate、教育者正式審議／簽核與真實預覽／發布操作仍未開放。本節非常設許可，完成後停止交 Reviewer。
+
+### F-01／F-02 補正與驗收（2026-11-07）
+
+#### 有界修正
+
+- F-01：受保護工作區於 build／publish 路徑變更、pathname 返回、focus、`pageshow`／bfcache、頁面隱藏及週期性重驗期間先遮蔽。父層以目前 pathname、project、用途、導航 epoch、layout revision 與頁面 server result ID 限定可信結果；舊路徑、重複／過期結果或先前導航的 callback 不得解除遮蔽。等待期間只顯示不含專案資料的檢查狀態。遮蔽以隱藏容器完成，不卸載檔案工作區，不取消保存／快照／恢復操作；`usePathname` 不含 `#file=`，純同路徑 hash 導覽不觸發重驗。
+- F-02：`WorkLimitations` 將 build／publish 當次 server 結果及唯一 `resultId` 回報給實際包住標題、分類、七頁籤、範圍與檔案的 `ProtectedProjectView`。可信 `access_closed` 立即關閉整個父層，不等待後續 refresh。build 頁固定 `a1_preview`、publish 頁固定 `public`；頁面不再因 workspace loader 的早退而略過資格 loader。未登入、失權、非本人、不存在與依賴故障仍採既有隱匿／安全錯誤規則。
+- F-02 測試僅在既有隔離 runner 開啟一個 project-scoped PostgreSQL advisory-lock barrier；runner 只允許此單一內部環境旗標傳入 Next 子程序，沒有新增 HTTP route、產品操作或公開測試入口。測試先確認 layout found，再等資格讀取確實停在 barrier，提交停權後才釋放；build／publish 各自從回應本文確認 `access_closed`，並檢查父層標題、脈絡、導覽、範圍及檔案皆不可見。
+
+#### 實際驗收與先前失敗
+
+補正前真 Next HTTPS／隔離 Auth／PostgreSQL 重現（22:58:29～23:00:28，exit 1）已保存：需求修改與撤權兩種返回在 barrier 期間仍可見舊作品／正向範圍；F-02 build 撤權後標題與導覽仍顯示。當時 publish 子案例因拒絕訊息等待條件而未執行，故不把它列作補正前已重現。補正後 runner 分別停住 RSC／資格讀取；F-01 需求更新與停權兩例等待期間均只見安全狀態，受保護元素不可見、觀察器未記錄標題／檔案／舊正向文案；釋放後需求更新顯示新阻擋結果，停權維持關閉。F-02 的兩頁事件順序均為 `layout-found → eligibility-awaiting → revocation-committed → eligibility-access_closed`，整個父層均隱藏。
+
+初次補正後回歸有兩項測試斷言需依實際行為校正：F-01 在 Next loading boundary 顯示既有安全伺服器檢查文字，而非只顯示 boundary 自有提示；S-2 恢復拒絕時工作區必須保持 mounted 並隱藏，且拒絕訊息由父層一次呈現。前者改以可見的非專案檢查狀態驗收；後者改驗父層拒絕提示與隱藏中的工作區，不改變操作／保存／恢復行為。中間失敗與清理紀錄保留於 review package；最終同批全數通過。
+
+| 命令 | 起訖（2026-11-07，+08:00） | exit／結果 |
+| --- | --- | --- |
+| 補正前 `.\scripts\test-auth-local.ps1 -BrowserOnly -E2EFilter tests/auth-e2e/real-auth-work-limitations.spec.ts` | 22:58:29～23:00:28 | 1；重現 F-01 兩種舊內容露出及 F-02 build 父層仍可見；publish 未執行 |
+| 最終 `.\scripts\test-auth-local.ps1 -IntegrationFilter @('tests/integration/real-auth-work-eligibility.test.ts','tests/integration/real-auth-project-files.test.ts') -E2EFilter @('tests/auth-e2e/real-auth-work-limitations.spec.ts','tests/auth-e2e/real-auth-project-files.spec.ts','tests/auth-e2e/real-auth-project-restore.spec.ts')` | 23:35:18～23:40:04 | 0；integration 2 files／23 passed；HTTPS 5 passed，含 F-01 兩時序、F-02 build／publish、檔案讀寫、同路徑 hash、快照及 T097 回歸 |
+| `.\scripts\test-auth-local.ps1 -BrowserOnly -E2EFilter tests/auth-e2e/real-auth-project-restore.spec.ts` | 23:32:05～23:33:56 | 0；S-2 真 HTTPS 恢復及保留原鍵回歸通過；與前一輪整合執行中的測試斷言失敗分開保留 |
+| `npx vitest run tests/unit/work-limitations.test.ts tests/unit/project-work-eligibility.test.ts tests/unit/project-file-controller.test.ts tests/contract/work-eligibility.test.ts` | 23:42:22～23:42:30 | 0；4 files／60 passed |
+| `npm run typecheck` | 23:42:22～23:42:35 | 0；全部 workspace 與 tests 通過 |
+| `$env:NEXT_TELEMETRY_DISABLED=1; npm run build` | 23:41:30～23:41:51 | 0；Next production build 通過 |
+
+最終隔離 Auth／PostgreSQL／HTTPS runner 無 skip，清理回報 containers／volumes／networks 均為 0。production build 將 `apps/web/next-env.d.ts` 從 before SHA-256 `b8b3a344484b959af5e4e3fc1a1609dac3cb9ece0cdeb6c145be29bc4c491000` 生成為 `1b59d4c6b83807db275d43f3cf2cc8e9323f465fab764eea091cc5becd5bad37`；已用本輪 before 精確副本還原，after SHA-256 回到 `b8b3a344484b959af5e4e3fc1a1609dac3cb9ece0cdeb6c145be29bc4c491000`。Next ignored build cache 保留為本機生成產物，未納入來源 patch 或 ZIP。
+
+#### 證據及停止界線
+
+本次 review package 位於 session `files/t097-correction-20261107/`：同一路徑清單 before／after、before／after 副本、來源雜湊、相對本輪實際 before 的補正 patch、patch replay、去敏原始 stdout／stderr、命令起訖／exit、skip／清理／生成檔紀錄、ZIP CRC 與 SHA-256。baseline、初次測試斷言失敗及最終通過輸出均保留並區分；未把失敗改寫成通過。補正只涉及本節兩頁、遮蔽邊界及直接驗收支援；未改任務正文／依賴／勾選、Gate 或正式啟用狀態。最終 index 維持空，未 commit、push 或部署；交付後交 Reviewer 唯讀複審，本節不是常設許可。
+
+#### 測試障壁 guard 後的最終來源複核
+
+為避免測試專用資格屏障在非開發伺服器啟用，僅允許 `NODE_ENV=development` 且 runner 提供既有隔離旗標時使用。以此最終來源重新執行 HTTPS／資料庫整合、聚焦測試、typecheck 與 production build；結果如下，完整去敏輸出及逐命令 metadata 隨證據包交付：
+
+| 命令 | 起訖（2026-11-07，+08:00） | exit／結果 |
+| --- | --- | --- |
+| `.\scripts\test-auth-local.ps1 -IntegrationFilter @('tests/integration/real-auth-work-eligibility.test.ts','tests/integration/real-auth-project-files.test.ts') -E2EFilter @('tests/auth-e2e/real-auth-work-limitations.spec.ts','tests/auth-e2e/real-auth-project-files.spec.ts','tests/auth-e2e/real-auth-project-restore.spec.ts')` | 23:49:16～23:53:54 | 0；整合 2 files／23 passed；真 Next HTTPS 5 passed；F-02 build／publish 事件順序及完整父層隱藏均通過；無 skip，runner 清理 containers／volumes／networks 均為 0。 |
+| `npm run typecheck` | 23:54:45～23:55:00 | 0；workspace 與 tests 通過。 |
+| `npx vitest run tests/unit/work-limitations.test.ts tests/unit/project-work-eligibility.test.ts tests/unit/project-file-controller.test.ts tests/contract/work-eligibility.test.ts` | 23:55:04～23:55:10 | 0；4 files／60 passed。 |
+| `$env:NEXT_TELEMETRY_DISABLED=1; npm run build` | 23:48:17～23:48:40 | 0；production build 通過。`apps/web/next-env.d.ts` 生成 SHA-256 `1b59d4c6b83807db275d43f3cf2cc8e9323f465fab764eea091cc5becd5bad37`，以 before 副本還原後 SHA-256 為 `b8b3a344484b959af5e4e3fc1a1609dac3cb9ece0cdeb6c145be29bc4c491000`。 |
+
+最終來源雜湊、補正 patch 與 replay 均在本次重跑後重新生成；以上結果不改變任務、Gate、正式審議／簽核或正式啟用狀態。
+
+#### Reviewer 再複審：F-04 返回觀察器正向控制與最終回歸（2026-11-08，+08:00）
+
+同一 Reviewer 指出 F-01 的可見工作區標記曾以 `body.innerText` 二次比對，若標記只表示節點可見而不在頁面文字中，可能漏掉閃現。另發現原 observer 正向控制未證明可見受保護節點確實被捕捉。補正只改驗收 observer：MutationObserver 改觀察穩定的 `document`，正向控制短暫加入符合相同受保護選擇器的合成可見節點，確認 observer 記錄後移除並清空記錄；瀏覽器返回障壁斷言只計入當前目標路徑，避免把離開前仍正常顯示的 publish 頁觀察值誤算成返回後的 build 洩漏。產品授權與頁面行為未再改動。
+
+初次正向控制未記錄節點，診斷證明當時頁面旗標、路徑及 5 個實際可見受保護節點皆成立；改為觀察 `document` 後正向控制通過。其後一次失敗是舊 publish 路徑的觀察記錄被拿來與返回 build 的空記錄比較，並非障壁期間 build 內容可見；改為按當前目標路徑檢查後完成通過。所有失敗輸出與 cleanup 記錄均保留，不以後續通過覆蓋。
+
+| 命令 | 起訖（2026-11-08，+08:00） | exit／結果 |
+| --- | --- | --- |
+| F-04 observer 正向控制（初次）`.\scripts\test-auth-local.ps1 -BrowserOnly -E2EFilter tests/auth-e2e/real-auth-work-limitations.spec.ts` | 01:34:11～01:35:37 | 1；正向控制未觀察到可見節點；cleanup containers／volumes／networks 為 0。 |
+| 同一 browser-only 命令（合成節點控制） | 01:36:56～01:38:22 | 1；正向控制仍未記錄，失敗輸出保留；cleanup 為 0。 |
+| 同一 browser-only 命令（診斷） | 01:38:56～01:40:21 | 1；診斷記錄 `active=1`、目標路徑有效、observer 存在且 5 個保護節點可見，觀察陣列仍空；據此修正 observer target；cleanup 為 0。 |
+| 同一 browser-only 命令（observer target 修正） | 01:40:59～01:43:11 | 1；正向控制通過；舊 publish 路徑觀察值造成路徑未分流的斷言失敗，當前 build DOM 仍 hidden、可見標記為空；cleanup 為 0。 |
+| 同一 browser-only 命令（最終） | 01:43:57～01:46:07 | 0；1 test passed；正向控制記錄成功，需求變更及撤權返回障壁皆無當前目標路徑舊標記／受保護內容；build／publish F-02 與 F-03、hash 導覽、合成 pageshow 均通過；真 BFCache `persisted=false`，未觸發；cleanup 為 0。 |
+| 隔離整合＋HTTPS `.\scripts\test-auth-local.ps1 -IntegrationFilter @('tests/integration/real-auth-work-eligibility.test.ts','tests/integration/real-auth-project-files.test.ts') -E2EFilter @('tests/auth-e2e/real-auth-work-limitations.spec.ts','tests/auth-e2e/real-auth-project-files.spec.ts','tests/auth-e2e/real-auth-project-restore.spec.ts')` | 01:46:42～01:52:09 | 0；integration 2 files／23 passed；HTTPS 5 passed、無 skip；檔案讀寫、同路徑 hash、快照、S-2 恢復與 T097 競態通過；cleanup containers／volumes／networks 為 0。 |
+| 聚焦測試 `npx vitest run tests/unit/work-limitations.test.ts tests/unit/project-work-eligibility.test.ts tests/unit/project-file-controller.test.ts tests/contract/work-eligibility.test.ts` | 01:52:36～01:52:43 | 0；4 files／60 passed。 |
+| `npm run typecheck` | 01:52:36～01:52:47 | 0；workspace 與 tests 通過。 |
+| `$env:NEXT_TELEMETRY_DISABLED=1; npm run build` | 01:53:07～01:53:25 | 0；production build 通過。實際執行先設定 `NEXT_TELEMETRY_DISABLED=1` 再執行 `npm run build`；metadata 已記錄正確命令，取代任何舊的錯誤命令字串。`apps/web/next-env.d.ts` before `b8b3a344484b959af5e4e3fc1a1609dac3cb9ece0cdeb6c145be29bc4c491000`、生成 `1b59d4c6b83807db275d43f3cf2cc8e9323f465fab764eea091cc5becd5bad37`，逐位元還原後 before／restored 雜湊相同。 |
+
+最終去敏輸出、逐命令 metadata、skip／cleanup、生成檔與還原紀錄，以及本輪來源 manifest、patch replay、ZIP 校驗均已更新至 session 證據包。同一 Reviewer 於 2026-11-08 完成最終唯讀複審，結論為通過，未發現本批阻擋問題；審閱依據、覆蓋範圍與限制均在 session 複審結果保存。實際 BFCache restore 仍未執行；任務正文／依賴／勾選、Gate、正式審議／簽核與啟用狀態不變。index 空，未 commit、push 或部署。
+
+#### Reviewer 複審補正與最終驗收（2026-11-08，+08:00）
+
+唯讀 Reviewer 指出原 F-02 案例的 `layout-found` 來自 versions 頁，且一般拒絕文字也可能由後續 layout refresh 顯示；原紀錄未證明目標父層由子頁當次可信結果立即關閉。此為驗收缺口，並非已證實有資料外洩。已先以強化案例在生產修復前重現：build 到達 `layout-found → eligibility-awaiting → revocation-committed → eligibility-access_closed → followup-refresh-held`，但父層專屬拒絕提示不存在；隔離資源清理為 0。
+
+最小修正為 `ProtectedProjectView.reportScope` 對已通過 pathname、navigation epoch、project、purpose 及唯一 `resultId` 核對的 `access_closed` 立即設定父層關閉狀態，不再被等待 layout revision 的條件略過；正向結果仍維持原重驗 revision 限制。build／publish 測試各先在目標頁載入並確認標題、分類脈絡、導覽、範圍與相應內容存在且可見，再返回目標頁；撤權後扣住後續 refresh，確認子頁回 `access_closed` 時父層提示已可見、標題／脈絡／導覽節點仍 mounted 但全部隱藏，且沒有走 layout 拒絕分支。兩頁事件均為 `layout-found → eligibility-awaiting → revocation-committed → eligibility-access_closed → followup-refresh-held`。
+
+F-01 增補 publish 瀏覽器歷史返回：先載入正向 publish 頁、離開後修改需求，返回並扣住重驗時沒有舊標題／正向範圍或其他受保護內容可見；釋放後呈現新 `outside_scope` 結果。另以真瀏覽器全頁離開／返回檢查 pagehide 與 bfcache：隔離 Next 開發 runner 實際回報 `pagehide.persisted=false`、返回的 `pageshow.persisted=false`，故**本輪沒有實際觸發 BFCache restore**，不列作已驗證項。pagehide 在離開前確實已遮蔽內容；另於真 Next 頁面以合成 `PageTransitionEvent(persisted=true)` 觸發同一 pageshow handler，扣住重驗後確認內容隱藏、無舊標記，再釋放並收到 200。實際 bfcache 恢復仍待具備可用 BFCache 的瀏覽器環境驗收。
+
+| 命令 | 起訖（2026-11-08，+08:00） | exit／結果 |
+| --- | --- | --- |
+| 強化 F-02 案例（生產修正前）`.\scripts\test-auth-local.ps1 -BrowserOnly -E2EFilter tests/auth-e2e/real-auth-work-limitations.spec.ts` | 00:07:44～00:09:23 | 1；父層拒絕提示在後續 refresh 屏障期間不存在，缺口重現；runner 清理 containers／volumes／networks 為 0。 |
+| F-01 publish／pageshow 與 F-02 修復後瀏覽器案例（同一命令） | 00:31:15～00:33:25 | 0；1 test passed；F-02 build／publish 均確認父層即時關閉；publish 歷史返回更新結果通過；實際 BFCache 不可用，原因及 pageshow 合成驗證如上；清理為 0。 |
+| 最終隔離整合＋HTTPS `.\scripts\test-auth-local.ps1 -IntegrationFilter @('tests/integration/real-auth-work-eligibility.test.ts','tests/integration/real-auth-project-files.test.ts') -E2EFilter @('tests/auth-e2e/real-auth-work-limitations.spec.ts','tests/auth-e2e/real-auth-project-files.spec.ts','tests/auth-e2e/real-auth-project-restore.spec.ts')` | 00:34:07～00:39:56 | 0；integration 2 files／23 passed；HTTPS 5 passed；涵蓋 F-01／F-02、檔案讀寫、同路徑 hash、快照與 S-2 恢復；無 skip，清理為 0。 |
+| `npm run typecheck` | 00:40:23～00:40:41 | 0；全部 workspace 與 tests 通過。 |
+| `npx vitest run tests/unit/work-limitations.test.ts tests/unit/project-work-eligibility.test.ts tests/unit/project-file-controller.test.ts tests/contract/work-eligibility.test.ts` | 00:40:23～00:40:40 | 0；4 files／60 passed。 |
+| `$env:NEXT_TELEMETRY_DISABLED=1; npm run build` | 00:33:35～00:33:59 | 0；production build 通過；生成的 `apps/web/next-env.d.ts` 還原至 before SHA-256 `b8b3a344484b959af5e4e3fc1a1609dac3cb9ece0cdeb6c145be29bc4c491000`。 |
+
+此次 Reviewer 提出的 F-02 測試缺口已修正並完成回歸驗證，待同一 Reviewer 最終唯讀複審；實際 BFCache 恢復因本機瀏覽器明確回報 `persisted=false` 未執行，未冒稱通過。任務正文／依賴／勾選、Gate、正式審議／簽核與啟用狀態均未變；index 空，未 commit、push 或部署。
+
+#### Reviewer 後續複審：F-03 父層閉鎖跨頁路徑補正（2026-11-08，+08:00）
+
+同一 Reviewer 複審發現 F-02 關閉狀態只綁 `navigation.epoch`，返回同專案非 scope 頁時 epoch 改變，可能使共用 `ProtectedProjectView` 重新顯示快取內容；另指出 publish 返回案例缺少 barrier 期間的連續觀察。此回歸已先以真 Next HTTPS／隔離資料的受控 RSC fixture 重現，再修正。
+
+修正將已關閉狀態綁定同一 `projectId`，不因同專案路徑／epoch 改變解除；未綁專案的工作台仍限定原 epoch。`close` 與 `reportScope` 均要求目前 pathname／epoch／project 相符，避免舊導航 callback 關閉新路徑。只有目前 scope 頁面對應、通過 revision 重驗的可信結果才可解除同專案閉鎖；`unavailable` 不解除，`access_closed` 持續關閉。使用者若在非 scope 頁遭關閉，需重新載入取得新結果；未加入測試端點或平行授權流程。
+
+F-03 測試在實際隔離 Auth／Next HTTPS 下，先確認 layout 為 found；僅於 Playwright RSC route fixture 將合成作品的 `requirements_missing` 轉成頁面 `access_closed`，並扣住後續 refresh，保持實際 Auth／layout 仍為 allowed／found。接著以真瀏覽器 back 返回先前載入的同專案 versions 頁，驗證 scope 結果未重驗時仍有父層拒絕提示、完整父層 hidden、context／導覽節點仍 mounted 但受保護內容不可見，且 `layoutDenied=false`。此 fixture 只模擬子頁可信拒絕到父層的事件接線；不冒稱它是資料庫撤權。F-02 build／publish 的真資料庫帳號撤權事件序列仍獨立實測。
+
+補強 publish 返回觀察器：從返回前啟用，涵蓋 build／publish 的 DOM mutation 與逐 frame 觀察，並記錄整個父層受保護節點、專案標題及範圍標記。publish 重驗障壁期間 `protectedVisible=false`、舊標記／觀察記錄皆為空；釋放後才呈現新 `outside_scope` 結果。
+
+| 命令 | 起訖（2026-11-08，+08:00） | exit／結果 |
+| --- | --- | --- |
+| F-03 修正前紅燈：`.\scripts\test-auth-local.ps1 -BrowserOnly -E2EFilter tests/auth-e2e/real-auth-work-limitations.spec.ts` | 01:11:09～01:12:58 | 1；事件 `layout-found → eligibility-access_closed → followup-refresh-held → browser-back-to-cached-versions` 後，`parentContentHidden=false`、`protectedVisible=true`；預期回歸重現；runner 清理 containers／volumes／networks 為 0。 |
+| F-01 publish 連續觀察、F-03 修復後瀏覽器案例（同一命令） | 01:20:10～01:22:24 | 0；1 test passed；F-03 返回 versions 時父層持續 hidden；publish 障壁觀察沒有舊內容露出；真 BFCache 未命中，明確記錄 `persisted=false` 並以合成 pageshow 補測；清理為 0。 |
+| 最終隔離整合＋HTTPS：`.\scripts\test-auth-local.ps1 -IntegrationFilter @('tests/integration/real-auth-work-eligibility.test.ts','tests/integration/real-auth-project-files.test.ts') -E2EFilter @('tests/auth-e2e/real-auth-work-limitations.spec.ts','tests/auth-e2e/real-auth-project-files.spec.ts','tests/auth-e2e/real-auth-project-restore.spec.ts')` | 01:22:42～01:28:16 | 0；integration 2 files／23 passed；HTTPS 5 passed，含 F-01／F-02／F-03、檔案讀寫、同路徑 hash、快照及 S-2 恢復；無其他測試 skip，真 BFCache 子項因 `persisted=false` 未觸發；runner 清理 containers／volumes／networks 為 0。 |
+| 聚焦 Vitest：`npx vitest run tests/unit/work-limitations.test.ts tests/unit/project-work-eligibility.test.ts tests/unit/project-file-controller.test.ts tests/contract/work-eligibility.test.ts` | 01:28:50～01:28:57 | 0；4 files／60 passed。 |
+| `npm run typecheck` | 01:28:47～01:28:59 | 0；workspace 與 tests 通過。 |
+| `$env:NEXT_TELEMETRY_DISABLED=1; npm run build` | 01:29:22～01:29:39 | 0；production build 通過；`apps/web/next-env.d.ts` build 前 SHA-256 `b8b3a344484b959af5e4e3fc1a1609dac3cb9ece0cdeb6c145be29bc4c491000`，build 中為 `1b59d4c6b83807db275d43f3cf2cc8e9323f465fab764eea091cc5becd5bad37`，已還原至 before 雜湊。 |
+
+F-03 與 F-01 證據、上述最新來源及測試輸出已納入本輪證據包；同一 Reviewer 尚待對這次修正唯讀複審。真 BFCache restore 仍未執行，不能推論已通過。任務正文／依賴／勾選、Gate、正式審議／簽核與啟用狀態不變；index 空，未 commit、push 或部署。
+
+#### E-01／E-02 最終補驗與接收邊界修正（2026-11-08，+08:00）
+
+本輪依教育者最新一次性批准，只收斂 E-01／E-02；F-02 保留已關閉結論，僅重跑直接回歸，不重開 §109～§112、文案、固定用途或 §112 資格政策。比較基準為本輪實際 dirty worktree before，而非 HEAD：分支 `work/auth-cancel-authorization`，HEAD `4ffe6c3fbefd0864570d87f8c38cd390d11484f8`。既有未提交成果與任務均保留。審閱資料定位為 session 的 `files/t097-e01-e02-20261108`；本輪新接收邊界測試在 before 不存在，不回填至 before。
+
+**E-01 已實作並實跑：**
+
+- build 需求變更返回、publish 需求變更返回、撤權返回，均在返回前啟用已有正向控制的 mutation／逐 frame observer；障壁放行不清除紀錄。收到本次 RSC body、畫面完成更新並再取樣兩 frame 後，才核對完整期間。三者的 `positiveVisible` 全為 false；前兩者僅在放行後顯示新的 `outside_scope`，撤權案例整段 `protectedVisible=false`。事件與去敏完整狀態轉換保存在 `final3-integration-https.log` 的 `T097E01CurrentResponse`／`T097E01FullInterval`。
+- 同專案、同 `a1_preview` 用途交錯案例，先擷取真 HTTPS 較早的 `within_scope` RSC 並扣住交付，再透過既有 requirements PUT 提交需求變更、扣住當次重驗，先交付舊回應再放行當次 `outside_scope`。事件順序由障壁控制，非固定 sleep；舊回應交付後父層、脈絡、檔案、範圍仍隱藏。瀏覽器未觀察到舊 nonce commit（`oldReachedView=false`），**不宣稱已到產品接收邊界，也不斷言框架一定取消**；紀錄分類為 framework discard or pending。
+- 補以直接呼叫真正 `ProtectedProjectView` Provider 接收 callback 的受控回歸：只 mock hook 儲存／router，不複製採納判斷。未修版本紅燈顯示首次晚到舊正向結果寫入 `scopeResult`；修正後拒絕較早 request，即使帶來新 layout revision／首次出現的 result UUID，也不能解除遮蔽。本次 request 可採納；帳號與用途不符不採納，可信拒絕仍關閉父層。
+- 最小產品修正以 `__scope_request` nonce 關聯**當次**既有頁面 server 重讀，並匹配父層帳號 scope、專案、用途、導航 epoch／路徑；不是僅去重 result UUID。無新增授權查詢流程、端點或測試入口；固定 build=`a1_preview`、publish=`public` 不變。`router.replace` 保留其他 query／hash 且不新增 history entry；結果匹配後移除網址的暫時 nonce，接收邊界仍保留 request 關聯，防止污染同路徑 hash 歷史。pagehide／背景遮蔽不送新請求。nonce 不提供權限。
+- 父層持續 mounted／hidden，不清除草稿或取消、重送寫入。直接 HTTPS 回歸含檔案讀寫、未保存草稿、同路徑 hash、快照及 S-2 恢復；另補「hash 歷史項目之間完成重驗後，再真瀏覽器 back」案例，確認網址不殘留 nonce、工作區可見且已保存內容保持。F-02 build／publish 均仍記錄 `layout-found → eligibility-awaiting → revocation-committed → eligibility-access_closed → followup-refresh-held`，整個父層、脈絡、導覽、範圍及檔案不可見；F-03 跨路徑閉鎖亦通過。
+
+**E-02 歷史限制與本輪來源配對：**前一批 §113 的 before／after 不是最終各命令執行前後的 manifest，無當時可核對時序的完整來源配對；此缺口保留為歷史限制，不以事後雜湊回填。新紅燈 `boundary-before.log` 同樣是診斷證據，沒有冒稱具有最終驗收等級的逐批 manifest。`diagnostic-*`、`final-*`、`final2-*` 是保留的診斷／中間執行，不作最終來源完整性證明；唯一最終驗收為下列 `final3-*`。`final2` 清單漏列 root layout 直接匯入的 `globals.css`，因此保留原始清單／manifest 不改寫，在獨立 `validation3` 目錄補齊清單後重跑四批，期間產品／測試未再修改。未啟用 `-TeacherSignup`，不使用該條件分支的 HTML template。
+
+每批執行前後以同一清單記錄 457 個 repository source 與驗收 runner 本身，共 458 項 path／bytes／SHA-256，涵蓋實作及實際樣式、selected tests、直接支援、Vitest／Playwright 設定、隔離 runner、實際使用的 `trusted-source-proxy.mjs`、migrations 與 lockfile。四批的前後 manifest SHA-256 均為 `f44648545c3d70a87e3e750db9de662a9d8114fa298e7d44a152657bb807db99`。每個 `.meta.json` 記錄 capture 起訖、實際命令起訖、exit code、前後 manifest 雜湊、去敏原始輸出雜湊、skip／cleanup；不同合成 UUID 以穩定別名保留跨事件關聯。事後更新的本文件、交付說明及 Reviewer 報告另列交付雜湊，不冒充受測來源。CSS 的 body 快照僅在 `final3` 驗收前新增保存，分列 `runtime-before-final3`／`runtime-after`，不回填本輪最初 before，也不假造為補正 patch 新增檔案。
+
+| 最終執行 | 起訖（2026-11-08，+08:00） | exit／結果 |
+| --- | --- | --- |
+| `npx vitest run tests/unit/protected-project-view.test.ts tests/unit/work-limitations.test.ts tests/unit/project-work-eligibility.test.ts tests/unit/project-file-controller.test.ts tests/contract/work-eligibility.test.ts` | 02:39:26.306～02:39:42.347 | 0；5 files／62 passed；無 skip，無隔離資源。 |
+| `.\scripts\test-auth-local.ps1 -IntegrationFilter @("tests/integration/real-auth-work-eligibility.test.ts","tests/integration/real-auth-project-files.test.ts") -E2EFilter @("tests/auth-e2e/real-auth-work-limitations.spec.ts","tests/auth-e2e/real-auth-project-files.spec.ts","tests/auth-e2e/real-auth-project-restore.spec.ts")` | 02:39:26.088～02:44:56.494 | 0；integration 23 passed、HTTPS 5 passed；測試無 skip。真 BFCache 子項因 `pageshow.persisted=false` 未觸發，維持 **not verified**；pagehide／合成 pageshow 不替代真 BFCache。隔離 runner 確認 containers／volumes／networks 均為 0。 |
+| `npm run typecheck` | 02:39:26.038～02:39:48.847 | 0；workspace 與 tests 通過；無 skip／隔離資源。 |
+| `$env:NEXT_TELEMETRY_DISABLED="1"; npm run build` | 02:45:18.697～02:45:36.218 | 0；production build 通過；無 skip／隔離資源。 |
+
+Build 生成 `apps/web/next-env.d.ts`：before／還原後 SHA-256 為 `b8b3a344484b959af5e4e3fc1a1609dac3cb9ece0cdeb6c145be29bc4c491000`，生成值為 `1b59d4c6b83807db275d43f3cf2cc8e9323f465fab764eea091cc5becd5bad37`；已逐位元還原後才保存 after manifest。`.next`／編譯快取為驗收生成物，不納入補正 patch 或審閱 ZIP；未刪除其他既有成果。隔離 runner 的臨時容器、volume、network 與私密環境檔由其原有清理程序移除，證書、密鑰及未去敏 raw log 均不交付。
+
+交付以本輪實際 before 產生增量 patch、before／after 快照、逐批配對、隔離 patch replay 與 ZIP 校驗；Reviewer 結論另行保存。所有結論僅限本批本機補正；任務正文／依賴／勾選、Gate、正式審議／簽核及啟用狀態不變；不 commit、push 或部署，index 保持空。
+
+**本輪 Reviewer 最終複審：**既有 Reviewer 僅使用 read／search，先獨立核對實作、呼叫端與測試，再補核 `final3` 的來源配對與交付；回報「未發現阻擋問題」，E-01／E-02 均已解決，F-02 維持已關閉，建議結束本輪本機審查。Reviewer 的測試、雜湊、replay、ZIP／CRC 判斷均引用 Coding Agent 實跑紀錄，未冒稱自行重跑。原文保存在審閱包 `reviewer-report.md`，審閱對象為 `package-review3`；最後交付僅補入此結論、報告與清理／交付紀錄並重新封裝，產品／測試及所有受測來源不變，仍逐檔匹配 `final3` manifest。歷史來源限制與真 BFCache not verified 繼續保留；此結論不是 T097 全任務結案、Gate 通過或正式啟用批准。

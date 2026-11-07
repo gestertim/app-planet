@@ -800,7 +800,7 @@ test("§108 真 Next HTTPS：replay-only 收據、導覽返回晚到 body、快�
     await expect(page.getByRole("button", { name: /^版本 1（manual）/ })).toBeVisible();
     expect(await snapshotPending()).toBeNull();
     await tabs.getByRole("link", { name: "建立 App", exact: true }).click();
-    await expect(page).toHaveURL(`${blueprintUrl}/build`);
+    await expect(page).toHaveURL((url) => url.origin + url.pathname === `${blueprintUrl}/build`);
     await expect(page.getByRole("heading", { name: "版本", exact: true })).toHaveCount(0);
     await expect(workspace).toBeVisible({ timeout: 20_000 });
     let committedSnapshotB: number | null = null;
@@ -905,7 +905,7 @@ test("§108 真 Next HTTPS：replay-only 收據、導覽返回晚到 body、快�
     await expect(workspace).toBeVisible({ timeout: 20_000 });
     await expect(page.getByRole("button", { name: "載入更多版本" })).toBeEnabled({ timeout: 15_000 });
     await tabs.getByRole("link", { name: "建立 App", exact: true }).click();
-    await expect(page).toHaveURL(`${blueprintUrl}/build`);
+    await expect(page).toHaveURL((url) => url.origin + url.pathname === `${blueprintUrl}/build`);
     await expect(page.getByRole("heading", { name: "版本", exact: true })).toHaveCount(0);
     await expect(workspace).toBeVisible({ timeout: 20_000 });
     await expect(page.getByRole("button", { name: "載入更多版本" })).toBeEnabled({ timeout: 15_000 });
@@ -941,7 +941,7 @@ test("§108 真 Next HTTPS：replay-only 收據、導覽返回晚到 body、快�
     await expect(page.getByRole("button", { name: /^版本 22（manual）/ })).toBeVisible({ timeout: 15_000 });
     await expect(page.getByRole("region", { name: "快照 manifest" })).toHaveCount(0);
     await tabs.getByRole("link", { name: "建立 App", exact: true }).click();
-    await expect(page).toHaveURL(`${blueprintUrl}/build`);
+    await expect(page).toHaveURL((url) => url.origin + url.pathname === `${blueprintUrl}/build`);
     await expect(page.getByRole("heading", { name: "版本", exact: true })).toHaveCount(0);
     await expect(workspace).toBeVisible({ timeout: 20_000 });
     await expect(page.getByRole("button", { name: /^版本 22（manual）/ })).toBeVisible({ timeout: 15_000 });
@@ -973,7 +973,7 @@ test("§108 真 Next HTTPS：replay-only 收據、導覽返回晚到 body、快�
     await page.getByRole("link", { name: "工作台", exact: true }).click();
     await page.locator(`a[href="/student/projects/${projectB}"]`).click();
     await tabs.getByRole("link", { name: "建立 App", exact: true }).click();
-    await expect(page).toHaveURL(`${origin}/student/projects/${projectB}/build`);
+    await expect(page).toHaveURL((url) => url.origin + url.pathname === `${origin}/student/projects/${projectB}/build`);
     await expect(workspace).toContainText("目前沒有檔案", { timeout: 20_000 });
     await expect(page.getByText("尚無 manual 快照。")).toBeVisible({ timeout: 15_000 });
     const storageBeforeSwitchRelease = await sessionStorageEntries(page);

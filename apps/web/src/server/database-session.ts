@@ -100,6 +100,23 @@ export function createDatabaseSession(
   });
 }
 
+export async function waitForWorkEligibilityTestBarrier(
+  projectId: string,
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<void> {
+  if (env.NODE_ENV !== "development" || env.APP_PLANET_ENV !== "isolated-local-test" ||
+      env.APP_PLANET_TEST_SCOPE_ELIGIBILITY_HOLD !== "1") return;
+  const pool = getPool(env);
+  if (!pool) throw new DatabaseConfigurationUnavailableError();
+  const client = await pool.connect();
+  try {
+    await client.query("SELECT pg_advisory_lock(hashtext($1), $2)", [projectId, 97113]);
+    await client.query("SELECT pg_advisory_unlock(hashtext($1), $2)", [projectId, 97113]);
+  } finally {
+    client.release();
+  }
+}
+
 export class DatabaseConfigurationUnavailableError extends Error {
   constructor() {
     super("database_configuration_unavailable");

@@ -162,10 +162,11 @@ test("學生在版本頁完整恢復 A、reload 後找回 B，且空目標明確
         }) }), { times: 1 });
       await expect(replayButton).toBeEnabled();
       await replayButton.click();
-      await expect(page.getByText(/目前無法確認原恢復結果；原鍵與原目標已保留/)).toBeVisible();
+      await expect(page.getByTestId("project-workspace-closed")
+        .getByText(/目前無法確認原恢復結果；原鍵與原目標已保留/)).toBeVisible();
       expect(await page.evaluate((key) => window.sessionStorage.getItem(key), restoreStorageKey))
         .toBe(operationRecord);
-      await expect(page.getByTestId("project-file-workspace")).toHaveCount(0);
+      await expect(page.getByTestId("project-file-workspace")).toBeHidden();
       await expect(page.getByText("恢復遭拒；已保存檔案未變更。請重新載入並確認目前版本。")).toHaveCount(0);
       await page.reload();
       await expect(replayConfirmation).toContainText(/恢復結果尚未確認/);

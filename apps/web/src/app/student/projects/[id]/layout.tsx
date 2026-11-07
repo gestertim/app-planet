@@ -3,6 +3,7 @@ import { TeacherRelationshipNotice } from "@/components/auth/teacher-relationshi
 import { ProtectedProjectView } from "@/components/project/protected-project-view";
 import { SevenTabs } from "@/components/project/seven-tabs";
 import { ProjectExportDownload } from "@/components/project/project-export-download";
+import { WorkspaceScopeRefresh } from "@/components/project/workspace-scope-refresh";
 import { readWorkspacePageData } from "@/server/workspace-page-data";
 
 export const dynamic = "force-dynamic";
@@ -31,7 +32,8 @@ export default async function ProjectWorkspaceLayout({ params, children }: Layou
   const classification = workspace.classification.state === "confirmed"
     ? `已確認 ${workspace.classification.tier}`
     : workspace.classification.state === "unconfirmed" ? "未分類" : "歷史分類未驗證";
-  return <ProtectedProjectView revision={crypto.randomUUID()}>
+  return <ProtectedProjectView projectId={workspace.project.id}
+    accountScope={result.principal.operationStorageScope} revision={crypto.randomUUID()}>
     <AppShell authenticated preview={false} heading={workspace.project.title}
       subtitle="每個頁面與資料操作都會由伺服器重新確認登入、帳號資格及專案權限。"
       capabilities={[{ href: "/student", label: "工作台" }]}>
@@ -47,6 +49,7 @@ export default async function ProjectWorkspaceLayout({ params, children }: Layou
       <TeacherRelationshipNotice />
       <ProjectExportDownload key={`${result.principal.operationStorageScope}:${workspace.project.id}`}
         projectId={workspace.project.id} />
+      <WorkspaceScopeRefresh />
       <SevenTabs projectId={workspace.project.id} />
       {children}
     </AppShell>

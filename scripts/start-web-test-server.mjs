@@ -38,8 +38,10 @@ function canConnect(targetPort) {
 const internalPort = await freePort();
 const proof = randomBytes(32).toString("hex");
 const env = { ...process.env };
+const allowedTestEnv = new Set(["APP_PLANET_TEST_SCOPE_ELIGIBILITY_HOLD"]);
 for (const name of Object.keys(env)) {
-  if (name.startsWith("APP_PLANET_TEST_") || name.startsWith("APP_PLANET_BOOTSTRAP_")) delete env[name];
+  if ((name.startsWith("APP_PLANET_TEST_") && !allowedTestEnv.has(name)) ||
+      name.startsWith("APP_PLANET_BOOTSTRAP_")) delete env[name];
 }
 env.NODE_ENV = "development";
 env.APP_PLANET_SOURCE_PROXY_PROOF = proof;
