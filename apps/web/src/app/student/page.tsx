@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { TeacherRelationshipNotice } from "@/components/auth/teacher-relationship-notice";
-import { ClosedAction } from "@/components/operation-state";
+import { StudentCreationSpace } from "@/components/student/creation-space";
 import { CreateProjectForm } from "@/components/project/create-project-form";
 import { ProtectedProjectView } from "@/components/project/protected-project-view";
 import { resolvePagePrincipal } from "@/server/page-principal";
@@ -24,22 +24,28 @@ export default async function StudentPage() {
   </AppShell>;
   const projects = result.projects.toSorted((a, b) => b.created_at.localeCompare(a.created_at) || a.id.localeCompare(b.id));
   return <ProtectedProjectView revision={crypto.randomUUID()}>
-    <AppShell authenticated preview={false} heading="學生工作台" subtitle="只顯示伺服器確認屬於目前帳號的專案。"
-      capabilities={[{ href: "/student", label: "工作台" }]}>
+    <StudentCreationSpace key={principal.operationStorageScope}>
       <TeacherRelationshipNotice />
-      <CreateProjectForm key={principal.operationStorageScope} storageScope={principal.operationStorageScope} />
       <section className="card" data-testid="owned-project-list">
         <h2>我的專案</h2>
-        {projects.length === 0 ? <p>目前沒有專案。</p> : <ul>{projects.map((project) =>
+        <p>只顯示伺服器確認屬於目前帳號的專案。下方可建立自己的新專案。</p>
+        {projects.length === 0 ? <p>目前沒有專案。可以從下方建立表單開始創作。</p> : <ul>{projects.map((project) =>
           <li key={project.id}>
             <Link prefetch={false} href={`/student/projects/${project.id}`}>{project.title}</Link>
             <span> — {project.stage}／{project.classification_state === "confirmed"
               ? `已確認 ${project.tier}` : project.classification_state === "unconfirmed" ? "未分類" : "歷史分類未驗證"}</span>
           </li>)}</ul>}
       </section>
-      <section className="card"><h2>尚未開放的功能</h2>
-        <div className="action-list"><ClosedAction label="開始 AI 對話" /><ClosedAction label="執行作品" /><ClosedAction label="發布作品" /></div>
+      {projects.length > 0 && <section className="card" data-testid="continue-project">
+        <h2>繼續我的創作</h2>
+        <h3>{projects[0].title}</h3>
+        <p>實際階段：{projects[0].stage}。尚無可讀取的專案摘要。</p>
+        <Link prefetch={false} href={`/student/projects/${projects[0].id}`}>繼續創作：{projects[0].title}</Link>
+      </section>}
+      <section className="card"><h2>創作旅程</h2>
+        <p>六階段摘要映射尚未核定，暫不顯示推導進度；請進入專案查看實際保存紀錄。這不代表任何階段已批准。</p>
       </section>
-    </AppShell>
+      <CreateProjectForm key={principal.operationStorageScope} storageScope={principal.operationStorageScope} />
+    </StudentCreationSpace>
   </ProtectedProjectView>;
 }
