@@ -1,6 +1,6 @@
 import { AppShell } from "@/components/app-shell";
 import { TeacherRelationshipNotice } from "@/components/auth/teacher-relationship-notice";
-import { ProtectedProjectView } from "@/components/project/protected-project-view";
+import { ClearIdeaDraftHandoff, ProtectedProjectView } from "@/components/project/protected-project-view";
 import { SevenTabs } from "@/components/project/seven-tabs";
 import { ProjectExportDownload } from "@/components/project/project-export-download";
 import { WorkspaceScopeRefresh } from "@/components/project/workspace-scope-refresh";
@@ -23,6 +23,7 @@ export default async function ProjectWorkspaceLayout({ params, children }: Layou
         ? "目前無法確認登入、資料庫或專案服務；受保護資料已隱藏，請稍後重新載入。"
         : "找不到這個專案，或目前帳號沒有檢視權限。";
     return <main className="main" data-testid="project-workspace-closed">
+      <ClearIdeaDraftHandoff />
       <h1>無法開啟專案</h1>
       <p role="alert">{message}</p>
     </main>;
