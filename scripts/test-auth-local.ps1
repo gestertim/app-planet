@@ -43,6 +43,39 @@ if ($StudentLogin) {
     if ($IntegrationFilter.Count -eq 0) { $IntegrationFilter = @("tests/integration/real-auth-student-login.test.ts") }
     if ($E2EFilter.Count -eq 0) { $E2EFilter = @("tests/auth-e2e/real-auth-student-login.spec.ts") }
 }
+
+# 不可變快照 fixture 不可藉停用 trigger 清理；合跑時改由兩個獨立 Docker 專案持有資料。
+# 保留原篩選與各檔內斷言；不是以測試排序或刪除其他檔資料隔離。
+$upgradeMode = $Upgrade0025 -or $Upgrade0028 -or $Upgrade0031 -or $Upgrade0032 -or
+    $Upgrade0035 -or $Upgrade0036 -or $Upgrade0037 -or $Upgrade0038 -or $Upgrade0039 -or
+    $Upgrade0040 -or $Upgrade0041 -or $Upgrade0042 -or $Upgrade0043 -or $Upgrade0042IllegalHistory
+if (-not $BrowserOnly -and -not $upgradeMode -and -not $TeacherSignup -and -not $StudentLogin -and
+    -not $env:APP_PLANET_AUTH_TEST_DATABASE_GROUP) {
+    Push-Location $repoRoot
+    try {
+        $selectedFiles = @(& node (Join-Path $repoRoot "node_modules\vitest\vitest.mjs") list `
+            --config vitest.auth.config.ts --filesOnly @IntegrationFilter)
+        if ($LASTEXITCODE -ne 0) { throw "無法列舉 Auth 測試檔；未建立隔離資源。" }
+    } finally { Pop-Location }
+    if ($selectedFiles.Count -gt 1 -and $selectedFiles -contains "tests/integration/real-auth-project-files.test.ts") {
+        $groupExitCode = 0
+        try {
+            foreach ($group in @("project-files", "shared")) {
+                $env:APP_PLANET_AUTH_TEST_DATABASE_GROUP = $group
+                Write-Output "IntegrationDatabaseGroup=$group (independent Docker project)"
+                & $PSCommandPath -IntegrationOnly -PortRangeStart $PortRangeStart -IntegrationFilter $IntegrationFilter
+                if ($LASTEXITCODE -ne 0) { $groupExitCode = $LASTEXITCODE }
+            }
+        } finally {
+            Remove-Item -LiteralPath Env:APP_PLANET_AUTH_TEST_DATABASE_GROUP
+        }
+        if ($groupExitCode -ne 0) { exit $groupExitCode }
+        if ($IntegrationOnly) { exit 0 }
+        # 瀏覽器驗收仍使用另一個全新隔離專案；不沿用任一整合測試的 fixture。
+        & $PSCommandPath -BrowserOnly -PortRangeStart $PortRangeStart -E2EFilter $E2EFilter
+        exit $LASTEXITCODE
+    }
+}
 $runId = [Guid]::NewGuid().ToString("N")
 $projectId = "app-planet-auth-$($runId.Substring(0, 12))"
 $workRoot = if ($StudentLogin) {

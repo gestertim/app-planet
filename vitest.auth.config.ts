@@ -8,6 +8,9 @@ const bindingsUpgrade = process.env.APP_PLANET_TEST_MIGRATE_THROUGH === "0031"
   ? ["tests/integration/real-auth-bindings-upgrade.test.ts"] : [];
 const studentLogin = process.env.APP_PLANET_STUDENT_LOGIN_MODE === "isolated-local-test"
   ? ["tests/integration/real-auth-student-login.test.ts"] : [];
+// 原始碼／快照 fixture 含不可變資料，須由 local runner 在專屬 Docker 專案內銷毀。
+const contentFixture = "tests/integration/real-auth-project-files.test.ts";
+const databaseGroup = process.env.APP_PLANET_AUTH_TEST_DATABASE_GROUP;
 // readiness §108：0041 非法歷史路徑升級阻擋只在 -Upgrade0042IllegalHistory 隔離 runner 納入。
 const illegalPathHistory = process.env.APP_PLANET_TEST_MIGRATE_THROUGH === "0041" &&
   process.env.APP_PLANET_TEST_ILLEGAL_PATH_HISTORY === "1"
@@ -24,7 +27,9 @@ export default defineConfig({
     environment: "node",
     setupFiles: ["tests/support/setup-isolation.ts"],
     reporters: ["verbose"],
-    include: ["tests/integration/real-auth-admin-schools.test.ts", "tests/integration/real-auth-project-export.test.ts", "tests/integration/real-auth-admin-memberships.test.ts", ...bindingsUpgrade, ...illegalPathHistory, ...studentLogin, "tests/integration/real-auth-agent-runs.test.ts", "tests/integration/real-auth-project-rename.test.ts", "tests/integration/real-auth-teacher-view-audit.test.ts", "tests/integration/real-auth-admin-bindings.test.ts", "tests/integration/real-auth-specification-review.test.ts", "tests/integration/real-auth-teacher-resources.test.ts", "tests/integration/real-auth-routes.test.ts", "tests/integration/real-auth-project-classification.test.ts", "tests/integration/real-auth-work-eligibility.test.ts", "tests/integration/real-auth-project-files.test.ts", "tests/integration/real-auth-creation-flow.test.ts", "tests/integration/real-auth-task-import.test.ts", "tests/integration/real-auth-stage-confirmation.test.ts", "tests/integration/real-auth-stage-overview.test.ts", "tests/integration/real-auth-staff-login.test.ts", "tests/integration/real-auth-staff-approval.test.ts", ...teacherSignup],
+    include: ["tests/integration/real-auth-admin-schools.test.ts", "tests/integration/real-auth-project-export.test.ts", "tests/integration/real-auth-admin-memberships.test.ts", ...bindingsUpgrade, ...illegalPathHistory, ...studentLogin, "tests/integration/real-auth-agent-runs.test.ts", "tests/integration/real-auth-project-rename.test.ts", "tests/integration/real-auth-teacher-view-audit.test.ts", "tests/integration/real-auth-admin-bindings.test.ts", "tests/integration/real-auth-specification-review.test.ts", "tests/integration/real-auth-teacher-resources.test.ts", "tests/integration/real-auth-routes.test.ts", "tests/integration/real-auth-project-classification.test.ts", "tests/integration/real-auth-work-eligibility.test.ts", contentFixture, "tests/integration/real-auth-creation-flow.test.ts", "tests/integration/real-auth-task-import.test.ts", "tests/integration/real-auth-stage-confirmation.test.ts", "tests/integration/real-auth-stage-overview.test.ts", "tests/integration/real-auth-staff-login.test.ts", "tests/integration/real-auth-staff-approval.test.ts", ...teacherSignup].filter((file) =>
+      databaseGroup === "project-files" ? file === contentFixture :
+        databaseGroup === "shared" ? file !== contentFixture : true),
     fileParallelism: false,
     testTimeout: 90_000,
     hookTimeout: 120_000,

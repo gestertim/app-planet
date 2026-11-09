@@ -1,5 +1,17 @@
 # 快速驗證指南（Quickstart）：AI APP 超級創客｜App Planet 平台首版
 
+### Auth 合跑的不可變 fixture 隔離（2026-11-09；僅本機測試修正）
+
+```powershell
+npm run test:auth:local -- -IntegrationOnly -PortRangeStart 56000
+```
+
+一般合跑若同時選到 `real-auth-project-files.test.ts` 與其他檔案，runner 會保留原篩選，分成兩個獨立的隨機 Docker 專案：原始碼／快照 fixture 專用組，以及其餘測試組。各組均套用既有 migrations、執行原斷言，並在成功或失敗後銷毀自己持有的容器、volume 與 network；任一組失敗，整體仍回非零。兩組輸出的檔案／測試統計須相加，不是省略測試。
+
+原因是原始碼／快照 fixture 留下合成管理員、`teacher_view` 與 `binding_ended` 歷史，而不可變快照不得為了清理而停用 trigger。隔離不依賴檔案排序，不清空共享資料、不修改約束或歷史重播／稽核筆數／權限斷言。`APP_PLANET_AUTH_TEST_DATABASE_GROUP` 僅供 runner 子呼叫選組，不應由外部預設。單檔、專用升級／申請／學生登入模式與 `-BrowserOnly` 保持原流程；一般同跑瀏覽器時，瀏覽器另用全新隔離專案。直接執行 `test:auth:integration` 不負責建立或銷毀資料庫，不能取代此 runner 的跨檔隔離。
+
+本修正不代表 Gate、正式啟用或任何任務整項完成；不連雲端、不執行 Staging migration。
+
 ### §105 管理員未確認學校登錄／讀回（2026-11-06；一次性有界子集）
 
 管理員由 `/login` 產品表單登入→`/admin` 學校管理→`/admin/schools` 輸入名稱、核對、明確建立→詳情 GET／reload→列表找回。明示「已登錄，尚未核驗；不代表學校已批准。」不提供核准／恢復；unknown 原鍵／原本文重試，不換鍵。詳情既存期限與文件標籤照 DB 讀取；正式核驗歷史來源尚缺，不以建立時間或 audit 拼造。
