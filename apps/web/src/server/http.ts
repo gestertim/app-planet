@@ -22,6 +22,7 @@ const registry = {
   invalid_credentials: { status: 401, title: "登入資訊不正確", next: "請確認電子郵件與密碼後再試一次。" },
   login_throttled: { status: 429, title: "嘗試登入次數太多", next: "請稍候一段時間再試。" },
   account_unavailable: { status: 403, title: "帳號目前無法使用", next: "請聯絡學校或平台管理員確認帳號狀態。" },
+  school_not_confirmed: { status: 403, title: "學校尚未確認", next: "請找老師或管理員協助。" },
   unknown_field: { status: 422, title: "送出的內容包含不支援的欄位", next: "請重新整理頁面後再試一次。" },
   forbidden: { status: 403, title: "沒有這項操作的權限", next: "請確認使用的是自己的帳號，或聯絡老師協助。" },
   ai_not_open: { status: 403, title: "此功能目前尚未開放", next: "請稍後再試，或詢問老師何時開放。" },
@@ -236,6 +237,7 @@ export type BodyResult<T> =
 
 export async function readJsonBody<T>(
   request: Request, parse: (value: unknown) => T | null, maxBytes: number,
+  parseJson: (text: string) => unknown = JSON.parse,
 ): Promise<BodyResult<T>> {
   const contentType = request.headers.get("content-type")?.split(";")[0]?.trim().toLowerCase();
   if (contentType !== "application/json") return { ok: false, code: "unsupported_media_type" };
@@ -257,7 +259,7 @@ export async function readJsonBody<T>(
   }
   try {
     const text = new TextDecoder("utf-8", { fatal: true }).decode(Buffer.concat(chunks));
-    const data = parse(JSON.parse(text));
+    const data = parse(parseJson(text));
     return data === null ? { ok: false, code: "invalid_request" } : { ok: true, data };
   } catch {
     return { ok: false, code: "invalid_request" };

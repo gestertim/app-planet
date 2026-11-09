@@ -16,6 +16,7 @@ param(
     [switch]$Upgrade0043,
     [switch]$Upgrade0042IllegalHistory,
     [switch]$TeacherSignup,
+    [switch]$StudentLogin,
     [string[]]$IntegrationFilter = @(),
     [string[]]$E2EFilter = @(),
     [ValidateRange(1024, 64246)]
@@ -28,11 +29,42 @@ if (Test-Path variable:PSNativeCommandUseErrorActionPreference) {
 }
 
 $repoRoot = (git rev-parse --show-toplevel).Trim()
+if ($StudentLogin) {
+    if ($TeacherSignup -or $Upgrade0025 -or $Upgrade0028 -or $Upgrade0031 -or $Upgrade0032 -or
+        $Upgrade0035 -or $Upgrade0036 -or $Upgrade0037 -or $Upgrade0038 -or $Upgrade0039 -or
+        $Upgrade0040 -or $Upgrade0041 -or $Upgrade0042 -or $Upgrade0043 -or $Upgrade0042IllegalHistory) {
+        throw "學生入口隔離驗收不可混用其他模式。"
+    }
+    if (-not $env:APP_PLANET_BATCH_EVIDENCE -or
+        -not [System.IO.Path]::IsPathRooted($env:APP_PLANET_BATCH_EVIDENCE) -or
+        -not (Test-Path -LiteralPath $env:APP_PLANET_BATCH_EVIDENCE -PathType Container)) {
+        throw "學生入口 runner 必須指定已存在的本批專屬證據目錄。"
+    }
+    if ($IntegrationFilter.Count -eq 0) { $IntegrationFilter = @("tests/integration/real-auth-student-login.test.ts") }
+    if ($E2EFilter.Count -eq 0) { $E2EFilter = @("tests/auth-e2e/real-auth-student-login.spec.ts") }
+}
 $runId = [Guid]::NewGuid().ToString("N")
 $projectId = "app-planet-auth-$($runId.Substring(0, 12))"
-$workRoot = Join-Path $env:TEMP "AppPlanetNativeAuth-$runId"
+$workRoot = if ($StudentLogin) {
+    Join-Path $env:APP_PLANET_BATCH_EVIDENCE "runtime\AppPlanetNativeAuth-$runId"
+} else { Join-Path $env:TEMP "AppPlanetNativeAuth-$runId" }
 $projectRoot = Join-Path $workRoot "project"
 $supabaseRoot = Join-Path $projectRoot "supabase"
+if ($StudentLogin) {
+    $env:TEMP = Join-Path $workRoot "process"
+    $env:TMP = $env:TEMP
+    $env:npm_config_cache = Join-Path $workRoot "npm-cache"
+    $env:npm_config_update_notifier = "false"
+    New-Item -ItemType Directory -Path $env:TEMP, $env:npm_config_cache -Force | Out-Null
+    foreach ($processPath in @($env:TEMP, $env:TMP, $env:npm_config_cache)) {
+        if (-not [System.IO.Path]::GetFullPath($processPath).StartsWith(
+            [System.IO.Path]::GetFullPath($workRoot) + [System.IO.Path]::DirectorySeparatorChar,
+            [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "本批程序／cache 路徑未隔離；未進行安裝或驗收。"
+        }
+    }
+    Write-Output "StudentProcessPathsVerified=batch-private"
+}
 $apiPort = 0
 $dbPort = 0
 $shadowPort = 0
@@ -198,7 +230,7 @@ enabled = false
 enabled = true
 site_url = "https://localhost:$webPort"
 additional_redirect_urls = ["https://localhost:$webPort/**"]
-jwt_expiry = 60
+jwt_expiry = $(if ($StudentLogin) { 600 } else { 60 })
 enable_signup = $authSignupEnabled
 
 # readiness §90 隔離測試值：放寬上游 IP 登入限速，避免干擾產品端節流驗收；非正式 PP 核定。
@@ -241,6 +273,18 @@ enabled = false
     if (-not ($authOrigin -and $adminDbUrl -and $anonKey -and $adminAuthKey)) {
         throw "隔離 Supabase status 缺少必要 Auth／PostgreSQL 設定。"
     }
+    if ($StudentLogin) {
+        $authUri = [System.Uri]::new($authOrigin)
+        $dbUri = [System.Uri]::new($adminDbUrl)
+        if (-not ($authUri.IsLoopback -and $dbUri.IsLoopback -and $authUri.Port -eq $apiPort -and $dbUri.Port -eq $dbPort)) {
+            throw "學生入口 Auth／DB 不是本輪指定的 loopback 埠。"
+        }
+        foreach ($container in @("supabase_auth_$projectId", "supabase_db_$projectId", "supabase_kong_$projectId")) {
+            $labels = (& docker inspect --format '{{json .Config.Labels}}' $container) | ConvertFrom-Json
+            if ($LASTEXITCODE -ne 0 -or $labels.'com.supabase.cli.project' -ne $projectId) { throw "學生入口容器身分不符。" }
+        }
+        Write-Output "StudentResourceIdentityVerified=$projectId loopback=true unique-label=true"
+    }
     Write-Output "已取得隔離 Auth／PostgreSQL 連線設定。"
 
     $env:APP_PLANET_LOCAL_AUTH = "1"
@@ -254,6 +298,14 @@ enabled = false
     $env:APP_PLANET_E2E_CHANNEL = "msedge"
     $env:APP_PLANET_TEST_AUTH_CONTAINER = "supabase_auth_$projectId"
     & docker inspect --format 'AuthImage={{.Config.Image}}' "supabase_auth_$projectId"
+    if ($StudentLogin) {
+        $authEnv = (& docker inspect --format '{{json .Config.Env}}' "supabase_auth_$projectId") | ConvertFrom-Json
+        if ($authEnv -notcontains "GOTRUE_JWT_EXP=600") { throw "隔離 Auth 實際 TTL 不是 600 秒。" }
+        Write-Output "StudentAuthTTLVerified=600"
+        $env:APP_PLANET_STUDENT_LOGIN_MODE = "isolated-local-test"
+        $env:APP_PLANET_STUDENT_AUTH_TTL_SECONDS = "600"
+        $env:APP_PLANET_STUDENT_LOGIN_ISOLATION_ID = ([Guid]::Parse($runId)).ToString()
+    }
     $env:NODE_ENV = "test"
     $env:APP_PLANET_ENV = "isolated-local-test"
     $env:APP_PLANET_BOOTSTRAP_MODE = "isolated-local-test"
@@ -391,6 +443,13 @@ enabled = false
     }
     $roleUrls = $roleUrlsJson | ConvertFrom-Json
     $env:APP_PLANET_DATABASE_URL = $roleUrls.applicationDatabaseUrl
+    if ($StudentLogin) {
+        if (-not ($roleUrls.studentLoginDatabaseUrl -and $roleUrls.studentDummyAlias)) {
+            throw "隔離學生入口設定不完整。"
+        }
+        $env:APP_PLANET_STUDENT_LOGIN_DATABASE_URL = $roleUrls.studentLoginDatabaseUrl
+        $env:APP_PLANET_STUDENT_DUMMY_ALIAS = $roleUrls.studentDummyAlias
+    }
     $env:APP_PLANET_TEST_WORKER_DATABASE_URL = $roleUrls.workerDatabaseUrl
     if ($roleUrls.bootstrapDatabaseUrl) { $env:APP_PLANET_BOOTSTRAP_DATABASE_URL = $roleUrls.bootstrapDatabaseUrl }
     Write-Output "隔離 migration 與 runtime database roles 已準備。"
@@ -428,7 +487,9 @@ enabled = false
 } finally {
     foreach ($secretName in @("APP_PLANET_BOOTSTRAP_DATABASE_URL", "APP_PLANET_STAFF_LOGIN_HMAC_SECRET", "APP_PLANET_SOURCE_PROXY_PROOF", "APP_PLANET_TEST_AUTH_ADMIN_KEY", "APP_PLANET_TEST_DB_ADMIN_URL", "APP_PLANET_DATABASE_URL", "APP_PLANET_TEST_WORKER_DATABASE_URL", "APP_PLANET_AUTH_API_KEY",
         "APP_PLANET_TEACHER_SIGNUP_MODE", "APP_PLANET_TEST_MAIL_API_URL", "APP_PLANET_TEST_MAIL_CONTAINER",
-        "APP_PLANET_TEST_AUTH_OTP_EXPIRY_SECONDS", "APP_PLANET_TEST_MIGRATE_THROUGH", "APP_PLANET_TEST_ILLEGAL_PATH_HISTORY")) {
+        "APP_PLANET_TEST_AUTH_OTP_EXPIRY_SECONDS", "APP_PLANET_TEST_MIGRATE_THROUGH", "APP_PLANET_TEST_ILLEGAL_PATH_HISTORY",
+        "APP_PLANET_STUDENT_LOGIN_MODE", "APP_PLANET_STUDENT_AUTH_TTL_SECONDS", "APP_PLANET_STUDENT_LOGIN_ISOLATION_ID",
+        "APP_PLANET_STUDENT_LOGIN_DATABASE_URL", "APP_PLANET_STUDENT_DUMMY_ALIAS")) {
         Remove-Item -LiteralPath "Env:$secretName" -ErrorAction SilentlyContinue
     }
     if ($started) {

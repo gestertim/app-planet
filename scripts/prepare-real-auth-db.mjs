@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
 import { Pool } from "pg";
 
@@ -11,6 +11,7 @@ if (!adminUrl) {
 const appPassword = randomBytes(32).toString("hex");
 const workerPassword = randomBytes(32).toString("hex");
 const bootstrapPassword = randomBytes(32).toString("hex");
+const studentPassword = randomBytes(32).toString("hex");
 const pool = new Pool({ connectionString: adminUrl, max: 1, connectionTimeoutMillis: 5_000 });
 let migrationPrincipal;
 
@@ -95,9 +96,36 @@ try {
   const bootstrapUrl = new URL(adminUrl);
   bootstrapUrl.username = "app_bootstrap_test";
   bootstrapUrl.password = bootstrapPassword;
+  let studentLoginSettings = {};
+  if (process.env.APP_PLANET_STUDENT_LOGIN_MODE === "isolated-local-test") {
+    if (through !== undefined || process.env.APP_PLANET_STUDENT_AUTH_TTL_SECONDS !== "600") {
+      throw new Error("學生登入不可混用歷史升級或不符 TTL 的 runner。");
+    }
+    await pool.query(`ALTER ROLE app_student_login_runtime PASSWORD '${studentPassword}'`);
+    const studentUrl = new URL(adminUrl);
+    studentUrl.username = "app_student_login_runtime";
+    studentUrl.password = studentPassword;
+    const alias = `ap-${randomUUID()}@example.invalid`;
+    const adminKey = process.env.APP_PLANET_TEST_AUTH_ADMIN_KEY;
+    const authOrigin = process.env.APP_PLANET_AUTH_ORIGIN;
+    if (!adminKey || !authOrigin) throw new Error("缺少隔離 Auth 控制設定。");
+    const response = await fetch(`${authOrigin}/auth/v1/admin/users`, {
+      method: "POST", cache: "no-store", redirect: "error", signal: AbortSignal.timeout(5_000),
+      headers: { apikey: adminKey, authorization: `Bearer ${adminKey}`, "content-type": "application/json" },
+      body: JSON.stringify({ email: alias, password: randomBytes(48).toString("base64url"), email_confirm: true }),
+    });
+    const body = await response.json();
+    if (!response.ok || typeof body?.id !== "string" ||
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.id)) {
+      throw new Error("隔離 dummy Auth 建立失敗。");
+    }
+    studentLoginSettings = { studentLoginDatabaseUrl: studentUrl.toString(), studentDummyAlias: alias };
+    process.stderr.write("StudentDummyVerified=no-product-profile\n");
+  }
   process.stdout.write(JSON.stringify({
     applicationDatabaseUrl: appUrl.toString(),
     workerDatabaseUrl: workerUrl.toString(),
+    ...studentLoginSettings,
     ...(through === undefined || through >= "0027" ? { bootstrapDatabaseUrl: bootstrapUrl.toString() } : {}),
   }));
 } catch (error) {
