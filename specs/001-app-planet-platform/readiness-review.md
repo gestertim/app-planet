@@ -5730,3 +5730,81 @@ Build 生成 `apps/web/next-env.d.ts`：before／還原後 SHA-256 為 `b8b3a344
 交付以本輪實際 before 產生增量 patch、before／after 快照、逐批配對、隔離 patch replay 與 ZIP 校驗；Reviewer 結論另行保存。所有結論僅限本批本機補正；任務正文／依賴／勾選、Gate、正式審議／簽核及啟用狀態不變；不 commit、push 或部署，index 保持空。
 
 **本輪 Reviewer 最終複審：**既有 Reviewer 僅使用 read／search，先獨立核對實作、呼叫端與測試，再補核 `final3` 的來源配對與交付；回報「未發現阻擋問題」，E-01／E-02 均已解決，F-02 維持已關閉，建議結束本輪本機審查。Reviewer 的測試、雜湊、replay、ZIP／CRC 判斷均引用 Coding Agent 實跑紀錄，未冒稱自行重跑。原文保存在審閱包 `reviewer-report.md`，審閱對象為 `package-review3`；最後交付僅補入此結論、報告與清理／交付紀錄並重新封裝，產品／測試及所有受測來源不變，仍逐檔匹配 `final3` manifest。歷史來源限制與真 BFCache not verified 繼續保留；此結論不是 T097 全任務結案、Gate 通過或正式啟用批准。
+
+## 114. AP-A1-ISO-20261109 已簽差異同步與生效核對
+
+### 114.1 批准與角色連結（2026-11-09，+08:00）
+
+同一輪的兩則教育者對話合併為批准依據；原始紀錄提交外保管，本節保留可公開的決定與結果：
+
+1. **2026-11-09T15:58:53.275+08:00**：「Approved｜AP-A1-ISO-20261109｜簽核稿 v1.0」。批准已簽稿 §3.1 全文、G-1～G-6、§1.2 每列及 C-01 修文／版本，確認採用鎖定修正版及 diff。該則權責來源原有占位，故當時未套用、不生效。
+2. **2026-11-09T16:01:05.356+08:00**：本人確認為本檔 §75（2026-10-26）階段批准的教育者，亦為 decision-register「2026-10-26 本批前置收斂」的專案管理員，本輪延續兩角色；憲章流程／治理為階段批准與修訂程序依據。§75 只連結角色，本批授權依已簽 G-1～G-6／C-01，不延用歷史實作許可。
+
+角色化指派：Coding Agent 套用差異、登錄並執行；Reviewer 唯讀合規／驗收；專案管理員保管證據。不蒐集姓名／身分資料，不替代法務或兒少專業審閱。
+
+### 114.2 同步、基線與生效
+
+- repository `gestertim/app-planet`；於指定獨立 worktree 執行，指定 HEAD `2d7f9f906bd4407897576570b8ab6a9ad00ae83d` 不變。接續前只有本批既有未追蹤簽核稿，沒有 tracked 變更。不覆寫主工作樹／展示環境；本機路徑與內部分支識別不公開。
+- 功能目錄依主工作樹 `.specify/feature.json` 的 `specs/001-app-planet-platform`；獨立樹缺該指標、環境變數未設定，不由分支推斷。
+- [簽核稿 1.0（歷史提案之去敏公開版）](../../docs/App-Planet-A1-governance-signoff-20261109.md) 的原始保管版本與鎖定修正版／diff 已完成來源雜湊核對，批准者已明確採用；不冒稱未取得副本的位元驗證。原始版本及核對紀錄於提交外保留。本公開版移除內部識別並澄清歷史狀態，不再宣稱公開稿與原始稿 hash 相同；決議、授權及驗收結論不變，後續生效與驗收以本節為準。
+- 已解析有效 constitution-template；無 before／after extension hooks。憲章僅加入 G-1、同步報告與 2.0.0 版本／2026-11-09 修訂日，十項原則與原採納日期待補狀態保留。
+- 已套用 G-2 D-21、G-3 Tasks、G-4 D-07、G-5 Plan P1、G-6 COMMON 及 C-01 AUTH §2(1)，並同步 decision-register 批准紀錄、plan 修訂紀錄及專案指引。§1.2 整張表逐項適用性／等待例外及原前置由固定已簽稿引用，不新增未列例外。
+- **2026-11-09T16:02:46.1745125+08:00 靜態比對（原批次）**：G-1～G-6 與 C-01 共 7 項建議正文逐字相符；136 項任務原行（含直接依賴與 Q）與 HEAD 完全一致，仍全未勾選；當時原始簽核稿 hash 不變；`git diff --check` 通過。當時尚未執行任何產品測試。
+- **生效時點：本節落盤且上述同步核對成立之後，以後續首筆執行前檢查記錄時間為實際起點**。這之前沒有產品開工。本次角色與來源確認、明確批准、正式修文與版本同步、差異比對及本節先登錄均已完成；僅允許已簽稿 §3.2 的單批工作，不需重複相同批准。
+
+### 114.3 有效範圍、停止及待驗收
+
+只限本機隔離 A-1、test-only 合成 credential fixture、最小映射／低權限 lookup／必要新 migration／RLS、登入 API／真表單與安全接線，以及空 cookie 登入→同作品首次手動保存→reload、拒絕路徑／RLS／A-2 聚焦回歸。正式 Gate／Q-AUTH／各 Q 與 S／136 項任務原依賴、未勾選全部保留。正式核發／重發、D-32 全路徑撤銷、refresh、正式 S-01～03、真資料、部署與已簽稿 §3.3 均排除。
+
+本批專屬資源識別／隔離檢查及清理責任於啟動前記錄；不得碰展示／共享／遠端環境。缺設定／身分或資料層安全條件不符、來源／範圍／基準未核准變更、需新政策或擴充功能、教育者撤回時立即停。測試失敗僅能在本批範圍最小修正再驗，不以降級放行。完成交付或停止事件即終止，無常設許可。
+
+**驗收狀態（登錄時）**：A-1 runtime、Auth 600 秒、fixture／lookup／真 DB RLS、空 cookie 真表單、首次保存／reload、拒絕與 A-2 回歸均未執行；正式 S-01～03 不執行。實際命令／結果／失敗與清理於本節續記，不用歷史數字冒充本批通過。
+
+### 114.4 本批實作與聚焦驗收（2026-11-09，+08:00）
+
+**實際生效／執行起點：2026-11-09T16:03:50.8963858+08:00**；先前 §114.2 的同步與先登錄已成立。Coding Agent 於 16:48:17.2678767+08:00 完成有界工作並清理停止。以下實跑由 Coding Agent 執行，主 Agent 讀取原始結果／去敏證據及重核來源雜湊，不冒稱重新執行產品測試。
+
+實作 21 檔：A-1 route／student server、strict JSON／throttle／窄 lookup、學生表單與登入入口；0044 最小 credential／owner／login role／欄位 grants／FORCE RLS；test-only fixture、runner 與聚焦測試。必要共用變更只為允許既定 `school_not_confirmed` 403 登錄、共用能力與測試隔離，不改 A-2 來源 20/min 或正式語意。完整變更及來源 before／after hash 由專案管理員於提交外保管。
+
+| 最終實跑 | 起訖（UTC；原證據保留 ISO 時間） | 結果 |
+| --- | --- | --- |
+| 聚焦 unit／contract | 08:40:43.838Z～08:40:47.171Z | exit 0，134 passed（student 85、lookup driver 12、staff 25、staff contract 12）；前後來源 0 差異。 |
+| tests 型別檢查 | 08:40:47.314Z～08:40:48.742Z | exit 0；前後來源 0 差異。 |
+| web 型別檢查 | 08:40:48.870Z～08:40:49.592Z | exit 0；前後來源 0 差異。 |
+| A-1 真 Auth／DB＋HTTPS browser | 08:28:42.784Z～08:40:00.500Z | exit 0，21 DB／9 HTTPS passed；含 600 秒 TTL 實等 602395ms；前後來源 0 差異。 |
+| A-2 真 Auth／DB＋HTTPS browser 回歸 | 08:40:38.177Z～08:43:32.546Z | exit 0，9 DB／9 HTTPS passed；前後來源 0 差異。 |
+
+實際命令、逐批起訖／exit／stdout／stderr、同清單來源 before／after、兩份最終型別檢查、彙整結果及早期失敗／最小修正紀錄，均由專案管理員於提交外保管，不公開內部原始證據引用，不將 evidence 複製為產品設定。無依賴安裝；以下為原批次實跑結果，不代表去敏公開版重新執行測試。
+
+**已驗證的本批行為**：
+
+- 全新空 cookie browser context、無預先 grant／addCookies，真學生表單→A-1→`/student`；明確帶入點子、建立同作品、首次手動保存 `stage_records` 0→1、`row_version=0`，換行／尾空格逐字相等；reload UI／DB 一致。
+- 可信 Auth admin 回傳 UUID 才寫入 profile／credential；真 DB 核對最小四欄、受限 owner／login role、欄位 grants、FORCE RLS、PUBLIC revoke、無繼承／SET ROLE／底表讀寫或控制操作；DB／EXECUTE 故障拒絕 503。
+- 狀態／資格矩陣、未知／錯碼／缺 credential／revoked／非學生、受控缺校及依賴／壞列／多列／UUID／cookie 前重讀故障，HTTP／body.status／code 一致；原始欄位 128／129 bytes、strict JSON／重複鍵／非法 UTF-8、HTTPS 無 Content-Length 分塊 4096／4097 bytes、422／415 均有聚焦驗證。
+- HMAC 配對＋來源桶、同步預留／neutral／漸進延遲／容量／過期清理；已知／未知同序列第六次 429、A 鎖不阻 B，但 B 仍受自身／上游限制；真 Auth／DB 的 A／B handler 測試使用受控可信來源 proof，不宣稱正式 NAT 轉送驗收。
+- 同碼 active 真登入→產品 UI 登出 204／空 cookie→控制層 revoked 提交讀回→同碼 401／無新 cookie。withdrawn／expired 各自登入、保存／reload，真 DB AI／公開部署 gate 為 false，未呼叫 AI／部署。
+- 實際 Auth TTL 600、可信 grant `expires_in=600`、安全 access-only cookie；實等後 cookie 到期 401，記憶體保留的過期 access token 亦 401，無 refresh。無 JS／hydration 前滑鼠與 Enter 不提交，釋放 script 後正常。
+
+**失敗及修正界線**：早期 unit／types 修正超長樣本實為 128 bytes、重複鍵 parser、既定 403 registry 與測試型別；早期 HTTPS 修正導頁後不可讀 browser response、登出應 204、DB 既有欄位為 row_version、noscript 斷言及 Next route announcer selector。npm cache getter 被 npm 拒絕不是缺依賴，沒有安裝；私有 cache 初始失敗、資源摘要 ID 偏移、清理 PowerShell 版本與早期私有快取非空等完整失敗於提交外保留，未放寬安全或改寫歷史失敗成成功。
+
+### 114.5 限制、清理與交付核對
+
+- 真 DB 缺校受 CHECK／FK 阻擋，未驗、不拆約束；僅受控成功 reader 缺校 403 與 reader 故障 503。受控 provider 非對稱明確不等價；真 provider 小樣本 known-wrong 83ms／dummy 117ms，列舉耗時驗收未達／不宣稱通過，非正式 S-02。正式 NAT／30 人／各 200 樣本／正式 S-01～03 未執行。
+- cookie 前重讀不是 Auth／DB 原子交易；local logout 只記嘗試，不證明上游 session 終結；revoked 消費端不是 A-9／D-32／發 cookie 後舊 session 撤銷。正式核發／重發、refresh、真資料與部署未做。
+- 七組隔離資源登錄（其中一組未建立）的核對紀錄於提交外保管，不公開資源識別。16:48:17.2476388+08:00 核對各 containers／volumes／networks 為 0、owned process 0、本批 HTTPS 埠拒絕連線、私有 cache／憑證已清理、禁止 browser artifact 0；原既有三個受保護 Auth 容器仍 running。
+- 主 Agent 16:49:13.3595210+08:00 重核 21 檔磁碟 SHA-256 與原變更清單全相符，136 原任務行完全不變、HEAD 不變、index 空、`git diff --check` 通過；核對紀錄提交外保管。原批次未 commit／push／PR／部署。
+
+**停止狀態**：實作／實測已停止，Reviewer 唯讀合規與驗收核對進行中，結論尚未取得，不先宣稱審閱通過。本輪後續僅允許原批審閱指出且仍在範圍內的最小修正／直接再驗；需要新政策或擴充則另批。完整 Gate／Q 與正式啟用不變，所有任務只記本批子集，不結案。
+
+### 114.6 Reviewer 結論與單批停止（2026-11-09，+08:00）
+
+Reviewer 完成唯讀核對，結論為：**「未發現阻擋問題。本輪審查可收斂；此結論僅限本批，不代表 Gate 通過或正式上線批准。」** 審閱依當時實作、測試及驗證版本紀錄，沒有重跑測試、重算雜湊或宣稱所有檔案逐行基準 diff 完成；主 Agent 的來源核對另見 §114.5。內部 agent 識別及原始紀錄提交外保管。
+
+| 審閱項目 | 判斷／處置 |
+| --- | --- |
+| 本批授權、角色、版本與正式同步 | 批准／角色補件、逐項同步及生效時點有紀錄；§75 僅作角色連結。G-1～G-6／C-01、權限／RLS、登入順序／錯誤投影、strict 輸入／節流、真表單保存／reload、TTL 與 A-2 回歸未發現已確認阻擋缺口。 |
+| Reviewer F-01（與歷史設計 F-01 不同） | P2、非阻擋：`tests/support/student-login-fixture.ts` 建立 Auth 成功後，DB 交易或 commit 後核對失敗時缺補償清理；函式未回傳 account，呼叫端拿不到正常清理所需帳號。這是 fixture 自身失敗路徑缺陷，不影響本批成功路徑及隔離服務最終全清理證據。依 Reviewer 建議列為後續改善，本輪不延長；下次重用此 fixture 前應補 Auth／DB 補償及受控故障無殘留測試，不以本批作常設修復授權。 |
+| 額外產生檔範圍追溯 | Reviewer 指出 `apps/web/next-env.d.ts` 未列入 21 檔。主 Agent 已補核原 before／after SHA-256；差異僅兩個自動產生型別 import 從 `.next/types/` 轉為 `.next/dev/types/`，登錄為本批 Next dev 測試產物，非新增產品功能。保留受測現況、不手改還原；原始追溯紀錄提交外保管。故範圍為 21 個手動產品／測試／runner 檔，另 1 個生成型別檔，不能宣稱 git 只有 21 個非治理變更。 |
+| 證據可讀性 | 主工作樹簽核稿路徑不可讀，Reviewer 使用指定隔離 worktree 內同名稿與登錄雜湊；本批交付與有效來源均為隔離 worktree，不要求主工作樹新增副本。正式 S-01～03／列舉耗時、真 DB 缺校等限制完整保留。 |
+
+**最終狀態**：已簽修文、版本同步、生效登錄、本機隔離實作、聚焦驗收及 Reviewer 核對完成；資源已清理。於本節登錄後結束 AP-A1-ISO-20261109，不再開工或啟動服務。本批原 136 項任務完成狀態及依賴、正式 Gate／Q-AUTH 均不變；正式核發／重發、D-32 全路徑撤銷、refresh、正式 S-01～03、真實學生資料與部署仍排除。未 commit／push／部署。

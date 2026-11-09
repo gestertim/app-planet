@@ -42,7 +42,10 @@ export const staffLoginIsolatedTestPolicy = Object.freeze({
   sessionMaxAgeMaxSeconds: 3_600,
 });
 
-export type StaffLoginPolicy = typeof staffLoginIsolatedTestPolicy;
+export type StaffLoginPolicy = {
+  readonly [K in keyof typeof staffLoginIsolatedTestPolicy]:
+    (typeof staffLoginIsolatedTestPolicy)[K] extends number ? number : string;
+} & { readonly countRejectedPairAttempts?: boolean };
 
 export const clientSourceHeader = "x-app-planet-client-source";
 export const sourceProofHeader = "x-app-planet-source-proof";
@@ -133,7 +136,8 @@ export class StaffLoginThrottle {
   reserve(accountKey: string, sourceKey: string): ThrottleReservation {
     const now = this.now();
     this.#prune(now);
-    if (this.#accounts.size + this.#sources.size >= this.policy.maxTrackedBuckets) {
+    const newBuckets = Number(!this.#accounts.has(accountKey)) + Number(!this.#sources.has(sourceKey));
+    if (this.#accounts.size + this.#sources.size + newBuckets > this.policy.maxTrackedBuckets) {
       return { ok: false, retryAfterSeconds: Math.ceil(this.policy.sourceWindowMs / 1000) };
     }
     let source = this.#sources.get(sourceKey);
@@ -148,13 +152,17 @@ export class StaffLoginThrottle {
     if (source.attempts >= this.policy.sourceAttemptLimit) {
       return { ok: false, retryAfterSeconds: secondsUntil(source.windowStart + this.policy.sourceWindowMs, now) };
     }
+    if (this.policy.countRejectedPairAttempts) {
+      source.attempts += 1;
+      this.#sources.set(sourceKey, source);
+    }
     if (account.lockedUntil > now) {
       return { ok: false, retryAfterSeconds: secondsUntil(account.lockedUntil, now) };
     }
     if (account.failures + account.inflight >= this.policy.accountFailureLimit) {
       return { ok: false, retryAfterSeconds: secondsUntil(now + this.policy.backoffBaseMs, now) };
     }
-    source.attempts += 1;
+    if (!this.policy.countRejectedPairAttempts) source.attempts += 1;
     account.inflight += 1;
     this.#sources.set(sourceKey, source);
     this.#accounts.set(accountKey, account);
