@@ -18,6 +18,7 @@ import {
   type StageDraftTarget,
 } from "./save-controller.ts";
 import { classifyGuardCondition, type GuardResult } from "./unsaved-changes-guard.tsx";
+import { canDiscardIdeaDraft, ideaDraftHandoff, type AppliedIdeaDraft } from "./idea-draft-handoff.ts";
 
 export interface StageDraftEditorProps {
   readonly target: StageDraftTarget;
@@ -76,6 +77,11 @@ export function StageDraftEditor({
   const [serverDraft, setServerDraft] = useState<StageDraftDto | null>(initialDraft ?? null);
   const [reloadError, setReloadError] = useState<string | null>(null);
   const [reloadPending, setReloadPending] = useState(false);
+  const [handoffMessage, setHandoffMessage] = useState("");
+  const [handoffApplied, setHandoffApplied] = useState(false);
+  const appliedHandoff = useRef<AppliedIdeaDraft | null>(null);
+  const currentIdentity = useRef({ accountScope, target, hasTrustedPrincipal });
+  currentIdentity.current = { accountScope, target, hasTrustedPrincipal };
   const composingRef = useRef(false);
   const [composing, setComposing] = useState(false);
   const setComposition = (value: boolean) => {
@@ -85,13 +91,30 @@ export function StageDraftEditor({
 
   useEffect(() => controller.subscribe(() => {
     const next = controller.getState(target);
+    if (!canDiscardIdeaDraft(appliedHandoff.current, accountScope, next)) appliedHandoff.current = null;
     setState(next);
     setServerDraft(next.confirmedDraft);
     if (next.operation.status === "failed" &&
         (next.operation.reason === "policy_denied" || next.operation.reason === "project_not_found")) {
       setServerDraft(null);
     }
-  }), [controller, target]);
+  }), [accountScope, controller, target]);
+
+  useEffect(() => {
+    if (!hasTrustedPrincipal || !canDiscardIdeaDraft(appliedHandoff.current, accountScope, controller.getState(target))) {
+      appliedHandoff.current = null;
+    }
+    if (!hasTrustedPrincipal || target.stage !== "點子") return;
+    const handoff = ideaDraftHandoff.take(accountScope, controller.getState(target));
+    if (handoff.outcome === "applied") {
+      controller.edit(handoff.text, target);
+      appliedHandoff.current = { accountScope, target };
+      setHandoffApplied(true);
+      setHandoffMessage("首頁點子已帶入，未儲存。請核對或修改，再按「保存」；也可放棄帶入。");
+    } else if (handoff.outcome === "occupied") {
+      setHandoffMessage("此點子編輯區已有保存內容或另一筆編輯；未帶入，也不會覆寫。");
+    }
+  }, [accountScope, controller, hasTrustedPrincipal, target]);
 
   useEffect(() => {
     const updateConnectivity = () => setConnectivity(navigator.onLine ? "online" : "offline");
@@ -113,6 +136,9 @@ export function StageDraftEditor({
     hasConfirmedDraft: state.confirmedDraft !== null,
   });
   const conflict = state.operation.status === "conflict" ? state.operation.conflict : null;
+  const handoffToDiscard = appliedHandoff.current;
+  const canDiscard = hasTrustedPrincipal &&
+    canDiscardIdeaDraft(handoffToDiscard, accountScope, controller.getState(target));
   const leave = async (choice: StageDraftSwitchChoice): Promise<GuardResult> => {
     const result = await controller.requestLeave(choice);
     return result.outcome === "superseded"
@@ -137,6 +163,19 @@ export function StageDraftEditor({
       />
       <p className="text-sm text-slate-600">草稿編輯僅保留在目前頁面記憶體；離開前可保存至伺服器，重新載入或關閉分頁不會保留未保存內容。</p>
       <OperationStatusBanner presentation={presentation} />
+      {!presentation.hideServerData && handoffMessage && <div data-testid="idea-handoff-status">
+        <p role="status">{!handoffApplied || canDiscard ? handoffMessage
+          : "首頁點子已帶入本頁；保存結果及後續修改請依操作狀態核對。"}</p>
+        {canDiscard && <button type="button" onClick={() => {
+          const current = currentIdentity.current;
+          if (!current.hasTrustedPrincipal || handoffToDiscard !== appliedHandoff.current ||
+              !canDiscardIdeaDraft(handoffToDiscard, current.accountScope, controller.getState(current.target))) return;
+          appliedHandoff.current = null;
+          controller.edit("", current.target);
+          setHandoffApplied(false);
+          setHandoffMessage("已放棄帶入；未寫入任何點子內容。");
+        }}>放棄帶入</button>}
+      </div>}
       {!presentation.hideServerData && state.operation.status === "replayed" && (
         <p data-testid="operation-receipt">
           原操作版本 {state.operation.receipt.row_version}：{state.operation.receipt.content.text}

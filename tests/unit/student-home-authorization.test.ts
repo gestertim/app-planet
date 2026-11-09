@@ -10,7 +10,8 @@ vi.mock("../../apps/web/src/server/page-principal.ts", () => ({ resolvePagePrinc
 vi.mock("../../apps/web/src/server/projects.ts", () => ({ listCurrentOwnedProjectsSubset: readers.list }));
 vi.mock("../../apps/web/src/components/student/creation-space.tsx", () => ({
   StudentCreationSpace: ({ children }: { children: React.ReactNode }) =>
-    createElement("div", { "data-testid": "student-creation-space" }, children),
+    createElement("div", { "data-testid": "student-creation-space" }, children,
+      createElement("p", null, "既有建立表單")),
 }));
 vi.mock("../../apps/web/src/components/project/create-project-form.tsx", () => ({
   CreateProjectForm: () => createElement("p", null, "既有建立表單"),

@@ -12,6 +12,7 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import type { WorkEligibilityContext } from "@app-planet/core";
 import type { WorkLimitationsState } from "./work-limitations-state.ts";
+import { ideaDraftHandoff } from "./idea-draft-handoff.ts";
 
 type ProjectAccessContextValue = Readonly<{
   close: (message?: string) => void;
@@ -38,6 +39,11 @@ const ProjectAccess = createContext<ProjectAccessContextValue>({
 export const useProjectAccessLost = () => useContext(ProjectAccess).close;
 export const useProjectScopeResult = () => useContext(ProjectAccess).reportScope;
 export const useProjectScopeRecheck = () => useContext(ProjectAccess).beginScopeRecheck;
+
+export function ClearIdeaDraftHandoff() {
+  useEffect(() => { ideaDraftHandoff.cancel(); }, []);
+  return null;
+}
 
 function scopePagePath(projectId: string, purpose: WorkEligibilityContext): string {
   return `/student/projects/${encodeURIComponent(projectId)}/${purpose === "a1_preview" ? "build" : "publish"}`;
@@ -82,6 +88,7 @@ export function ProtectedProjectView({ revision, projectId, accountScope, childr
   const close = useCallback((message?: string) => {
     if (navigation.current.pathname !== pathname ||
         navigation.current.epoch !== navigationEpoch) return;
+    ideaDraftHandoff.cancel();
     setClosedState({
       projectId: projectId ?? null,
       epoch: navigationEpoch,

@@ -4,6 +4,8 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { useCallback, useRef, useState, type FocusEvent, type MouseEvent } from "react";
 import Link from "next/link";
 import { ClosedAction, OperationNotice } from "@/components/operation-state";
+import { CreateProjectForm } from "../project/create-project-form";
+import { ideaDraftHandoff, validateIdeaDraft } from "../project/idea-draft-handoff";
 import styles from "./creation-space.module.css";
 
 const guides = [
@@ -18,13 +20,20 @@ const guides = [
     prompt: "我想學會新知識。我想學的主題是：我目前知道的是：" },
 ] as const;
 
-export function StudentCreationSpace({ children }: Readonly<{ children: React.ReactNode }>) {
+export function StudentCreationSpace({ children, storageScope }: Readonly<{
+  children: React.ReactNode;
+  storageScope: string;
+}>) {
   const [draft, setDraft] = useState("");
+  const [carry, setCarry] = useState(false);
+  const [bound, setBound] = useState(false);
+  const [carryMessage, setCarryMessage] = useState("");
   const [selected, setSelected] = useState<number | null>(null);
   const [destination, setDestination] = useState<HTMLAnchorElement | null>(null);
   const [portal, setPortal] = useState<HTMLDivElement | null>(null);
   const space = useRef<HTMLDivElement | null>(null);
   const bypass = useRef(false);
+  const autoNavigationAllowed = useRef(true);
   const opener = useRef<HTMLAnchorElement | null>(null);
   const editor = useRef<HTMLTextAreaElement>(null);
   const mountSpace = useCallback((element: HTMLDivElement | null) => {
@@ -60,8 +69,13 @@ export function StudentCreationSpace({ children }: Readonly<{ children: React.Re
   };
   const leave = () => {
     if (!destination?.isConnected || space.current?.closest("[hidden]")) return;
+    autoNavigationAllowed.current = false;
+    ideaDraftHandoff.cancel(storageScope);
     setDestination(null);
     setDraft("");
+    setCarry(false);
+    setBound(false);
+    setCarryMessage("");
     // 重送原控制項的點擊，沿用 Link 導覽，不另建路由機制。
     bypass.current = true;
     destination.click();
@@ -69,7 +83,7 @@ export function StudentCreationSpace({ children }: Readonly<{ children: React.Re
   };
   const selectGuide = (index: number) => {
     setSelected(index);
-    setDraft((current) => current.trim() === "" ? guides[index].prompt : current);
+    setDraft((current) => current.length === 0 ? guides[index].prompt : current);
     editor.current?.focus();
   };
 
@@ -89,7 +103,7 @@ export function StudentCreationSpace({ children }: Readonly<{ children: React.Re
       </nav>
       <p className={styles.sectionLabel}>我的創作工具・本頁引導</p>
       <div className={styles.tools}>{guides.map((guide, index) =>
-        <button type="button" key={guide.tool} onClick={() => selectGuide(index)}
+        <button type="button" key={guide.tool} disabled={bound} onClick={() => selectGuide(index)}
           aria-label={`${guide.tool}：帶入草稿引導`}>
           <span aria-hidden="true">{guide.icon}</span>{guide.tool}
         </button>)}</div>
@@ -115,12 +129,31 @@ export function StudentCreationSpace({ children }: Readonly<{ children: React.Re
         </section>
         <section className={styles.composer} aria-label="本頁點子草稿">
           <label htmlFor="student-idea">我的點子草稿</label>
-          <textarea id="student-idea" ref={editor} value={draft} onChange={(event) => setDraft(event.target.value)}
+          <textarea id="student-idea" ref={editor} value={draft} disabled={bound} onChange={(event) => setDraft(event.target.value)}
             aria-describedby="student-draft-help student-guide-status"
             placeholder="說說你的點子，或寫下任何關於 App 的問題⋯" rows={3} />
           <div className={styles.composerActions}>
             <ClosedAction label="＋ 附件" /><ClosedAction label="啟用 Skill" /><ClosedAction label="送出點子" />
+            <button type="button" disabled={carry || bound} onClick={() => {
+              const validation = validateIdeaDraft(draft);
+              if (validation !== "valid") {
+                setCarryMessage(validation === "too_large"
+                  ? "點子超過既有保存的 64 KiB JSON UTF-8 上限；請縮短原文，不會截斷或建立專案。"
+                  : "點子含無法精確保存的字元；請檢查內容，不會建立專案。");
+                return;
+              }
+              setCarry(true);
+              setCarryMessage("已選擇帶入；尚未建立或保存。請在下方輸入專案名稱，再按「建立專案」。");
+              document.getElementById("project-title")?.focus();
+            }}>將點子帶入新專案</button>
+            {carry && <button type="button" onClick={() => {
+              ideaDraftHandoff.cancel(storageScope);
+              setCarry(false);
+              setBound(false);
+              setCarryMessage("已取消帶入，首頁原文仍保留；已送出的建立操作仍只可查回，不會重新建立。");
+            }}>取消帶入</button>}
           </div>
+          <p role="status" data-testid="idea-carry-status">{carryMessage}</p>
           <p id="student-draft-help">僅在本頁暫存，未儲存、未送出；本頁離頁連結會先詢問。重新載入、關閉分頁及瀏覽器返回／前進不在此保護範圍，離開後草稿無法恢復。</p>
         </section>
         <p className={styles.tagline}>聊出點子，做出自己的 App！</p>
@@ -128,7 +161,7 @@ export function StudentCreationSpace({ children }: Readonly<{ children: React.Re
           <div className={styles.guideHeading}><h2 id="guide-title">每個好點子，都有一個好起點</h2><span>選一張卡，或直接輸入</span></div>
           <div className={styles.cards}>{guides.map((guide, index) =>
             <button type="button" key={guide.title} className={styles.guideCard}
-              aria-pressed={selected === index} onClick={() => selectGuide(index)}>
+              aria-pressed={selected === index} disabled={bound} onClick={() => selectGuide(index)}>
               <span className={`${styles.guideIcon} ${styles[guide.tone]}`} aria-hidden="true">{guide.icon}</span>
               <strong>{guide.title}</strong><span>{guide.description}</span><small>{guide.tool}・草稿引導</small>
             </button>)}</div>
@@ -139,6 +172,10 @@ export function StudentCreationSpace({ children }: Readonly<{ children: React.Re
         </section>
         <section id="my-projects" tabIndex={-1} className={styles.projects} aria-label="本人專案區">
           {children}
+          <CreateProjectForm storageScope={storageScope} ideaDraft={carry ? draft : null}
+            canAutoNavigate={() => autoNavigationAllowed.current}
+            onCarryBound={() => setBound(true)}
+            onCarryReleased={() => setBound(false)} />
         </section>
         <OperationNotice authenticated />
       </main>

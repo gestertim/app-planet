@@ -17,7 +17,9 @@ param(
     [switch]$Upgrade0042IllegalHistory,
     [switch]$TeacherSignup,
     [string[]]$IntegrationFilter = @(),
-    [string[]]$E2EFilter = @()
+    [string[]]$E2EFilter = @(),
+    [ValidateRange(1024, 64246)]
+    [int]$PortRangeStart = 55000
 )
 
 $ErrorActionPreference = "Stop"
@@ -38,13 +40,13 @@ $webPort = 0
 $mailPort = 0
 $started = $false
 $exitCode = 0
-$nextCandidatePort = 55000
+$nextCandidatePort = $PortRangeStart
 $supabaseExecutable = (Get-Command supabase -CommandType Application | Select-Object -First 1).Source
 $script:commandInvocationId = 0
 Write-Output "IsolatedProject=$projectId"
 
 function Get-FreeTcpPort {
-    while ($script:nextCandidatePort -le 56289) {
+    while ($script:nextCandidatePort -le $PortRangeStart + 1289) {
         $candidate = $script:nextCandidatePort++
         $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Any, $candidate)
         try {

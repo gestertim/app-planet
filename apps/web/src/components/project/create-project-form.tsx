@@ -1,12 +1,13 @@
 "use client";
 import { productFetch as fetch } from "../auth/product-fetch.ts";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { z } from "zod";
 import { problemJsonSchema, utcInstantSchema } from "@app-planet/core";
 import { useProjectAccessLost } from "./protected-project-view";
+import { ideaDraftHandoff, validateIdeaDraft } from "./idea-draft-handoff";
 import {
   clearIntentSnapshot,
   resolveStoredIntents,
@@ -44,7 +45,13 @@ function provesCreateWasNotExecuted(response: Response, problem: Awaited<ReturnT
     noWriteCreateCodes.has(problem.data.code);
 }
 
-export function CreateProjectForm({ storageScope }: { storageScope: string }) {
+export function CreateProjectForm({ storageScope, ideaDraft = null, onCarryBound, onCarryReleased, canAutoNavigate }: {
+  storageScope: string;
+  ideaDraft?: string | null;
+  onCarryBound?: () => void;
+  onCarryReleased?: () => void;
+  canAutoNavigate?: () => boolean;
+}) {
   const router = useRouter();
   const accessLost = useProjectAccessLost();
   const [title, setTitle] = useState("");
@@ -60,6 +67,18 @@ export function CreateProjectForm({ storageScope }: { storageScope: string }) {
   const storageKey = `app-planet.project-create.${storageScope}`;
   const scopeReady = loadedStorageKey === storageKey;
   const storageReady = scopeReady && !storageUnavailable;
+  const active = useRef(false);
+
+  useEffect(() => {
+    active.current = true;
+    const clearOnPageHide = () => ideaDraftHandoff.cancel(storageScope);
+    window.addEventListener("pagehide", clearOnPageHide);
+    return () => {
+      active.current = false;
+      window.removeEventListener("pagehide", clearOnPageHide);
+      ideaDraftHandoff.abandonUnconfirmed(storageScope);
+    };
+  }, [storageScope]);
 
   useEffect(() => {
     setLoadedStorageKey(null);
@@ -96,7 +115,8 @@ export function CreateProjectForm({ storageScope }: { storageScope: string }) {
         setIntent(resolved.intent);
         setTitle(resolved.intent.payload.title);
         setRequestedTier(resolved.intent.payload.tier ?? null);
-        setMessage("上次建立結果待確認。只會以原操作識別與原本文查詢／恢復，絕不重新建立或換鍵。");
+        setMessage("上次建立結果待確認。只會以原操作識別與原本文查詢／恢復，絕不重新建立或換鍵。"
+          + "查回只能取得專案；重新載入或換分頁後無法找回首頁暫態點子。");
       }
       setLoadedStorageKey(storageKey);
     } catch {
@@ -108,6 +128,7 @@ export function CreateProjectForm({ storageScope }: { storageScope: string }) {
   }, [storageKey]);
 
   function hideProtectedState() {
+    ideaDraftHandoff.cancel(storageScope);
     setTitle("");
     setIntent(null);
     setCreated(null);
@@ -116,7 +137,7 @@ export function CreateProjectForm({ storageScope }: { storageScope: string }) {
   }
 
   async function submit() {
-    if (busy || !storageReady || stopped) return;
+    if (busy || !storageReady || stopped || canAutoNavigate?.() === false) return;
     setBusy(true);
     setCreated(null);
     setMessage(intent ? "正在以原操作查詢建立結果。" : "正在保存操作識別並建立專案。");
@@ -127,6 +148,14 @@ export function CreateProjectForm({ storageScope }: { storageScope: string }) {
         payload: requestedTier === null ? { title } : { title, tier: requestedTier },
       };
       const initialCreate = intent === null;
+      if (initialCreate && ideaDraft !== null) {
+        const validation = validateIdeaDraft(ideaDraft);
+        if (validation !== "valid" || !ideaDraftHandoff.begin(storageScope, operation.key, ideaDraft)) {
+          setMessage("無法安全帶入點子：請檢查字元、64 KiB JSON UTF-8 大小或取消先前帶入。尚未送出建立。");
+          return;
+        }
+        onCarryBound?.();
+      }
       // 本次操作實際保存的來源快照；不可依賴剛呼叫 setter 的 state。
       let sources: StoredIntentSources = storedSources;
       if (initialCreate) {
@@ -135,6 +164,8 @@ export function CreateProjectForm({ storageScope }: { storageScope: string }) {
           sessionStorage.setItem(storageKey, serialized);
           if (sessionStorage.getItem(storageKey) !== serialized) throw new Error("session storage verification failed");
         } catch {
+          ideaDraftHandoff.cancel(storageScope);
+          onCarryReleased?.();
           setStorageUnavailable(true);
           setStopped(true);
           setMessage("無法安全保存操作識別；尚未送出建立，請勿另建重複專案。");
@@ -158,6 +189,7 @@ export function CreateProjectForm({ storageScope }: { storageScope: string }) {
         headers: { "content-type": "application/json", "idempotency-key": operation.key },
         body: JSON.stringify(operation.payload), signal: AbortSignal.timeout(15_000),
       });
+      if (!active.current) return;
       if (response.status === 401 || response.status === 403) {
         hideProtectedState();
         return;
@@ -165,6 +197,8 @@ export function CreateProjectForm({ storageScope }: { storageScope: string }) {
       if (initialCreate && (response.status === 400 || response.status === 413 || response.status === 415)) {
         const problem = await readProblem(response);
         if (provesCreateWasNotExecuted(response, problem)) {
+          ideaDraftHandoff.cancel(storageScope);
+          onCarryReleased?.();
           if (clearIntentSnapshot(sessionStorage, localStorage, storageKey, sources) === "cleared") {
             setStoredSources({ session: null, local: null });
             setIntent(null);
@@ -192,7 +226,7 @@ export function CreateProjectForm({ storageScope }: { storageScope: string }) {
           setMessage("建立結果待確認：回應無法驗證。下次只會查詢原操作，不會重新建立。");
           return;
         }
-        await finishConfirmed(parsed.data, sources);
+        await finishConfirmed(parsed.data, operation, sources);
         return;
       }
       if (!initialCreate && response.status === 200) {
@@ -202,7 +236,7 @@ export function CreateProjectForm({ storageScope }: { storageScope: string }) {
           setMessage("恢復結果待確認：回應無法驗證。原操作已保留，請勿另建專案。");
           return;
         }
-        await finishConfirmed(parsed.data.project, sources);
+        await finishConfirmed(parsed.data.project, operation, sources);
         return;
       }
       setMessage("建立結果仍待確認。原操作識別與本文已保留；後續只會查詢原操作，不會重新建立或換鍵。");
@@ -211,7 +245,10 @@ export function CreateProjectForm({ storageScope }: { storageScope: string }) {
     }
   }
 
-  async function finishConfirmed(project: { id: string; title: string }, sources: StoredIntentSources) {
+  async function finishConfirmed(project: { id: string; title: string }, operation: CreateIntent, sources: StoredIntentSources) {
+    if (!active.current) return;
+    const carrying = canAutoNavigate?.() !== false &&
+      ideaDraftHandoff.confirm(storageScope, operation.key, project.id);
     const cleared = clearIntentSnapshot(sessionStorage, localStorage, storageKey, sources) === "cleared";
     setCreated(project);
     setTitle("");
@@ -224,9 +261,12 @@ export function CreateProjectForm({ storageScope }: { storageScope: string }) {
       setStopped(true);
     }
     setMessage(cleared
-      ? "伺服器已確認原操作建立專案；分類仍未確認。"
+      ? "伺服器已確認原操作建立專案；分類仍未確認。查回專案不等於找回首頁暫態點子。"
       : "伺服器已確認原操作建立專案，但本機紀錄無法清除；請勿另建，重新載入後仍只會查詢原操作。");
-    router.refresh();
+    onCarryReleased?.();
+    if (!active.current || canAutoNavigate?.() === false) return;
+    if (carrying) router.push(`/student/projects/${project.id}/stages/${encodeURIComponent("點子")}`);
+    else router.refresh();
   }
 
   return <section className="card" aria-labelledby="create-project-heading">
@@ -246,7 +286,7 @@ export function CreateProjectForm({ storageScope }: { storageScope: string }) {
         <option value="A">偏好 A：靜態作品</option>
         <option value="B">偏好 B：平台資料服務</option>
       </select>
-      <button type="submit" disabled={!storageReady || busy || stopped}>
+      <button type="submit" disabled={!storageReady || busy || stopped || canAutoNavigate?.() === false}>
         {intent ? stopped ? "操作已停止" : "只查詢原操作" : "建立專案"}
       </button>
     </form>

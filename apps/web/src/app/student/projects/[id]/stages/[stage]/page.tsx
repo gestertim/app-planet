@@ -1,5 +1,6 @@
 import { projectStageSchema, readStageDraftInputSchema } from "@app-planet/core";
 import { StageDraftEditor } from "@/components/project/stage-draft-editor";
+import { ClearIdeaDraftHandoff } from "@/components/project/protected-project-view";
 import { decodeStageParam } from "@/server/stage-param";
 import { StageNav } from "@/components/project/stage-overview";
 import { authorizeCapability } from "@/server/authorization";
@@ -18,7 +19,7 @@ type PageProps = {
 };
 
 function ClosedMessage({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <p className="card" role="status">{children}</p>;
+  return <><ClearIdeaDraftHandoff /><p className="card" role="status">{children}</p></>;
 }
 
 export default async function StageDraftPage({ params }: PageProps) {
