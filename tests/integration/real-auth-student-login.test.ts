@@ -1,6 +1,6 @@
 import { randomBytes, randomUUID } from "node:crypto";
-import { Pool } from "pg";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { Pool, type PoolClient, type QueryResult } from "pg";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createStudentLoginHandler, requestStudentGrant, readStudentLoginRuntime } from "../../apps/web/src/server/auth/student.ts";
 import { lookupStudentLogin, closeStudentLookupPools } from "../../apps/web/src/server/auth/student-lookup.ts";
 import { StudentLoginThrottle } from "../../apps/web/src/server/auth/student-throttle.ts";
@@ -204,5 +204,231 @@ describe("真 PostgreSQL 最小權限／FORCE RLS", () => {
       (conname='profiles_student_school_required' OR (contype='f' AND confrelid='app.schools'::regclass))`);
     expect(constraints.rows[0].n).toBe(2);
     console.info(JSON.stringify({ check: "missing-school", controlledReaderCovered: true, realDBMissingSchool: "not-executed-constraints-preserved" }));
+  });
+});
+
+type FixtureQuery = {
+  text: string;
+  values?: unknown[];
+  transaction: boolean;
+  execute: () => Promise<QueryResult>;
+};
+
+function interceptFixturePool(
+  pool: Pool,
+  intercept: (query: FixtureQuery) => Promise<QueryResult>,
+  onRelease?: (client: PoolClient, destroy?: boolean) => void,
+): Pool {
+  return new Proxy(pool, {
+    get(target, key) {
+      if (key === "connect") return async () => {
+        const client = await target.connect();
+        return new Proxy(client, {
+          get(connection, member) {
+            if (member === "release" && onRelease) return (destroy?: boolean) => onRelease(connection, destroy);
+            if (member === "query") return (text: string, values?: unknown[]) =>
+              intercept({ text, values, transaction: true, execute: () => connection.query(text, values) });
+            const value = Reflect.get(connection, member, connection);
+            return typeof value === "function" ? value.bind(connection) : value;
+          },
+        });
+      };
+      if (key === "query") return (text: string, values?: unknown[]) =>
+        intercept({ text, values, transaction: false, execute: () => target.query(text, values) });
+      const value = Reflect.get(target, key, target);
+      return typeof value === "function" ? value.bind(target) : value;
+    },
+  });
+}
+
+describe("A-1 fixture 失敗補償", () => {
+  let witness: Pool;
+  beforeAll(() => { witness = openControlPool(); });
+  afterAll(async () => { await witness.end(); });
+
+  async function counts(account: SyntheticStudent) {
+    const result = await witness.query<{ auth: number; profiles: number; credentials: number; schools: number }>(`SELECT
+      (SELECT count(*)::int FROM auth.users WHERE id=$1) AS auth,
+      (SELECT count(*)::int FROM app.profiles WHERE id=$1) AS profiles,
+      (SELECT count(*)::int FROM app.student_login_credentials WHERE student_id=$1) AS credentials,
+      (SELECT count(*)::int FROM app.schools WHERE id=$2) AS schools`, [account.id, account.schoolId]);
+    return result.rows[0];
+  }
+
+  async function profileSnapshot() {
+    const result = await witness.query("SELECT to_jsonb(p) FROM app.profiles p WHERE id=$1", [student.id]);
+    return JSON.stringify(result.rows);
+  }
+
+  it.each([
+    "before_commit", "after_commit", "invalid_verification",
+    "commit_response_lost", "commit_not_sent", "commit_in_flight", "rollback_failed",
+    "auth_cleanup_failed", "db_cleanup_failed",
+  ] as const)("%s：故障證據、補償結果與既有資料保護", async (point) => {
+    const original = new Error(`受控 fixture ${point} 故障`);
+    const observed: SyntheticStudent = { id: "", schoolId: "", handle: "", email: "", password: "" };
+    const existing = await counts(student);
+    const existingProfile = await profileSnapshot();
+    const blockerId = randomUUID();
+    let injected = false;
+    let committed = false;
+    let rolledBack = false;
+    let rollbackFailed = false;
+    let cleanupFailed = false;
+    let cleanupWaitedForCommit = false;
+    let delayedCommit: (() => Promise<QueryResult>) | undefined;
+    let settlement: Promise<void> | undefined;
+    const fetch = globalThis.fetch;
+    const authFault = vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+      if (point === "auth_cleanup_failed" && init?.method === "DELETE" &&
+          String(input).endsWith(`/auth/v1/admin/users/${observed.id}`)) {
+        cleanupFailed = true;
+        throw new Error("synthetic-cleanup-sensitive-marker");
+      }
+      return fetch(input, init);
+    });
+    const faulted = interceptFixturePool(control, async ({ text, values, transaction, execute }) => {
+      if (text.startsWith("INSERT INTO app.schools") && typeof values?.[0] === "string") observed.schoolId = values[0];
+      if (text.startsWith("INSERT INTO app.profiles") && typeof values?.[0] === "string" && typeof values[2] === "string") {
+        observed.id = values[0];
+        observed.handle = values[2];
+      }
+      if (text.startsWith("INSERT INTO app.student_login_credentials") && typeof values?.[1] === "string") {
+        observed.email = values[1];
+        if (point === "before_commit" || point === "rollback_failed") {
+          await execute();
+          injected = true;
+          throw original;
+        }
+      }
+      if (point === "rollback_failed" && text === "ROLLBACK") {
+        rollbackFailed = true;
+        throw new Error("受控 ROLLBACK 回應遺失");
+      }
+      if (point === "commit_not_sent" && text === "COMMIT") {
+        injected = true;
+        throw original;
+      }
+      if (point === "commit_in_flight" && text === "COMMIT") {
+        delayedCommit = execute;
+        injected = true;
+        throw original;
+      }
+      if (!transaction && text.startsWith("SELECT p.id=$1")) {
+        if (point === "db_cleanup_failed") {
+          // 非 fixture 建立的參照必須阻擋補償，不得擴大刪除。
+          await witness.query("INSERT INTO app.audit_identity_map(aid,account_id,created_at) VALUES ($1,$2,now())",
+            [blockerId, observed.id]);
+        }
+        if (point === "invalid_verification") {
+          const result = await execute();
+          injected = true;
+          return { ...result, rows: [{ verified: false }] };
+        }
+        if (["after_commit", "auth_cleanup_failed", "db_cleanup_failed"].includes(point)) {
+          injected = true;
+          throw original;
+        }
+      }
+      const result = await execute();
+      if (text === "ROLLBACK") rolledBack = true;
+      if (text === "COMMIT") {
+        committed = true;
+        if (point === "commit_response_lost") {
+          injected = true;
+          throw original;
+        }
+      }
+      return result;
+    }, (client, destroy) => {
+      if (!delayedCommit) { client.release(destroy); return; }
+      const commit = delayedCommit;
+      delayedCommit = undefined;
+      settlement = (async () => {
+        try {
+          for (let attempt = 0; attempt < 50; attempt++) {
+            const waiting = await witness.query<{ waiting: boolean }>(`SELECT EXISTS (
+              SELECT 1 FROM pg_stat_activity WHERE datname=current_database()
+                AND wait_event_type='Lock' AND wait_event='advisory'
+                AND query='SELECT pg_advisory_xact_lock(hashtextextended($1,0))') AS waiting`);
+            if (waiting.rows[0].waiting) { cleanupWaitedForCommit = true; break; }
+            await new Promise((resolve) => setTimeout(resolve, 20));
+          }
+          await commit();
+          committed = true;
+        } finally { client.release(destroy); }
+      })();
+    });
+    try {
+      let failure: unknown;
+      try { await createSyntheticStudent(faulted); } catch (error) { failure = error; }
+      await settlement;
+      expect(injected).toBe(true);
+      expect(observed.id.length > 0 && observed.schoolId.length > 0 && observed.email.length > 0).toBe(true);
+      expect(committed).toBe(!["before_commit", "commit_not_sent", "rollback_failed"].includes(point));
+      expect(rolledBack).toBe(point === "before_commit");
+      expect(rollbackFailed).toBe(point === "rollback_failed");
+      expect(cleanupWaitedForCommit).toBe(point === "commit_in_flight");
+      if (point === "invalid_verification") {
+        expect(failure instanceof Error && failure.message === "學生 fixture 提交後 UUID 關聯核對失敗。").toBe(true);
+      } else if (point === "auth_cleanup_failed" || point === "db_cleanup_failed") {
+        if (!(failure instanceof AggregateError)) throw new Error("未回報補償複合錯誤。");
+        expect(failure.cause === original && failure.errors[0] === original).toBe(true);
+        expect(failure.errors.slice(1).map((error: unknown) => error instanceof Error ? error.message : "invalid"))
+          .toEqual(point === "auth_cleanup_failed"
+            ? ["學生 fixture Auth 補償未能確認完成。"]
+            : ["學生 fixture DB 補償未能確認完成。", "學生 fixture Auth 補償未能確認完成。"]);
+        expect("transactionState" in failure && failure.transactionState === "committed").toBe(true);
+        expect("unconfirmedResources" in failure && failure.unconfirmedResources).toEqual(point === "auth_cleanup_failed"
+          ? [`auth.users:${observed.id}`]
+          : [`app.student_login_credentials:${observed.id}`, `app.profiles:${observed.id}`,
+            `app.schools:${observed.schoolId}`, `auth.users:${observed.id}`]);
+      } else {
+        expect(failure === original).toBe(true);
+      }
+      const remaining = await counts(observed);
+      expect(remaining).toEqual(point === "auth_cleanup_failed"
+        ? { auth: 1, profiles: 0, credentials: 0, schools: 0 }
+        : point === "db_cleanup_failed"
+          ? { auth: 1, profiles: 1, credentials: 1, schools: 1 }
+          : { auth: 0, profiles: 0, credentials: 0, schools: 0 });
+      expect(cleanupFailed).toBe(point === "auth_cleanup_failed");
+      expect(await counts(student)).toEqual(existing);
+      expect(await profileSnapshot() === existingProfile).toBe(true);
+      if (point === "db_cleanup_failed") {
+        const blocker = await witness.query("SELECT count(*)::int AS n FROM app.audit_identity_map WHERE aid=$1 AND account_id=$2",
+          [blockerId, observed.id]);
+        expect(blocker.rows[0].n).toBe(1);
+      }
+      console.info(JSON.stringify({ check: "fixture-compensation", point, injected, committed, rolledBack,
+        rollbackFailed, cleanupWaitedForCommit, originalPreserved: true, cleanupFailureReported: point.endsWith("cleanup_failed"),
+        remaining, existingPreserved: true }));
+    } finally {
+      authFault.mockRestore();
+      await settlement;
+      if (point === "db_cleanup_failed" && observed.id) {
+        await witness.query("DELETE FROM app.audit_identity_map WHERE aid=$1 AND account_id=$2", [blockerId, observed.id]);
+      }
+      if (observed.id && observed.schoolId) {
+        await removeSyntheticStudent(control, observed);
+        const remaining = await counts(observed);
+        expect(remaining).toEqual({ auth: 0, profiles: 0, credentials: 0, schools: 0 });
+        console.info(JSON.stringify({ check: "fixture-case-final-cleanup", point, remaining }));
+      }
+      expect(await counts(student)).toEqual(existing);
+      expect(await profileSnapshot() === existingProfile).toBe(true);
+    }
+  });
+
+  it("成功回傳契約與既有正常清理，獨立查詢無殘留", async () => {
+    const account = await createSyntheticStudent(control);
+    try {
+      expect(Object.keys(account).sort()).toEqual(["email", "handle", "id", "password", "schoolId"]);
+      expect(/^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{10}$/.test(account.password)).toBe(true);
+      expect(await counts(account)).toEqual({ auth: 1, profiles: 1, credentials: 1, schools: 1 });
+    } finally { await removeSyntheticStudent(control, account); }
+    expect(await counts(account)).toEqual({ auth: 0, profiles: 0, credentials: 0, schools: 0 });
+    expect(await counts(student)).toEqual({ auth: 1, profiles: 1, credentials: 1, schools: 1 });
+    console.info(JSON.stringify({ check: "fixture-success-normal-cleanup", remaining: 0, existingPreserved: true }));
   });
 });
