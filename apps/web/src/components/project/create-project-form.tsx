@@ -8,6 +8,7 @@ import { z } from "zod";
 import { problemJsonSchema, utcInstantSchema } from "@app-planet/core";
 import { useProjectAccessLost } from "./protected-project-view";
 import { ideaDraftHandoff, validateIdeaDraft } from "./idea-draft-handoff";
+import { formatGuidedIdeaCard, resolveSuggestedProjectTitle, type GuidedIdea } from "../student/guided-idea";
 import {
   clearIntentSnapshot,
   resolveStoredIntents,
@@ -45,9 +46,10 @@ function provesCreateWasNotExecuted(response: Response, problem: Awaited<ReturnT
     noWriteCreateCodes.has(problem.data.code);
 }
 
-export function CreateProjectForm({ storageScope, ideaDraft = null, onCarryBound, onCarryReleased, canAutoNavigate }: {
+export function CreateProjectForm({ storageScope, ideaDraft = null, guidedIdea = null, onCarryBound, onCarryReleased, canAutoNavigate }: {
   storageScope: string;
   ideaDraft?: string | null;
+  guidedIdea?: GuidedIdea | null;
   onCarryBound?: () => void;
   onCarryReleased?: () => void;
   canAutoNavigate?: () => boolean;
@@ -68,13 +70,18 @@ export function CreateProjectForm({ storageScope, ideaDraft = null, onCarryBound
   const scopeReady = loadedStorageKey === storageKey;
   const storageReady = scopeReady && !storageUnavailable;
   const active = useRef(false);
+  const scopeGeneration = useRef(0);
+  const titleEdited = useRef(false);
+  const ideaTitle = guidedIdea?.name ?? "";
 
   useEffect(() => {
     active.current = true;
+    scopeGeneration.current++;
     const clearOnPageHide = () => ideaDraftHandoff.cancel(storageScope);
     window.addEventListener("pagehide", clearOnPageHide);
     return () => {
       active.current = false;
+      scopeGeneration.current++;
       window.removeEventListener("pagehide", clearOnPageHide);
       ideaDraftHandoff.abandonUnconfirmed(storageScope);
     };
@@ -84,8 +91,10 @@ export function CreateProjectForm({ storageScope, ideaDraft = null, onCarryBound
     setLoadedStorageKey(null);
     setStorageUnavailable(false);
     setTitle("");
+    titleEdited.current = false;
     setRequestedTier(null);
     setIntent(null);
+    setBusy(false);
     setStopped(false);
     setCreated(null);
     setMessage("");
@@ -127,6 +136,12 @@ export function CreateProjectForm({ storageScope, ideaDraft = null, onCarryBound
     }
   }, [storageKey]);
 
+  useEffect(() => {
+    if (scopeReady && !intent && !stopped && !busy && !created) {
+      setTitle((current) => resolveSuggestedProjectTitle(current, ideaTitle, titleEdited.current));
+    }
+  }, [ideaTitle, intent, scopeReady, stopped, busy, created]);
+
   function hideProtectedState() {
     ideaDraftHandoff.cancel(storageScope);
     setTitle("");
@@ -138,6 +153,7 @@ export function CreateProjectForm({ storageScope, ideaDraft = null, onCarryBound
 
   async function submit() {
     if (busy || !storageReady || stopped || canAutoNavigate?.() === false) return;
+    const generation = scopeGeneration.current;
     setBusy(true);
     setCreated(null);
     setMessage(intent ? "正在以原操作查詢建立結果。" : "正在保存操作識別並建立專案。");
@@ -148,9 +164,11 @@ export function CreateProjectForm({ storageScope, ideaDraft = null, onCarryBound
         payload: requestedTier === null ? { title } : { title, tier: requestedTier },
       };
       const initialCreate = intent === null;
-      if (initialCreate && ideaDraft !== null) {
-        const validation = validateIdeaDraft(ideaDraft);
-        if (validation !== "valid" || !ideaDraftHandoff.begin(storageScope, operation.key, ideaDraft)) {
+      if (initialCreate && (ideaDraft !== null || guidedIdea !== null)) {
+        const card = guidedIdea === null ? null : formatGuidedIdeaCard(guidedIdea, operation.payload.title);
+        const text = card === null ? ideaDraft : card.outcome === "ready" ? card.text : null;
+        if (text === null || validateIdeaDraft(text) !== "valid" ||
+            !ideaDraftHandoff.begin(storageScope, operation.key, text)) {
           setMessage("無法安全帶入點子：請檢查字元、64 KiB JSON UTF-8 大小或取消先前帶入。尚未送出建立。");
           return;
         }
@@ -175,13 +193,14 @@ export function CreateProjectForm({ storageScope, ideaDraft = null, onCarryBound
         setStoredSources(sources);
         setIntent(operation);
       }
-      await send(operation, initialCreate, sources);
+      await send(operation, initialCreate, sources, generation);
     } finally {
-      setBusy(false);
+      if (active.current && generation === scopeGeneration.current) setBusy(false);
     }
   }
 
-  async function send(operation: CreateIntent, initialCreate: boolean, sources: StoredIntentSources) {
+  async function send(operation: CreateIntent, initialCreate: boolean, sources: StoredIntentSources, generation: number) {
+    const isCurrent = () => active.current && generation === scopeGeneration.current;
     setMessage(initialCreate ? "正在等待伺服器確認建立結果。" : "正在只查詢原操作的建立結果。");
     try {
       const response = await fetch(initialCreate ? "/api/v1/projects" : "/api/v1/projects/recovery", {
@@ -189,13 +208,14 @@ export function CreateProjectForm({ storageScope, ideaDraft = null, onCarryBound
         headers: { "content-type": "application/json", "idempotency-key": operation.key },
         body: JSON.stringify(operation.payload), signal: AbortSignal.timeout(15_000),
       });
-      if (!active.current) return;
+      if (!isCurrent()) return;
       if (response.status === 401 || response.status === 403) {
         hideProtectedState();
         return;
       }
       if (initialCreate && (response.status === 400 || response.status === 413 || response.status === 415)) {
         const problem = await readProblem(response);
+        if (!isCurrent()) return;
         if (provesCreateWasNotExecuted(response, problem)) {
           ideaDraftHandoff.cancel(storageScope);
           onCarryReleased?.();
@@ -212,6 +232,7 @@ export function CreateProjectForm({ storageScope, ideaDraft = null, onCarryBound
       }
       if (response.status === 409 && !initialCreate) {
         const problem = await readProblem(response);
+        if (!isCurrent()) return;
         if (problem?.success && problem.data.code === "operation_outcome_unrecoverable") {
           setStopped(true);
           setMessage(`操作 ${shortOperationId(operation.key)} 無法從有效完整的 receipt 確認；系統不會重新建立。`
@@ -221,6 +242,7 @@ export function CreateProjectForm({ storageScope, ideaDraft = null, onCarryBound
       }
       if (initialCreate && response.status === 201) {
         const parsed = createdSchema.safeParse(await response.json());
+        if (!isCurrent()) return;
         if (!parsed.success || parsed.data.title !== operation.payload.title ||
             parsed.data.requested_tier !== (operation.payload.tier ?? null)) {
           setMessage("建立結果待確認：回應無法驗證。下次只會查詢原操作，不會重新建立。");
@@ -231,6 +253,7 @@ export function CreateProjectForm({ storageScope, ideaDraft = null, onCarryBound
       }
       if (!initialCreate && response.status === 200) {
         const parsed = replayedSchema.safeParse(await response.json());
+        if (!isCurrent()) return;
         if (!parsed.success || parsed.data.project.title !== operation.payload.title ||
             parsed.data.project.requested_tier !== (operation.payload.tier ?? null)) {
           setMessage("恢復結果待確認：回應無法驗證。原操作已保留，請勿另建專案。");
@@ -241,6 +264,7 @@ export function CreateProjectForm({ storageScope, ideaDraft = null, onCarryBound
       }
       setMessage("建立結果仍待確認。原操作識別與本文已保留；後續只會查詢原操作，不會重新建立或換鍵。");
     } catch {
+      if (!isCurrent()) return;
       setMessage("建立結果仍待確認：連線或回應中斷。原操作已保留；後續只會查詢原操作，不會重新建立或換鍵。");
     }
   }
@@ -273,8 +297,16 @@ export function CreateProjectForm({ storageScope, ideaDraft = null, onCarryBound
     <h2 id="create-project-heading">建立未分類點子</h2>
     <form onSubmit={(event) => { event.preventDefault(); void submit(); }}>
       <label htmlFor="project-title">專案名稱</label>
-      <input id="project-title" value={scopeReady ? title : ""} disabled={!storageReady || busy || stopped || intent !== null}
-        onChange={(event) => setTitle(event.target.value)} />
+      <input id="project-title" value={scopeReady ? title : ""} placeholder="請在這裡輸入你的 App 名稱"
+        aria-describedby={guidedIdea !== null ? "guided-project-name-notice" : undefined}
+        disabled={!storageReady || busy || stopped || intent !== null}
+        onChange={(event) => { titleEdited.current = true; setTitle(event.target.value); }} />
+      {guidedIdea !== null && <p id="guided-project-name-notice">
+        點子卡會使用本表單最後確認的專案名稱；其他回答不變。
+        {guidedIdea.name.trim() && guidedIdea.name !== title &&
+          ` 原卡片暫名「${guidedIdea.name}」會另行保留。按「建立專案」表示確認這項名稱差異。`}
+        {" "}帶入後仍須手動保存，尚未儲存到伺服器。
+      </p>}
       <label htmlFor="project-requested-tier">建立時的 A/B 偏好（不是正式分類）</label>
       <select id="project-requested-tier" value={scopeReady ? requestedTier ?? "" : ""}
         disabled={!storageReady || busy || stopped || intent !== null}
