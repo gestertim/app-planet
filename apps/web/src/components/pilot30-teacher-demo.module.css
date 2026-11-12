@@ -1,0 +1,393 @@
+.page {
+  min-height: 100vh;
+  background: #f5f8fb;
+  color: #173b63;
+}
+
+.page :is(a, button, input, textarea):focus-visible {
+  outline: 3px solid #0e766d;
+  outline-offset: 3px;
+}
+
+.header {
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 14px clamp(18px, 4vw, 56px);
+  background: #fff;
+  border-bottom: 1px solid #d5e0e9;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.brandMark {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 14px;
+  background: #173b63;
+  color: #ffc83d;
+  font-weight: 900;
+}
+
+.brand strong,
+.brand small {
+  display: block;
+}
+
+.brand strong {
+  font-size: 16px;
+}
+
+.brand small {
+  margin-top: 3px;
+  color: #50677d;
+}
+
+.mode,
+.previewTag {
+  border: 1px solid #b8c9d8;
+  border-radius: 999px;
+  background: #edf3f8;
+  padding: 7px 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.main {
+  width: min(1440px, 100%);
+  margin: 0 auto;
+  padding: 28px clamp(18px, 4vw, 56px) 40px;
+}
+
+.intro {
+  max-width: 900px;
+  margin-bottom: 22px;
+}
+
+.eyebrow {
+  margin: 0 0 7px;
+  color: #0e766d;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.intro h1 {
+  margin: 0 0 8px;
+  font-size: clamp(26px, 3vw, 36px);
+  line-height: 1.25;
+}
+
+.intro p {
+  line-height: 1.7;
+}
+
+.notice {
+  display: inline-block;
+  border-left: 5px solid #ffc83d;
+  border-radius: 7px;
+  background: #fff6d8;
+  padding: 10px 14px;
+  font-weight: 800;
+}
+
+.limits,
+.help,
+.footerNote,
+.emptyState {
+  color: #435d74;
+  line-height: 1.65;
+}
+
+.stepper {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  list-style: none;
+  padding: 0;
+  margin: 22px 0;
+}
+
+.stepper li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  border: 1px solid #c9d7e3;
+  border-radius: 13px;
+  background: #fff;
+  padding: 10px 14px;
+  font-weight: 700;
+}
+
+.stepper li[aria-current="step"] {
+  border-color: #173b63;
+  background: #e8f0f7;
+  box-shadow: inset 0 0 0 1px #173b63;
+}
+
+.stepper li span {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 50%;
+  background: #173b63;
+  color: #fff;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.9fr) minmax(360px, 1.1fr);
+  align-items: start;
+  gap: 20px;
+}
+
+.editor,
+.preview {
+  min-width: 0;
+  border: 1px solid #d5e0e9;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 8px 26px rgb(23 59 99 / 7%);
+  padding: clamp(18px, 2.5vw, 28px);
+}
+
+.editor h2,
+.preview h2 {
+  margin: 0 0 8px;
+  font-size: 23px;
+}
+
+.field {
+  display: grid;
+  gap: 7px;
+  margin: 16px 0;
+  font-weight: 700;
+}
+
+.field :is(input, textarea),
+.featureRow input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #71879b;
+  border-radius: 9px;
+  background: #fff;
+  color: #173b63;
+  padding: 11px 12px;
+  font: inherit;
+  line-height: 1.5;
+}
+
+.field textarea {
+  resize: vertical;
+}
+
+.features,
+.versionList {
+  display: grid;
+  gap: 12px;
+  border: 1px solid #c9d7e3;
+  border-radius: 12px;
+  margin: 18px 0;
+  padding: 14px;
+}
+
+.features legend,
+.versionList legend {
+  padding: 0 5px;
+  font-weight: 800;
+}
+
+.featureRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px 10px;
+}
+
+.featureRow label {
+  grid-column: 1 / -1;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.primaryButton,
+.secondaryButton {
+  min-height: 44px;
+  border: 1px solid #173b63;
+  border-radius: 9px;
+  padding: 9px 14px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.primaryButton {
+  background: #173b63;
+  color: #fff;
+}
+
+.primaryButton:hover:not(:disabled) {
+  background: #0f2d4d;
+}
+
+.secondaryButton {
+  background: #fff;
+  color: #173b63;
+}
+
+.secondaryButton:hover:not(:disabled) {
+  background: #edf3f8;
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled {
+  border-color: #9aaab8;
+  background: #e8edf1;
+  color: #40566a;
+  cursor: not-allowed;
+}
+
+.error {
+  color: #8b241c;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.previewHeading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.appPreview {
+  overflow: hidden;
+  border: 1px solid #c9d7e3;
+  border-radius: 14px;
+  background: #fbfcfd;
+}
+
+.appPreview > header {
+  background: #173b63;
+  color: #fff;
+  padding: 18px;
+}
+
+.appPreview > header > span {
+  color: #ffc83d;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.appPreview > header h3 {
+  margin: 8px 0 4px;
+  font-size: 25px;
+}
+
+.appPreview > header p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.appPreview > section {
+  padding: 16px 18px;
+}
+
+.appPreview h4 {
+  margin: 10px 0;
+}
+
+.appPreview ul {
+  display: grid;
+  gap: 8px;
+  padding-left: 23px;
+  line-height: 1.5;
+}
+
+.interaction {
+  margin: 0 14px 14px;
+  border: 1px solid #d5e0e9;
+  border-radius: 12px;
+  background: #fff;
+  padding: 14px;
+}
+
+.interaction ul {
+  margin-bottom: 14px;
+}
+
+.pickResult {
+  min-height: 28px;
+  margin-bottom: 0;
+  border-radius: 8px;
+  background: #fff6d8;
+  padding: 7px 10px;
+  font-weight: 800;
+}
+
+.previewDisclaimer {
+  color: #50677d;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.versionItem {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 3px 9px;
+  align-items: start;
+  padding: 8px 0;
+}
+
+.versionItem input {
+  grid-row: span 2;
+  margin-top: 4px;
+}
+
+.versionItem small {
+  color: #50677d;
+}
+
+.liveStatus {
+  margin: 18px 0 0;
+  border-left: 4px solid #0e766d;
+  background: #e8f3f0;
+  padding: 11px 14px;
+  line-height: 1.6;
+}
+
+.footerNote {
+  font-size: 14px;
+}
+
+@media (max-width: 850px) {
+  .workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .stepper {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
