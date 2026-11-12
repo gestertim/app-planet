@@ -28,21 +28,32 @@ const syntheticIdea: GuidedIdea = {
   problem: "下課時間很短，常常不知道可以玩什麼。",
   features: ["查看遊戲清單", "依下課時間找遊戲", "挑選一個遊戲試試看"],
 };
+const syntheticSampleContent = "猜拳\n畫畫\n傳球";
 
 export function createSyntheticTeacherDemoDraft(): TeacherDemoDraft {
   return {
     idea: { ...syntheticIdea, features: [...syntheticIdea.features] },
-    sampleContent: "猜拳\n畫畫\n傳球",
+    sampleContent: syntheticSampleContent,
   };
 }
 
-export function validateTeacherDemoIdea(idea: GuidedIdea): TeacherDemoValidation {
+export function createTeacherDemoDraftFromIdea(idea: GuidedIdea): TeacherDemoDraft {
+  return {
+    idea: { ...idea, features: [...idea.features] },
+    sampleContent: syntheticSampleContent,
+  };
+}
+
+export function validateTeacherDemoIdea(
+  idea: GuidedIdea,
+  options: Readonly<{ allowMissingName?: boolean }> = {},
+): TeacherDemoValidation {
   const name = idea.name.trim();
   const audience = idea.audience.trim();
   const problem = idea.problem.trim();
   const features = idea.features.map((feature) => feature.trim());
 
-  if (!name || name.length > 60) {
+  if ((!options.allowMissingName && !name) || name.length > 60) {
     return { valid: false, message: "App 名稱請填 1 到 60 個字。" };
   }
   if (!audience || audience.length > 120) {

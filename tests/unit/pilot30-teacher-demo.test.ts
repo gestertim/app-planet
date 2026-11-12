@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import type { GuidedIdea } from "../../apps/web/src/components/student/guided-idea.ts";
 import {
+  createTeacherDemoDraftFromIdea,
   createSyntheticTeacherDemoDraft,
   createTeacherDemoVersion,
   restoreTeacherDemoVersion,
@@ -17,6 +18,7 @@ type PreviewProps = Readonly<{
   items: readonly string[];
   pickedItem: string;
   contentError: string;
+  guided: boolean;
   onPick: () => void;
 }>;
 const { TeacherDemo, TeacherDemoPreview } = await vi.importActual<{
@@ -39,6 +41,20 @@ describe("Pilot30 教師本機示範", () => {
     expect(validateTeacherDemoIdea({ ...sample, features: ["猜拳", " 猜拳 ", "畫畫"] }).valid).toBe(false);
     expect(validateTeacherDemoIdea({ ...sample, features: ["一", "二", "三", "四"] }).valid).toBe(false);
     expect(validateTeacherDemoIdea({ ...sample, features: ["一", ""] }).valid).toBe(false);
+  });
+
+  it("允許未命名的已確認點子安全帶入，但建立示範 App 前仍要求名稱", () => {
+    const unnamed = { ...createSyntheticTeacherDemoDraft().idea, name: "  " };
+    const handoff = validateTeacherDemoIdea(unnamed, { allowMissingName: true });
+
+    expect(handoff).toMatchObject({ valid: true, idea: { name: "" } });
+    expect(validateTeacherDemoIdea(unnamed).valid).toBe(false);
+    if (!handoff.valid) throw new Error("Expected an unnamed idea to be valid for handoff.");
+
+    const draft = createTeacherDemoDraftFromIdea(handoff.idea);
+    expect(draft.idea.name).toBe("");
+    expect(draft.idea.features).toEqual(unnamed.features);
+    expect(draft.idea.features).not.toBe(unnamed.features);
   });
 
   it("只接受 1 到 8 個不重複的示範清單項目", () => {
@@ -78,6 +94,7 @@ describe("Pilot30 教師本機示範", () => {
       items: ["<img src=x onerror=alert(1)>"],
       pickedItem: "",
       contentError: "",
+      guided: false,
       onPick: () => undefined,
     }));
     expect(html).toContain("&lt;img src=x onerror=alert(1)&gt;");

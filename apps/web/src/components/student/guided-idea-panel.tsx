@@ -1,5 +1,6 @@
 "use client";
 
+import type { RefObject } from "react";
 import type { GuidedIdeaAction, GuidedIdeaFlow } from "./guided-idea";
 import { canContinueGuidedIdea } from "./guided-idea";
 import styles from "./creation-space.module.css";
@@ -13,6 +14,8 @@ export function GuidedIdeaPanel({
   onPreview,
   onCarry,
   onCancel,
+  variant = "student",
+  carryButtonRef,
 }: Readonly<{
   flow: GuidedIdeaFlow;
   error: string;
@@ -22,10 +25,13 @@ export function GuidedIdeaPanel({
   onPreview: () => void;
   onCarry: () => void;
   onCancel: () => void;
+  variant?: "student" | "teacher-demo";
+  carryButtonRef?: RefObject<HTMLButtonElement | null>;
 }>) {
   const step = flow.step;
   const stepNumber = step === "preview" ? 3 : step;
   const canContinue = canContinueGuidedIdea(flow);
+  const isTeacherDemo = variant === "teacher-demo";
 
   return (
     <section className={styles.guidedPanel} aria-labelledby="guided-idea-title" data-testid="guided-idea-panel">
@@ -107,7 +113,7 @@ export function GuidedIdeaPanel({
           <h3>我的 App 點子</h3>
           <p><strong>App 名稱：</strong>{flow.idea.name.trim()
             ? flow.idea.name
-            : "尚未填寫（請在既有建立專案表單輸入）"}</p>
+            : isTeacherDemo ? "尚未命名（帶入後請補上名稱）" : "尚未填寫（請在既有建立專案表單輸入）"}</p>
           <p><strong>想幫助的人：</strong>{flow.idea.audience}</p>
           <p><strong>想解決的問題：</strong>{flow.idea.problem}</p>
           <div><strong>主要功能：</strong>
@@ -126,15 +132,23 @@ export function GuidedIdeaPanel({
         {error && <p role="alert" className={styles.guideError}>{error}</p>}
         {flow.confirmed
           ? <p role="status" aria-live="polite" className={styles.guideStatus}>
-            點子卡已確認；尚未建立專案、儲存到伺服器或啟動 AI。
+            {isTeacherDemo
+              ? "點子卡已確認；尚未建立示範 App、正式專案或保存到伺服器。"
+              : "點子卡已確認；尚未建立專案、儲存到伺服器或啟動 AI。"}
           </p>
-          : <p className={styles.guideStatus}>請檢查這張卡。確認只代表你接受內容，不會建立或保存專案。</p>}
+          : <p className={styles.guideStatus}>
+            {isTeacherDemo
+              ? "請檢查這張卡。確認只表示接受內容，不會帶入 Blueprint 或建立示範 App。"
+              : "請檢查這張卡。確認只代表你接受內容，不會建立或保存專案。"}
+          </p>}
         <div className={styles.guidedActions}>
           <button type="button" className={styles.secondaryButton} disabled={disabled} onClick={() => onAction({ type: "back" })}>回上一題</button>
           {!flow.confirmed
             ? <button type="button" disabled={disabled} onClick={() => onAction({ type: "confirm" })}>確認這張點子卡</button>
-            : <button type="button" disabled={disabled || carried} onClick={onCarry}>
-              {carried ? "已帶入建立專案表單" : "帶入既有建立專案表單"}
+            : <button ref={carryButtonRef} type="button" disabled={disabled || carried} onClick={onCarry}>
+              {isTeacherDemo
+                ? carried ? "已帶入 Blueprint" : "帶入 Blueprint"
+                : carried ? "已帶入建立專案表單" : "帶入既有建立專案表單"}
             </button>}
         </div>
       </div>}
